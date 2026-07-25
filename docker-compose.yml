@@ -1,0 +1,28 @@
+services:
+  mock-bank-db:
+    image: mariadb:11.4
+    container_name: sai-mock-bank-db
+
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+
+    ports:
+      - "3307:3306"
+
+  mock-bank-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SERVER_PORT: ${SERVER_PORT}
+      DB_URL: ${DB_URL}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"

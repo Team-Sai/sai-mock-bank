@@ -1,4 +1,4 @@
-package org.example.saimockbank;
+package org.teamsai.saimockbank;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

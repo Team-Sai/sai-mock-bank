@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper">
+
+    <resultMap id="bankTransactionResultMap"
+               type="org.teamsai.saimockbank.domain.transaction.entity.BankTransaction">
+
+        <id property="transactionId" column="transaction_id"/>
+
+        <result property="transactionKey" column="transaction_key"/>
+        <result property="transactionType" column="transaction_type"/>
+        <result property="amount" column="amount"/>
+        <result property="balanceAfter" column="balance_after"/>
+        <result property="counterpartyName" column="counterparty_name"/>
+        <result property="counterpartyAccountNumber"
+                column="counterparty_account_number"/>
+        <result property="memo" column="memo"/>
+        <result property="transactionAt" column="transaction_at"/>
+        <result property="transferId" column="transfer_id"/>
+        <result property="accountId" column="account_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="transactionColumns">
+        transaction_id,
+        transaction_key,
+        transaction_type,
+        amount,
+        balance_after,
+        counterparty_name,
+        counterparty_account_number,
+        memo,
+        transaction_at,
+        transfer_id,
+        account_id,
+        created_at,
+        updated_at
+    </sql>
+
+    <select id="findById"
+            resultMap="bankTransactionResultMap">
+        SELECT
+        <include refid="transactionColumns"/>
+        FROM bank_transaction
+        WHERE transaction_id = #{transactionId}
+    </select>
+
+    <select id="findByTransactionKey"
+            resultMap="bankTransactionResultMap">
+        SELECT
+        <include refid="transactionColumns"/>
+        FROM bank_transaction
+        WHERE transaction_key = #{transactionKey}
+    </select>
+
+    <select id="findAllByAccountId"
+            resultMap="bankTransactionResultMap">
+        SELECT
+        <include refid="transactionColumns"/>
+        FROM bank_transaction
+        WHERE account_id = #{accountId}
+        ORDER BY transaction_at DESC, transaction_id DESC
+    </select>
+
+</mapper>

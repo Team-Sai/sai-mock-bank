@@ -54,4 +54,33 @@
         WHERE request_key = #{requestKey}
     </select>
 
+    <insert id="insert"
+            parameterType="org.teamsai.saimockbank.domain.transfer.entity.BankTransfer"
+            useGeneratedKeys="true"
+            keyProperty="transferId"
+            keyColumn="transfer_id">
+
+        INSERT INTO bank_transfer (
+        request_key,
+        from_account_id,
+        to_account_id,
+        amount,
+        sender_memo,
+        receiver_memo,
+        status,
+        failure_reason,
+        completed_at
+        ) VALUES (
+        #{requestKey},
+        #{fromAccountId},
+        #{toAccountId},
+        #{amount},
+        #{senderMemo},
+        #{receiverMemo},
+        #{status},
+        #{failureReason},
+        #{completedAt}
+        )
+    </insert>
+
 </mapper>

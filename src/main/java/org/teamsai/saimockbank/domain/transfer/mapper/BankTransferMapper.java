@@ -16,4 +16,6 @@ public interface BankTransferMapper {
     Optional<BankTransfer> findByRequestKey(
             @Param("requestKey") String requestKey
     );
+
+    int insert(BankTransfer transfer);
 }

@@ -20,4 +20,11 @@ public interface BankTransactionMapper {
     List<BankTransaction> findAllByAccountId(
             @Param("accountId") Long accountId
     );
+
+    int insert(BankTransaction transaction);
+
+    List<BankTransaction> findAllByAccountIdAfter(
+            @Param("accountId") Long accountId,
+            @Param("afterTransactionId") Long afterTransactionId
+    );
 }

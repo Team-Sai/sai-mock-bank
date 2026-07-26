@@ -1,5 +1,6 @@
 package org.teamsai.saimockbank.domain.transfer.entity;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.teamsai.saimockbank.global.common.BaseEntity;
@@ -20,5 +21,28 @@ public class BankTransfer extends BaseEntity {
     private TransferStatus status;
     private String failureReason;
     private LocalDateTime completedAt;
+
+    @Builder
+    private BankTransfer(
+            String requestKey,
+            Long fromAccountId,
+            Long toAccountId,
+            BigDecimal amount,
+            String senderMemo,
+            String receiverMemo,
+            TransferStatus status,
+            String failureReason,
+            LocalDateTime completedAt
+    ) {
+        this.requestKey = requestKey;
+        this.fromAccountId = fromAccountId;
+        this.toAccountId = toAccountId;
+        this.amount = amount;
+        this.senderMemo = senderMemo;
+        this.receiverMemo = receiverMemo;
+        this.status = status;
+        this.failureReason = failureReason;
+        this.completedAt = completedAt;
+    }
 
 }

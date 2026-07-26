@@ -66,4 +66,57 @@
         ORDER BY transaction_at DESC, transaction_id DESC
     </select>
 
+    <insert id="insert"
+            parameterType="org.teamsai.saimockbank.domain.transaction.entity.BankTransaction"
+            useGeneratedKeys="true"
+            keyProperty="transactionId"
+            keyColumn="transaction_id">
+
+        INSERT INTO bank_transaction (
+        transaction_key,
+        transaction_type,
+        amount,
+        balance_after,
+        counterparty_name,
+        counterparty_account_number,
+        memo,
+        transaction_at,
+        transfer_id,
+        account_id
+        ) VALUES (
+        #{transactionKey},
+        #{transactionType},
+        #{amount},
+        #{balanceAfter},
+        #{counterpartyName},
+        #{counterpartyAccountNumber},
+        #{memo},
+        #{transactionAt},
+        #{transferId},
+        #{accountId}
+        )
+    </insert>
+
+    <select id="findAllByAccountIdAfter"
+            resultMap="bankTransactionResultMap">
+        SELECT
+        transaction_id,
+        transaction_key,
+        transaction_type,
+        amount,
+        balance_after,
+        counterparty_name,
+        counterparty_account_number,
+        memo,
+        transaction_at,
+        transfer_id,
+        account_id,
+        created_at,
+        updated_at
+        FROM bank_transaction
+        WHERE account_id = #{accountId}
+        AND transaction_id > #{afterTransactionId}
+        ORDER BY transaction_id ASC
+    </select>
+
 </mapper>

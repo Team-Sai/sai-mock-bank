@@ -60,4 +60,26 @@
         AND account_number = #{accountNumber}
     </select>
 
+    <select id="findByIdForUpdate"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE account_id = #{accountId}
+        FOR UPDATE
+    </select>
+
+    <update id="decreaseBalance">
+        UPDATE bank_account
+        SET balance = balance - #{amount}
+        WHERE account_id = #{accountId}
+        AND balance >= #{amount}
+    </update>
+
+    <update id="increaseBalance">
+        UPDATE bank_account
+        SET balance = balance + #{amount}
+        WHERE account_id = #{accountId}
+    </update>
+
 </mapper>

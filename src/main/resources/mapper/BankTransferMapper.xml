@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper">
+
+    <resultMap id="bankTransferResultMap"
+               type="org.teamsai.saimockbank.domain.transfer.entity.BankTransfer">
+
+        <id property="transferId" column="transfer_id"/>
+
+        <result property="requestKey" column="request_key"/>
+        <result property="fromAccountId" column="from_account_id"/>
+        <result property="toAccountId" column="to_account_id"/>
+        <result property="amount" column="amount"/>
+        <result property="senderMemo" column="sender_memo"/>
+        <result property="receiverMemo" column="receiver_memo"/>
+        <result property="status" column="status"/>
+        <result property="failureReason" column="failure_reason"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="transferColumns">
+        transfer_id,
+        request_key,
+        from_account_id,
+        to_account_id,
+        amount,
+        sender_memo,
+        receiver_memo,
+        status,
+        failure_reason,
+        completed_at,
+        created_at,
+        updated_at
+    </sql>
+
+    <select id="findById"
+            resultMap="bankTransferResultMap">
+        SELECT
+        <include refid="transferColumns"/>
+        FROM bank_transfer
+        WHERE transfer_id = #{transferId}
+    </select>
+
+    <select id="findByRequestKey"
+            resultMap="bankTransferResultMap">
+        SELECT
+        <include refid="transferColumns"/>
+        FROM bank_transfer
+        WHERE request_key = #{requestKey}
+    </select>
+
+    <insert id="insert"
+            parameterType="org.teamsai.saimockbank.domain.transfer.entity.BankTransfer"
+            useGeneratedKeys="true"
+            keyProperty="transferId"
+            keyColumn="transfer_id">
+
+        INSERT INTO bank_transfer (
+        request_key,
+        from_account_id,
+        to_account_id,
+        amount,
+        sender_memo,
+        receiver_memo,
+        status,
+        failure_reason,
+        completed_at
+        ) VALUES (
+        #{requestKey},
+        #{fromAccountId},
+        #{toAccountId},
+        #{amount},
+        #{senderMemo},
+        #{receiverMemo},
+        #{status},
+        #{failureReason},
+        #{completedAt}
+        )
+    </insert>
+
+</mapper>

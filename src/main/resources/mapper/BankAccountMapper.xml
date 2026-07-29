@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper">
+
+    <resultMap id="bankAccountResultMap"
+               type="org.teamsai.saimockbank.domain.account.entity.BankAccount">
+
+        <id property="accountId" column="account_id"/>
+
+        <result property="userKey" column="user_key"/>
+        <result property="bankCode" column="bank_code"/>
+        <result property="accountNumber" column="account_number"/>
+        <result property="accountName" column="account_name"/>
+        <result property="ownerName" column="owner_name"/>
+        <result property="balance" column="balance"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="accountColumns">
+        account_id,
+        user_key,
+        bank_code,
+        account_number,
+        account_name,
+        owner_name,
+        balance,
+        status,
+        created_at,
+        updated_at
+    </sql>
+
+    <select id="findAllByUserKey"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE user_key = #{userKey}
+        ORDER BY account_id ASC
+    </select>
+
+    <select id="findById"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE account_id = #{accountId}
+    </select>
+
+    <select id="findByBankCodeAndAccountNumber"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE bank_code = #{bankCode}
+        AND account_number = #{accountNumber}
+    </select>
+
+    <select id="findByIdForUpdate"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE account_id = #{accountId}
+        FOR UPDATE
+    </select>
+
+    <update id="decreaseBalance">
+        UPDATE bank_account
+        SET balance = balance - #{amount}
+        WHERE account_id = #{accountId}
+        AND balance >= #{amount}
+    </update>
+
+    <update id="increaseBalance">
+        UPDATE bank_account
+        SET balance = balance + #{amount}
+        WHERE account_id = #{accountId}
+    </update>
+
+</mapper>

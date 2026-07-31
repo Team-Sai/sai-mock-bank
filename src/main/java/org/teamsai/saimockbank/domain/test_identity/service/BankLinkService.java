@@ -27,17 +27,16 @@ public class BankLinkService {
     public MockBankLinkResponse issueUserKey(String name, String email) {
         TestIdentity identity = testIdentityMapper.findByNameAndEmail(name, email);
 
-        if (identity.getUserKey() != null) {
-            // 이미 발급된 원본 키는 다시 복원할 수 없으므로(단방향), 응답으로 재발급은 불가
-            throw new AlreadyLinkedException(ALREADY_LINKED_USER);
-        }
         if (identity == null) {
             throw new IdentityNotFoundException(CORRECT_USER_NOT_FOUND);
         }
 
+        if (identity.getUserKey() != null) {
+            throw new AlreadyLinkedException(ALREADY_LINKED_USER);
+        }
+
         String rawKey = generateUserKey();
         String hashedKey = userKeyHasher.hash(rawKey);
-        LocalDateTime now = LocalDateTime.now();
         testIdentityMapper.updateUserKey(identity.getIdentityId(), hashedKey, LocalDateTime.now());
 
         return new MockBankLinkResponse(rawKey, LocalDateTime.now());

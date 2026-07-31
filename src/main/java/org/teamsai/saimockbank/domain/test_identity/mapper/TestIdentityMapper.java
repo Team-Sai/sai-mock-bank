@@ -12,5 +12,4 @@ public interface TestIdentityMapper {
     void updateUserKey(@Param("identityId") Long identityId,
                        @Param("userKey") String userKey,
                        @Param("issuedAt") LocalDateTime issuedAt);
-    TestIdentity findByUserKey(@Param("userKey") String userKey);
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.teamsai.saimockbank.domain.test_identity.mapper.TestIdentityMapper">
+    <select id="findByNameAndEmail" resultType="org.teamsai.saimockbank.domain.test_identity.entity.TestIdentity">
+        SELECT identity_id, name, email, user_key, issued_at
+        FROM test_identity
+        WHERE name = #{name} AND email = #{email}
+    </select>
+    <select id="findByIdentityId" resultType="org.teamsai.saimockbank.domain.account.entity.BankAccount">
+        SELECT account_id, identity_id, bank_code, bank_name, account_number, holder_name, balance
+        FROM bank_account
+        WHERE identity_id = #{identityId}
+    </select>
+
+    <update id="updateUserKey">
+    UPDATE test_identity
+    SET user_key = #{userKey}, issued_at = #{issuedAt}
+    WHERE identity_id = #{identityId}
+    </update>
+</mapper>

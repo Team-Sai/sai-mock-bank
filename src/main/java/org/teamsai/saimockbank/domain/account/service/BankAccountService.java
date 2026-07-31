@@ -8,6 +8,7 @@ import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
 import org.teamsai.saimockbank.domain.account.entity.BankAccount;
 import org.teamsai.saimockbank.domain.account.exception.AccountErrorCode;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.test_identity.service.UserKeyHasher;
 
 import java.util.List;
 
@@ -17,30 +18,29 @@ import java.util.List;
 public class BankAccountService {
 
     private final BankAccountMapper bankAccountMapper;
+    private final UserKeyHasher userKeyHasher;
 
     public List<AccountListResponse> getAccounts(String userKey) {
         validateUserKey(userKey);
 
-        return bankAccountMapper.findAllByUserKey(userKey)
+        String hashedKey = userKeyHasher.hash(userKey);   // 추가
+
+        return bankAccountMapper.findAllByUserKey(hashedKey)   // userKey → hashedKey
                 .stream()
                 .map(AccountListResponse::from)
                 .toList();
     }
 
-    public AccountDetailResponse getAccount(
-            Long accountId,
-            String userKey
-    ) {
+    public AccountDetailResponse getAccount(Long accountId, String userKey) {
         validateRequest(accountId, userKey);
 
-        BankAccount account = bankAccountMapper.findById(accountId)
-                .orElseThrow(
-                        AccountErrorCode.ACCOUNT_NOT_FOUND::toException
-                );
+        String hashedKey = userKeyHasher.hash(userKey);   // 추가
 
-        if (!account.getUserKey().equals(userKey)) {
-            throw AccountErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
+        BankAccount account = bankAccountMapper.findById(accountId)
+                .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
+
+        if (!account.getUserKey().equals(hashedKey)) {   // userKey → hashedKey
+            throw AccountErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
 
         return AccountDetailResponse.from(account);

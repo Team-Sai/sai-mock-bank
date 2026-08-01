@@ -1,14 +1,14 @@
-package org.teamsai.saimockbank.domain.account.entity;
+package org.teamsai.saimockbank.domain.account.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.teamsai.saimockbank.global.common.BaseEntity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class BankAccount extends BaseEntity {
+public class BankAccountDTO{
     private Long accountId;
     private String userKey;
     private String bankCode;
@@ -17,5 +17,6 @@ public class BankAccount extends BaseEntity {
     private String ownerName;
     private BigDecimal balance;
     private AccountStatus status;
-
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

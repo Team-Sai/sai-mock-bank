@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.test_identity.entity;
+package org.teamsai.saimockbank.domain.identity.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class TestIdentity {
+public class IdentityDTO {
     Long identityId;
     String name;
     String email;

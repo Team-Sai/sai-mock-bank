@@ -5,10 +5,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.transaction.entity.BankTransaction;
-import org.teamsai.saimockbank.domain.transaction.entity.TransactionType;
+import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
+import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.exception.TransactionErrorCode;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
 import org.teamsai.saimockbank.domain.transaction.service.BankTransactionService;
@@ -37,13 +37,13 @@ class BankTransactionServiceTest {
 
     @Test
     void 특정_거래ID_이후의_거래내역을_조회한다() {
-        BankAccount account = mock(BankAccount.class);
+        BankAccountDTO account = mock(BankAccountDTO.class);
 
         when(account.getUserKey()).thenReturn("USER_001");
         when(bankAccountMapper.findById(1L))
                 .thenReturn(Optional.of(account));
 
-        BankTransaction transaction = BankTransaction.builder()
+        BankTransactionDTO transaction = BankTransactionDTO.builder()
                 .transactionKey("TX-001")
                 .transactionType(TransactionType.WITHDRAW)
                 .amount(new BigDecimal("10000"))
@@ -87,7 +87,7 @@ class BankTransactionServiceTest {
 
     @Test
     void 거래ID를_전달하지_않으면_처음부터_조회한다() {
-        BankAccount account = mock(BankAccount.class);
+        BankAccountDTO account = mock(BankAccountDTO.class);
 
         when(account.getUserKey()).thenReturn("USER_001");
         when(bankAccountMapper.findById(1L))
@@ -110,7 +110,7 @@ class BankTransactionServiceTest {
 
     @Test
     void 다른_사용자의_거래내역은_조회할_수_없다() {
-        BankAccount account = mock(BankAccount.class);
+        BankAccountDTO account = mock(BankAccountDTO.class);
 
         when(account.getUserKey()).thenReturn("USER_002");
         when(bankAccountMapper.findById(1L))

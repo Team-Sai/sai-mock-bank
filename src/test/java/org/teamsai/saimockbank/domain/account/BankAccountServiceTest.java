@@ -5,7 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.exception.AccountErrorCode;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
@@ -28,7 +28,7 @@ class BankAccountServiceTest {
 
     @Test
     void 사용자_계좌_목록을_조회한다() {
-        BankAccount account = mock(BankAccount.class);
+        BankAccountDTO account = mock(BankAccountDTO.class);
 
         when(bankAccountMapper.findAllByUserKey("USER_001"))
                 .thenReturn(List.of(account));
@@ -55,7 +55,7 @@ class BankAccountServiceTest {
 
     @Test
     void 다른_사용자의_계좌는_조회할_수_없다() {
-        BankAccount account = mock(BankAccount.class);
+        BankAccountDTO account = mock(BankAccountDTO.class);
 
         when(account.getUserKey()).thenReturn("USER_002");
         when(bankAccountMapper.findById(1L))

@@ -2,13 +2,13 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="org.teamsai.saimockbank.domain.test_identity.mapper.TestIdentityMapper">
-    <select id="findByNameAndEmail" resultType="org.teamsai.saimockbank.domain.test_identity.entity.TestIdentity">
+<mapper namespace="org.teamsai.saimockbank.domain.identity.mapper.IdentityMapper">
+    <select id="findByNameAndEmail" resultType="org.teamsai.saimockbank.domain.identity.dto.Identity">
         SELECT identity_id, name, email, user_key, issued_at
         FROM test_identity
         WHERE name = #{name} AND email = #{email}
     </select>
-    <select id="findByIdentityId" resultType="org.teamsai.saimockbank.domain.account.entity.BankAccount">
+    <select id="findByIdentityId" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
         SELECT account_id, identity_id, bank_code, bank_name, account_number, holder_name, balance
         FROM bank_account
         WHERE identity_id = #{identityId}

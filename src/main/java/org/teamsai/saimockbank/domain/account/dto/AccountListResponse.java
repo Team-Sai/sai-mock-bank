@@ -1,7 +1,5 @@
 package org.teamsai.saimockbank.domain.account.dto;
 
-import org.teamsai.saimockbank.domain.account.entity.AccountStatus;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 public record AccountListResponse(
@@ -12,7 +10,7 @@ public record AccountListResponse(
         String maskedAccountNumber,
         AccountStatus status
 ) {
-    public static AccountListResponse from(BankAccount account) {
+    public static AccountListResponse from(BankAccountDTO account) {
         return new AccountListResponse(
                 account.getAccountId(),
                 account.getBankCode(),

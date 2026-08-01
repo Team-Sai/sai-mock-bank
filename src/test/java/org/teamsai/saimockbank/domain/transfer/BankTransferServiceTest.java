@@ -6,8 +6,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
-import org.teamsai.saimockbank.domain.transfer.entity.BankTransfer;
-import org.teamsai.saimockbank.domain.transfer.entity.TransferStatus;
+import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
+import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
 import org.teamsai.saimockbank.domain.transfer.service.BankTransferService;
@@ -37,7 +37,7 @@ class BankTransferServiceTest {
     void 계좌_이체를_실행한다() {
         TransferRequest request = createRequest("TRANSFER-001");
 
-        BankTransfer transfer = BankTransfer.builder()
+        BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey("TRANSFER-001")
                 .fromAccountId(1L)
                 .toAccountId(2L)

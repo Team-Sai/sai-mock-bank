@@ -2,28 +2,28 @@ package org.teamsai.saimockbank.domain.transaction.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.teamsai.saimockbank.domain.transaction.entity.BankTransaction;
+import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 
 import java.util.List;
 import java.util.Optional;
 
 @Mapper
 public interface BankTransactionMapper {
-    Optional<BankTransaction> findById(
+    Optional<BankTransactionDTO> findById(
             @Param("transactionId") Long transactionId
     );
 
-    Optional<BankTransaction> findByTransactionKey(
+    Optional<BankTransactionDTO> findByTransactionKey(
             @Param("transactionKey") String transactionKey
     );
 
-    List<BankTransaction> findAllByAccountId(
+    List<BankTransactionDTO> findAllByAccountId(
             @Param("accountId") Long accountId
     );
 
-    int insert(BankTransaction transaction);
+    int insert(BankTransactionDTO transaction);
 
-    List<BankTransaction> findAllByAccountIdAfter(
+    List<BankTransactionDTO> findAllByAccountIdAfter(
             @Param("accountId") Long accountId,
             @Param("afterTransactionId") Long afterTransactionId
     );

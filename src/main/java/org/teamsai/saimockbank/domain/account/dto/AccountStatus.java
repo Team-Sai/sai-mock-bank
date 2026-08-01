@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.account.entity;
+package org.teamsai.saimockbank.domain.account.dto;
 
 public enum AccountStatus {
     ACTIVE,

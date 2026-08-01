@@ -1,3 +1,3 @@
-package org.teamsai.saimockbank.domain.test_identity.dto;
+package org.teamsai.saimockbank.domain.identity.dto;
 
 public record MockBankLinkRequest(String name, String email){}

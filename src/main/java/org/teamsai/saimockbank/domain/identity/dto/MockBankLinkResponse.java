@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.test_identity.dto;
+package org.teamsai.saimockbank.domain.identity.dto;
 
 import java.time.LocalDateTime;
 

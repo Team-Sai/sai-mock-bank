@@ -5,10 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
 import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.exception.AccountErrorCode;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.test_identity.service.UserKeyHasher;
+import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class BankAccountService {
 
         String hashedKey = userKeyHasher.hash(userKey);   // 추가
 
-        BankAccount account = bankAccountMapper.findById(accountId)
+        BankAccountDTO account = bankAccountMapper.findById(accountId)
                 .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
 
         if (!account.getUserKey().equals(hashedKey)) {   // userKey → hashedKey

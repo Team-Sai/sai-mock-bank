@@ -3,7 +3,7 @@ package org.teamsai.saimockbank.domain.account.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -12,20 +12,20 @@ import java.util.Optional;
 @Mapper
 public interface BankAccountMapper {
 
-    List<BankAccount> findAllByUserKey(
+    List<BankAccountDTO> findAllByUserKey(
             @Param("userKey") String userKey
     );
 
-    Optional<BankAccount> findById(
+    Optional<BankAccountDTO> findById(
             @Param("accountId") Long accountId
     );
 
-    Optional<BankAccount> findByBankCodeAndAccountNumber(
+    Optional<BankAccountDTO> findByBankCodeAndAccountNumber(
             @Param("bankCode") String bankCode,
             @Param("accountNumber") String accountNumber
     );
 
-    Optional<BankAccount> findByIdForUpdate(
+    Optional<BankAccountDTO> findByIdForUpdate(
             @Param("accountId") Long accountId
     );
 

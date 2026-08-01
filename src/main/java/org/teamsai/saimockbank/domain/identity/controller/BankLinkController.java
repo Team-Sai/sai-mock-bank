@@ -1,17 +1,19 @@
-package org.teamsai.saimockbank.domain.test_identity.controller;
+package org.teamsai.saimockbank.domain.identity.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
-import org.teamsai.saimockbank.domain.test_identity.dto.MockBankLinkRequest;
-import org.teamsai.saimockbank.domain.test_identity.dto.MockBankLinkResponse;
-import org.teamsai.saimockbank.domain.test_identity.service.BankLinkService;
+import org.teamsai.saimockbank.domain.identity.dto.MockBankLinkRequest;
+import org.teamsai.saimockbank.domain.identity.dto.MockBankLinkResponse;
+import org.teamsai.saimockbank.domain.identity.service.BankLinkService;
 
-import java.util.List;
-
+@Tag(
+        name = "사이원장 연동 API",
+        description = "사용자 연동키 생성 API"
+)
 @RestController
 @RequestMapping("/api/mock-bank")
 @RequiredArgsConstructor

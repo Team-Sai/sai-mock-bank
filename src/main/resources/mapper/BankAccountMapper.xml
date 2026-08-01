@@ -6,7 +6,7 @@
 <mapper namespace="org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper">
 
     <resultMap id="bankAccountResultMap"
-               type="org.teamsai.saimockbank.domain.account.entity.BankAccount">
+               type="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
 
         <id property="accountId" column="account_id"/>
 

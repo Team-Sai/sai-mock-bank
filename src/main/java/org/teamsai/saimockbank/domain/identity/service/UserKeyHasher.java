@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.test_identity.service;
+package org.teamsai.saimockbank.domain.identity.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;

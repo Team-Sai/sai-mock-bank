@@ -1,7 +1,5 @@
 package org.teamsai.saimockbank.domain.account.dto;
 
-import org.teamsai.saimockbank.domain.account.entity.AccountStatus;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
@@ -15,7 +13,7 @@ public record AccountDetailResponse(
         BigDecimal balance,
         AccountStatus status
 ) {
-    public static AccountDetailResponse from(BankAccount account) {
+    public static AccountDetailResponse from(BankAccountDTO account) {
         return new AccountDetailResponse(
                 account.getAccountId(),
                 account.getBankCode(),

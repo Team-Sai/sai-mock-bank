@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class BankAccountDTO{
     private Long accountId;
+    private Long identityId;
     private String userKey;
     private String bankCode;
     private String accountNumber;

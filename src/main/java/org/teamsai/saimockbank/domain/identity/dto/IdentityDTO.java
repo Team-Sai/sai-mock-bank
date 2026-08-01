@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.identity.dto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -12,5 +13,8 @@ public class IdentityDTO {
     String name;
     String email;
     String userKey;
-    LocalDateTime issuedAt;
+    LocalDateTime issuedAt; //userKey 발급날짜
+    LocalDateTime createdAt; //bank 가입날짜
+    LocalDateTime updatedAt;
+
 }

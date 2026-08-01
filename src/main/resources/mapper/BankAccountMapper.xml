@@ -9,7 +9,7 @@
                type="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
 
         <id property="accountId" column="account_id"/>
-
+        
         <result property="userKey" column="user_key"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>

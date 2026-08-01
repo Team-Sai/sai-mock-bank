@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.teamsai.saimockbank.domain.identity.mapper.IdentityMapper">
-    <select id="findByNameAndEmail" resultType="org.teamsai.saimockbank.domain.identity.dto.Identity">
+    <select id="findByNameAndEmail" resultType="org.teamsai.saimockbank.domain.identity.dto.IdentityDTO">
         SELECT identity_id, name, email, user_key, issued_at
-        FROM test_identity
+        FROM identity
         WHERE name = #{name} AND email = #{email}
     </select>
     <select id="findByIdentityId" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
@@ -15,7 +15,7 @@
     </select>
 
     <update id="updateUserKey">
-    UPDATE test_identity
+    UPDATE identity
     SET user_key = #{userKey}, issued_at = #{issuedAt}
     WHERE identity_id = #{identityId}
     </update>

@@ -11,6 +11,7 @@ import java.util.Optional;
 
 @Mapper
 public interface BankAccountMapper {
+    int insert(BankAccountDTO bankAccountDTO);
 
     List<BankAccountDTO> findAllByUserKey(
             @Param("userKey") String userKey

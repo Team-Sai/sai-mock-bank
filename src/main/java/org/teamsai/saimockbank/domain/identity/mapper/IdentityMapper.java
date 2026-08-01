@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Mapper
 public interface IdentityMapper {
-    Optional<IdentityDTO> findByNameAndEmail(@Param("name") String name, @Param("email") String email);
+    Optional<IdentityDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
     void updateUserKey(@Param("identityId") Long identityId,
                        @Param("userKey") String userKey,
                        @Param("issuedAt") LocalDateTime issuedAt);

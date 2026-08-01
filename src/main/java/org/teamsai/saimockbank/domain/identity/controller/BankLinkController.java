@@ -20,13 +20,12 @@ import org.teamsai.saimockbank.domain.identity.service.BankLinkService;
 public class BankLinkController {
 
     private final BankLinkService bankLinkService;
-    private final BankAccountService bankAccountService;
 
     @Operation(summary = "연동키 생성 응답")
     @PostMapping("/link")
     public ResponseEntity<MockBankLinkResponse> link(@RequestBody MockBankLinkRequest request) {
         MockBankLinkResponse response = bankLinkService.issueUserKey(
-                request.name(), request.email()
+                request.name(), request.userToken()
         );
         return ResponseEntity.ok(response);
     }

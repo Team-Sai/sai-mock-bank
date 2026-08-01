@@ -9,7 +9,9 @@
                type="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
 
         <id property="accountId" column="account_id"/>
-        
+
+        <result property="identityId" column="identity_id"/>
+
         <result property="userKey" column="user_key"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
@@ -21,8 +23,36 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
+    <insert id="insert"
+            parameterType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO"
+            useGeneratedKeys="true"
+            keyProperty="accountId"
+            keyColumn="account_id">
+
+        INSERT INTO bank_account (
+        identity_id,
+        user_key,
+        bank_code,
+        account_number,
+        account_name,
+        owner_name,
+        balance,
+        status
+        ) VALUES (
+        #{identityId},
+        #{userKey},
+        #{bankCode},
+        #{accountNumber},
+        #{accountName},
+        #{ownerName},
+        #{balance},
+        #{status}
+        )
+    </insert>
+
     <sql id="accountColumns">
         account_id,
+        identity_id,
         user_key,
         bank_code,
         account_number,

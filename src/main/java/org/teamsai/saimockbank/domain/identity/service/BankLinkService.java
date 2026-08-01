@@ -1,6 +1,7 @@
 package org.teamsai.saimockbank.domain.identity.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.identity.dto.IdentityDTO;
@@ -12,7 +13,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BankLinkService {
@@ -23,9 +24,13 @@ public class BankLinkService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Transactional
-    public MockBankLinkResponse issueUserKey(String name, String email) {
-        IdentityDTO identity = identityMapper.findByNameAndEmail(name, email)
+    public MockBankLinkResponse issueUserKey(String name, String userToken) {
+        //log.info("[issueUserKey] 요청 수신 -> name: '{}', userToken: '{}'", name, userToken);
+
+        IdentityDTO identity = identityMapper.findByNameAndUserToken(name, userToken)
                 .orElseThrow(IdentityErrorCode.CORRECT_USER_NOT_FOUND::toException);
+
+        //log.info("[issueUserKey] 회원 조회 성공 -> identityId: {}, userKey 존재여부: {}",identity.getIdentityId(), identity.getUserKey() != null);
 
         if (identity.getUserKey() != null) {
             throw IdentityErrorCode.ALREADY_LINKED_USER.toException();

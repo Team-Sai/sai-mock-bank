@@ -46,7 +46,6 @@ class BankLinkServiceTest {
         IdentityDTO identity = new IdentityDTO();
         ReflectionTestUtils.setField(identity, "identityId", identityId);
         ReflectionTestUtils.setField(identity, "name", NAME);
-        ReflectionTestUtils.setField(identity, "email", "test@example.com");
         ReflectionTestUtils.setField(identity, "userKeyHash", userKeyHash);
         return identity;
     }

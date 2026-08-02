@@ -11,6 +11,7 @@ import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
 import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -34,20 +35,24 @@ public class BankAccountService {
     public AccountDetailResponse getAccount(Long accountId, String userKey) {
         validateRequest(accountId, userKey);
 
-        String hashedKey = userKeyHasher.hash(userKey);   // 추가
-
         BankAccountDTO account = bankAccountMapper.findById(accountId)
                 .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
 
-        if (!account.getUserKey().equals(userKey)) {   // userKey → hashedKey
+        String ownerHash = bankAccountMapper.findOwnerUserKeyHashByAccountId(accountId)
+                .orElseThrow(AccountErrorCode.ACCOUNT_ACCESS_DENIED::toException);
+
+        String hashedKey = userKeyHasher.hash(userKey);
+        if (!ownerHash.equals(hashedKey)) {
             throw AccountErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
 
         return AccountDetailResponse.from(account);
     }
 
-    public List<BankAccountDTO> getAccountsByHashedUserKey(String hashedUserKey) {
-        return bankAccountMapper.findByUserKey(hashedUserKey);
+    public List<BankAccountDTO> getAccountsByUserKey(String userKey) {
+        validateUserKey(userKey);
+        String hashedKey = userKeyHasher.hash(userKey);
+        return bankAccountMapper.findByUserKey(hashedKey);
     }
 
     private void validateUserKey(String userKey) {

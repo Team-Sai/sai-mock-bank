@@ -32,7 +32,7 @@ public class BankAccountController {
     ) {
         //log.info("[sai-mock-bank] 계좌 조회 요청 수신 - userKey(Hash): {}", userKey);
 
-        List<BankAccountDTO> accounts = bankAccountService.getAccountsByHashedUserKey(userKey);
+        List<BankAccountDTO> accounts = bankAccountService.getAccountsByUserKey(userKey);
 
         //log.info("[sai-mock-bank] 조회 성공 계좌 수: {}, 상세 정보: {}", accounts.size(), accounts);
         return ResponseEntity.ok(accounts);

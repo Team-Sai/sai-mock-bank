@@ -9,8 +9,6 @@ import java.util.Date;
 public record AccountDetailResponse(
         Long accountId,
         Long identityId,
-        String userKey,
-        String userToken,
         String bankCode,
         String accountHolderName,
         String accountName,
@@ -24,8 +22,6 @@ public record AccountDetailResponse(
         return new AccountDetailResponse(
                 account.getAccountId(),
                 account.getIdentityId(),
-                account.getUserKey(),
-                account.getUserToken(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountHolderName(),
                 account.getAccountName(),

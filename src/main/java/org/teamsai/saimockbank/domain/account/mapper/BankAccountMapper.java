@@ -29,6 +29,8 @@ public interface BankAccountMapper {
             @Param("userKey") String userKey
     );
 
+    Optional<String> findOwnerUserKeyHashByAccountId(@Param("accountId") Long accountId);
+
     int increaseBalance(
             @Param("accountId") Long accountId,
             @Param("amount")BigDecimal amount

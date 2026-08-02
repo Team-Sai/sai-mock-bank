@@ -32,7 +32,7 @@ public class BankLinkService {
 
         //log.info("[issueUserKey] 회원 조회 성공 -> identityId: {}, userKey 존재여부: {}",identity.getIdentityId(), identity.getUserKey() != null);
 
-        if (identity.getUserKey() != null) {
+        if (identity.getUserKeyHash() != null) {
             throw IdentityErrorCode.ALREADY_LINKED_USER.toException();
         }
 
@@ -40,7 +40,7 @@ public class BankLinkService {
         String hashedKey = userKeyHasher.hash(rawKey);
         LocalDateTime issuedAt = LocalDateTime.now();
 
-        identityMapper.updateUserKey(identity.getIdentityId(), rawKey, hashedKey, issuedAt);
+        identityMapper.updateUserKey(identity.getIdentityId(), hashedKey, issuedAt);
         return new MockBankLinkResponse(rawKey, issuedAt);
     }
 

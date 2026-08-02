@@ -12,8 +12,6 @@
 
         <result property="identityId" column="identity_id"/>
 
-        <result property="userKey" column="user_key"/>
-        <result property="userToken" column="user_token"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
         <result property="accountName" column="account_name"/>
@@ -32,8 +30,6 @@
 
         INSERT INTO bank_account (
         identity_id,
-        user_key,
-        user_token,
         bank_code,
         account_number,
         account_name,
@@ -42,8 +38,6 @@
         status
         ) VALUES (
         #{identityId},
-        #{userKey},
-        #{userToken},
         #{bankCode},
         #{accountNumber},
         #{accountName},
@@ -56,8 +50,6 @@
     <sql id="accountColumns">
         account_id,
         identity_id,
-        user_key,
-        user_token,
         bank_code,
         account_number,
         account_name,
@@ -70,17 +62,22 @@
 
     <select id="findAllByUserKey"
             resultMap="bankAccountResultMap">
-        SELECT
-        <include refid="accountColumns"/>
-        FROM bank_account
-        WHERE user_key = #{userKey}
-        ORDER BY account_id ASC
+        SELECT a.account_id, a.identity_id, a.bank_code, a.account_number,
+        a.account_name, a.account_holder_name, a.balance, a.status,
+        a.created_at, a.updated_at
+        FROM bank_account a
+        JOIN bank_identity i ON a.identity_id = i.identity_id
+        WHERE i.user_key_hash = #{userKey}
+        ORDER BY a.account_id ASC
     </select>
 
     <select id="findByUserKey" parameterType="string" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
-        SELECT *
-        FROM bank_account
-        WHERE user_key = #{userKey}
+        SELECT a.account_id, a.identity_id, a.bank_code, a.account_number,
+        a.account_name, a.account_holder_name, a.balance, a.status,
+        a.created_at, a.updated_at
+        FROM bank_account a
+        JOIN bank_identity i ON a.identity_id = i.identity_id
+        WHERE i.user_key_hash = #{userKey}
     </select>
 
     <select id="findByUserToken" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
@@ -90,7 +87,6 @@
         a.account_name,
         a.account_holder_name,
         a.balance,
-        a.user_token,
         a.created_at,
         a.updated_at
         FROM bank_account a
@@ -104,6 +100,13 @@
         <include refid="accountColumns"/>
         FROM bank_account
         WHERE account_id = #{accountId}
+    </select>
+
+    <select id="findOwnerUserKeyHashByAccountId" resultType="java.lang.String">
+        SELECT i.user_key_hash
+        FROM bank_account a
+        JOIN bank_identity i ON a.identity_id = i.identity_id
+        WHERE a.account_id = #{accountId}
     </select>
 
     <select id="findByBankCodeAndAccountNumber"

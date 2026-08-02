@@ -20,20 +20,20 @@ public class BankAccountMapperTest {
     private BankAccountMapper bankAccountMapper;
 
     @Test
-    void 사용자키로_계좌목록을_조회한다(){
+    void 사용자키로_계좌목록을_조회한다() {
         List<BankAccountDTO> accounts = bankAccountMapper.findAllByUserKey("TEST_USER_001");
 
         assertThat(accounts).isNotEmpty();
         assertThat(accounts)
-                .extracting(BankAccountDTO::getUserKey)
-                .containsOnly("TEST_USER_001");
+                .extracting(BankAccountDTO::getIdentityId)
+                .containsOnly(1L); // TEST_USER_001에 해당하는 identity_id로 교체
     }
 
     @Test
     void 계좌아이디로_계좌를_조회한다(){
         BankAccountDTO account = bankAccountMapper.findById(1L).orElseThrow();
 
-        assertThat(account.getOwnerName()).isEqualTo("김사이");
+        assertThat(account.getAccountHolderName()).isEqualTo("김사이");
         assertThat(account.getStatus()).isEqualTo(AccountStatus.ACTIVE);
     }
 }

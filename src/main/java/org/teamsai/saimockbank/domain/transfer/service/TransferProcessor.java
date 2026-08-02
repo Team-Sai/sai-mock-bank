@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -25,6 +26,7 @@ public class TransferProcessor {
     private final BankAccountMapper bankAccountMapper;
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
+    private final UserKeyHasher userKeyHasher;
 
     public BankTransferDTO process(TransferRequest request){
         BankAccountDTO fromAccount = findAccountForUpdate(request.fromAccountId());
@@ -71,11 +73,14 @@ public class TransferProcessor {
             BankAccountDTO toAccount,
             TransferRequest request
     ) {
-        if (!fromAccount.getUserKey()
-                .equals(request.fromUserKey())) {
+        String ownerHash = bankAccountMapper
+                .findOwnerUserKeyHashByAccountId(fromAccount.getAccountId())
+                .orElseThrow(TransferErrorCode.ACCOUNT_ACCESS_DENIED::toException);
 
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
+        String hashedKey = userKeyHasher.hash(request.fromUserKey());
+
+        if (!ownerHash.equals(hashedKey)) {
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE

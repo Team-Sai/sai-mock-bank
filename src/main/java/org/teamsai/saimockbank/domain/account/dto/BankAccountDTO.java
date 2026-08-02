@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 public class BankAccountDTO{
     private Long accountId;
     private Long identityId;
-    private String userKey;
-    private String userToken;
     private String bankCode;
     private String accountNumber;
     private String accountName;

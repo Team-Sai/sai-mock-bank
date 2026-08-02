@@ -7,6 +7,7 @@ public record AccountListResponse(
         String bankCode,
         String bankName,
         String accountName,
+        String accountHolderName,
         String maskedAccountNumber,
         AccountStatus status
 ) {
@@ -16,6 +17,7 @@ public record AccountListResponse(
                 account.getBankCode(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountName(),
+                account.getAccountHolderName(),
                 AccountNumberMasker.mask(
                         account.getAccountNumber()
                 ),

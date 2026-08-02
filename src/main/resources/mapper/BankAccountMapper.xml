@@ -13,10 +13,11 @@
         <result property="identityId" column="identity_id"/>
 
         <result property="userKey" column="user_key"/>
+        <result property="userToken" column="user_token"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
         <result property="accountName" column="account_name"/>
-        <result property="ownerName" column="owner_name"/>
+        <result property="accountHolderName" column="account_holder_name"/>
         <result property="balance" column="balance"/>
         <result property="status" column="status"/>
         <result property="createdAt" column="created_at"/>
@@ -32,19 +33,21 @@
         INSERT INTO bank_account (
         identity_id,
         user_key,
+        user_token,
         bank_code,
         account_number,
         account_name,
-        owner_name,
+        account_holder_name,
         balance,
         status
         ) VALUES (
         #{identityId},
         #{userKey},
+        #{userToken},
         #{bankCode},
         #{accountNumber},
         #{accountName},
-        #{ownerName},
+        #{accountHolderName},
         #{balance},
         #{status}
         )
@@ -54,10 +57,11 @@
         account_id,
         identity_id,
         user_key,
+        user_token,
         bank_code,
         account_number,
         account_name,
-        owner_name,
+        account_holder_name,
         balance,
         status,
         created_at,
@@ -71,6 +75,27 @@
         FROM bank_account
         WHERE user_key = #{userKey}
         ORDER BY account_id ASC
+    </select>
+
+    <select id="findByUserKey" parameterType="string" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
+        SELECT *
+        FROM bank_account
+        WHERE user_key = #{userKey}
+    </select>
+
+    <select id="findByUserToken" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
+        SELECT DISTINCT
+        a.account_id,
+        a.account_number,
+        a.account_name,
+        a.account_holder_name,
+        a.balance,
+        a.user_token,
+        a.created_at,
+        a.updated_at
+        FROM bank_account a
+        JOIN bank_identity i ON a.identity_id = i.identity_id
+        WHERE i.user_key_hash = #{userKey}
     </select>
 
     <select id="findById"

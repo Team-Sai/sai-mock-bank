@@ -21,13 +21,12 @@ public interface BankAccountMapper {
             @Param("accountId") Long accountId
     );
 
-    Optional<BankAccountDTO> findByBankCodeAndAccountNumber(
-            @Param("bankCode") String bankCode,
-            @Param("accountNumber") String accountNumber
-    );
-
     Optional<BankAccountDTO> findByIdForUpdate(
             @Param("accountId") Long accountId
+    );
+
+    List<BankAccountDTO> findByUserKey(
+            @Param("userKey") String userKey
     );
 
     int increaseBalance(

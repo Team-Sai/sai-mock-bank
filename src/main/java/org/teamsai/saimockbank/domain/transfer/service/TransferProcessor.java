@@ -195,7 +195,7 @@ public class TransferProcessor {
                 .transactionType(TransactionType.WITHDRAW)
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
-                .counterpartyName(toAccount.getOwnerName())
+                .counterpartyName(toAccount.getAccountHolderName())
                 .counterpartyAccountNumber(
                         toAccount.getAccountNumber()
                 )
@@ -219,7 +219,7 @@ public class TransferProcessor {
                 .transactionType(TransactionType.DEPOSIT)
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
-                .counterpartyName(fromAccount.getOwnerName())
+                .counterpartyName(fromAccount.getAccountHolderName())
                 .counterpartyAccountNumber(
                         fromAccount.getAccountNumber()
                 )

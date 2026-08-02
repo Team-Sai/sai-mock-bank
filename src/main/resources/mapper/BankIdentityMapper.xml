@@ -17,7 +17,7 @@
     <update id="updateUserKey">
     UPDATE bank_identity
     SET user_key = #{userKey}, issued_at = NOW(),
-        updated_at = NOW()
+        updated_at = NOW(), user_key_hash = #{userKeyHash}
     WHERE identity_id = #{identityId}
     </update>
 </mapper>

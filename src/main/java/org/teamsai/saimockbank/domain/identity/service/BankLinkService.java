@@ -40,7 +40,7 @@ public class BankLinkService {
         String hashedKey = userKeyHasher.hash(rawKey);
         LocalDateTime issuedAt = LocalDateTime.now();
 
-        identityMapper.updateUserKey(identity.getIdentityId(), hashedKey, issuedAt);
+        identityMapper.updateUserKey(identity.getIdentityId(), rawKey, hashedKey, issuedAt);
         return new MockBankLinkResponse(rawKey, issuedAt);
     }
 

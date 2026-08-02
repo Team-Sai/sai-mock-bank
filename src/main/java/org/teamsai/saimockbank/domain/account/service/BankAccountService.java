@@ -39,11 +39,15 @@ public class BankAccountService {
         BankAccountDTO account = bankAccountMapper.findById(accountId)
                 .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
 
-        if (!account.getUserKey().equals(hashedKey)) {   // userKey → hashedKey
+        if (!account.getUserKey().equals(userKey)) {   // userKey → hashedKey
             throw AccountErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
 
         return AccountDetailResponse.from(account);
+    }
+
+    public List<BankAccountDTO> getAccountsByHashedUserKey(String hashedUserKey) {
+        return bankAccountMapper.findByUserKey(hashedUserKey);
     }
 
     private void validateUserKey(String userKey) {

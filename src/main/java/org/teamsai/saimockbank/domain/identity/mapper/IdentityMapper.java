@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface IdentityMapper {
     Optional<IdentityDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
     void updateUserKey(@Param("identityId") Long identityId,
+                       @Param("userKeyHash") String userKeyHash,
                        @Param("userKey") String userKey,
                        @Param("issuedAt") LocalDateTime issuedAt);
 }

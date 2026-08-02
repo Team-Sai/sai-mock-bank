@@ -16,5 +16,5 @@ public class IdentityDTO {
     LocalDateTime issuedAt; //userKey 발급날짜
     LocalDateTime createdAt; //bank 가입날짜
     LocalDateTime updatedAt;
-
+    String userKeyHash;
 }

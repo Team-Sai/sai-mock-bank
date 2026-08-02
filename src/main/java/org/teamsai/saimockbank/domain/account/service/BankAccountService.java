@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
 import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
+import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.exception.AccountErrorCode;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
 import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 
 import java.util.List;
@@ -20,6 +22,7 @@ public class BankAccountService {
 
     private final BankAccountMapper bankAccountMapper;
     private final UserKeyHasher userKeyHasher;
+    private final AccountOwnershipValidator ownershipValidator;
 
     public List<AccountListResponse> getAccounts(String userKey) {
         validateUserKey(userKey);
@@ -34,17 +37,10 @@ public class BankAccountService {
 
     public AccountDetailResponse getAccount(Long accountId, String userKey) {
         validateRequest(accountId, userKey);
-
-        BankAccountDTO account = bankAccountMapper.findById(accountId)
+        AccountWithOwnerDTO account = bankAccountMapper.findByIdWithOwner(accountId)
                 .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
 
-        String ownerHash = bankAccountMapper.findOwnerUserKeyHashByAccountId(accountId)
-                .orElseThrow(AccountErrorCode.ACCOUNT_ACCESS_DENIED::toException);
-
-        String hashedKey = userKeyHasher.hash(userKey);
-        if (!ownerHash.equals(hashedKey)) {
-            throw AccountErrorCode.ACCOUNT_ACCESS_DENIED.toException();
-        }
+        ownershipValidator.verify(account.getOwnerUserKeyHash(), userKey, AccountErrorCode.ACCOUNT_ACCESS_DENIED::toException);
 
         return AccountDetailResponse.from(account);
     }

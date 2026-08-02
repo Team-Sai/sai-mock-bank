@@ -27,12 +27,12 @@ public class BankAccountController {
 
     @Operation(summary = "사용자 보유 계좌 목록 조회")
     @GetMapping
-    public ResponseEntity<List<BankAccountDTO>> getAccounts(
+    public ResponseEntity<List<AccountListResponse>> getAccounts(
             @RequestParam("userKey") String userKey
     ) {
         //log.info("[sai-mock-bank] 계좌 조회 요청 수신 - userKey(Hash): {}", userKey);
 
-        List<BankAccountDTO> accounts = bankAccountService.getAccountsByUserKey(userKey);
+        List<AccountListResponse> accounts = bankAccountService.getAccounts(userKey);
 
         //log.info("[sai-mock-bank] 조회 성공 계좌 수: {}, 상세 정보: {}", accounts.size(), accounts);
         return ResponseEntity.ok(accounts);
@@ -44,7 +44,7 @@ public class BankAccountController {
             @PathVariable Long accountId,
             @RequestParam("userKey") String userKey
     ) {
-        log.info("[sai-mock-bank] 계좌 조회 요청 수신 - userKey(Hash): {}", userKey);
+        //log.info("[sai-mock-bank] 계좌 조회 요청 수신 - userKey(Hash): {}", userKey);
         return ResponseEntity.ok(
                 bankAccountService.getAccount(accountId, userKey)
         );

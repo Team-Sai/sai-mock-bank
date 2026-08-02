@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public class IdentityDTO {
     Long identityId;
     String name;
-    String email;
     LocalDateTime issuedAt; //userKey 발급날짜
     LocalDateTime createdAt; //bank 가입날짜
     LocalDateTime updatedAt;

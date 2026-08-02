@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.account.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 
 import java.math.BigDecimal;
@@ -30,6 +31,8 @@ public interface BankAccountMapper {
     );
 
     Optional<String> findOwnerUserKeyHashByAccountId(@Param("accountId") Long accountId);
+
+    Optional<AccountWithOwnerDTO> findByIdWithOwner(@Param("accountId") Long accountId);
 
     int increaseBalance(
             @Param("accountId") Long accountId,

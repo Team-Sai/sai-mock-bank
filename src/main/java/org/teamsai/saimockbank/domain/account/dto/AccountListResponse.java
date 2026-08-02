@@ -2,6 +2,8 @@ package org.teamsai.saimockbank.domain.account.dto;
 
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
+import java.math.BigDecimal;
+
 public record AccountListResponse(
         Long accountId,
         String bankCode,
@@ -9,7 +11,8 @@ public record AccountListResponse(
         String accountName,
         String accountHolderName,
         String maskedAccountNumber,
-        AccountStatus status
+        AccountStatus status,
+        BigDecimal balance
 ) {
     public static AccountListResponse from(BankAccountDTO account) {
         return new AccountListResponse(
@@ -21,15 +24,11 @@ public record AccountListResponse(
                 AccountNumberMasker.mask(
                         account.getAccountNumber()
                 ),
-                account.getStatus()
+                account.getStatus(),
+                account.getBalance()
         );
     }
     private static String resolveBankName(String bankCode) {
-        return switch (bankCode) {
-            case "004" -> "국민은행";
-            case "020" -> "우리은행";
-            case "088" -> "신한은행";
-            default -> "기타은행";
-        };
+        return BankCode.getBankNameByCode(bankCode);
     }
 }

@@ -34,12 +34,23 @@ public record AccountDetailResponse(
                 account.getUpdatedAt()
         );
     }
+
+    public static AccountDetailResponse from(AccountWithOwnerDTO account) {
+        return new AccountDetailResponse(
+                account.getAccountId(),
+                account.getIdentityId(),
+                resolveBankName(account.getBankCode()),
+                account.getAccountHolderName(),
+                account.getAccountName(),
+                AccountNumberMasker.mask(account.getAccountNumber()),
+                account.getBalance(),
+                account.getStatus(),
+                account.getCreatedAt(),
+                account.getUpdatedAt()
+        );
+    }
+    
     private static String resolveBankName(String bankCode) {
-        return switch (bankCode) {
-            case "004" -> "국민은행";
-            case "020" -> "우리은행";
-            case "088" -> "신한은행";
-            default -> "기타은행";
-        };
+        return BankCode.getBankNameByCode(bankCode);
     }
 }

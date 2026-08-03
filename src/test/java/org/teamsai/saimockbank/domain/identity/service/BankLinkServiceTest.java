@@ -121,9 +121,25 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.ALREADY_LINKED_USER);
+                .isEqualTo(IdentityErrorCode.CONFLICT);
 
         verify(userKeyHasher, never()).hash(anyString());
         verify(identityMapper, never()).updateUserKey(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("동시 요청으로 인해 업데이트가 반영되지 않으면 ALREADY_LINKED_USER 예외가 발생한다")
+    void throwsWhenConcurrentUpdateFails() {
+        IdentityDTO identity = createIdentity(IDENTITY_ID, null);
+        given(identityMapper.findByNameAndUserToken(NAME, USER_TOKEN))
+                .willReturn(Optional.of(identity));
+        given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
+        given(identityMapper.updateUserKey(eq(IDENTITY_ID), anyString(), any(LocalDateTime.class)))
+                .willReturn(0);
+
+        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
+                .isInstanceOf(DomainException.class)
+                .extracting("errorCode")
+                .isEqualTo(IdentityErrorCode.CONFLICT);
     }
 }

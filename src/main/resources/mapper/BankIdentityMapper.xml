@@ -13,8 +13,8 @@
     <update id="updateUserKey">
     UPDATE bank_identity
     SET user_key_hash = #{userKeyHash},
-        issued_at = NOW(),
-        updated_at = NOW()
-    WHERE identity_id = #{identityId}
+        issued_at = #{issuedAt},
+        updated_at = #{issuedAt}
+    WHERE identity_id = #{identityId} AND user_key_hash IS NULL
     </update>
 </mapper>

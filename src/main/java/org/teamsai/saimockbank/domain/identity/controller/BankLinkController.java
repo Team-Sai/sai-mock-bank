@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.teamsai.saimockbank.domain.account.service.BankAccountService;
 import org.teamsai.saimockbank.domain.identity.dto.MockBankLinkRequest;
 import org.teamsai.saimockbank.domain.identity.dto.MockBankLinkResponse;
 import org.teamsai.saimockbank.domain.identity.service.BankLinkService;

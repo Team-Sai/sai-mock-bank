@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.identity.service;
+package org.teamsai.saimockbank.domain.identity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +12,8 @@ import org.teamsai.saimockbank.domain.identity.dto.IdentityDTO;
 import org.teamsai.saimockbank.domain.identity.dto.MockBankLinkResponse;
 import org.teamsai.saimockbank.domain.identity.exception.IdentityErrorCode;
 import org.teamsai.saimockbank.domain.identity.mapper.IdentityMapper;
+import org.teamsai.saimockbank.domain.identity.service.BankLinkService;
+import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 import org.teamsai.saimockbank.global.exception.DomainException;
 
 import java.time.LocalDateTime;
@@ -44,7 +46,7 @@ class BankLinkServiceTest {
 
     private IdentityDTO createIdentity(Long identityId, String userKeyHash) {
         IdentityDTO identity = new IdentityDTO();
-        ReflectionTestUtils.setField(identity, "identityId", identityId);
+        ReflectionTestUtils.setField(identity, "bankIdentityId", identityId);
         ReflectionTestUtils.setField(identity, "name", NAME);
         ReflectionTestUtils.setField(identity, "userKeyHash", userKeyHash);
         return identity;
@@ -58,6 +60,8 @@ class BankLinkServiceTest {
         given(identityMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(identity));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
+        given(identityMapper.updateUserKey(eq(IDENTITY_ID), anyString(), any(LocalDateTime.class)))
+                .willReturn(1);
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
 
@@ -89,6 +93,8 @@ class BankLinkServiceTest {
                 .willReturn(Optional.of(identity1))
                 .willReturn(Optional.of(identity2));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
+        given(identityMapper.updateUserKey(anyLong(), anyString(), any(LocalDateTime.class)))
+                .willReturn(1);
 
         MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN);
         MockBankLinkResponse second = bankLinkService.issueUserKey(NAME, USER_TOKEN);

@@ -10,7 +10,7 @@
 
         <id property="accountId" column="account_id"/>
 
-        <result property="identityId" column="identity_id"/>
+        <result property="bankIdentityId" column="bank_identity_id"/>
 
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
@@ -25,7 +25,7 @@
     <resultMap id="accountWithOwnerResultMap"
                type="org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO">
         <id property="accountId" column="account_id"/>
-        <result property="identityId" column="identity_id"/>
+        <result property="bankIdentityId" column="bank_identity_id"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
         <result property="accountName" column="account_name"/>
@@ -44,7 +44,7 @@
             keyColumn="account_id">
 
         INSERT INTO bank_account (
-        identity_id,
+        bank_identity_id,
         bank_code,
         account_number,
         account_name,
@@ -52,7 +52,7 @@
         balance,
         status
         ) VALUES (
-        #{identityId},
+        #{bankIdentityId},
         #{bankCode},
         #{accountNumber},
         #{accountName},
@@ -64,7 +64,7 @@
 
     <sql id="accountColumns">
         account_id,
-        identity_id,
+        bank_identity_id,
         bank_code,
         account_number,
         account_name,
@@ -77,21 +77,21 @@
 
     <select id="findAllByUserKey"
             resultMap="bankAccountResultMap">
-        SELECT a.account_id, a.identity_id, a.bank_code, a.account_number,
+        SELECT a.account_id, a.bank_identity_id, a.bank_code, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at
         FROM bank_account a
-        JOIN bank_identity i ON a.identity_id = i.identity_id
+        JOIN bank_identity i ON a.bank_identity_id = i.bank_identity_id
         WHERE i.user_key_hash = #{userKey}
         ORDER BY a.account_id ASC
     </select>
 
     <select id="findByUserKey" parameterType="string" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
-        SELECT a.account_id, a.identity_id, a.bank_code, a.account_number,
+        SELECT a.account_id, a.bank_identity_id, a.bank_code, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at
         FROM bank_account a
-        JOIN bank_identity i ON a.identity_id = i.identity_id
+        JOIN bank_identity i ON a.bank_identity_id = i.bank_identity_id
         WHERE i.user_key_hash = #{userKey}
     </select>
 
@@ -106,18 +106,18 @@
     <select id="findOwnerUserKeyHashByAccountId" resultType="java.lang.String">
         SELECT i.user_key_hash
         FROM bank_account a
-        JOIN bank_identity i ON a.identity_id = i.identity_id
+        JOIN bank_identity i ON a.bank_identity_id = i.bank_identity_id
         WHERE a.account_id = #{accountId}
     </select>
 
     <select id="findByIdWithOwner" resultMap="accountWithOwnerResultMap">
         SELECT
-        a.account_id, a.identity_id, a.bank_code, a.account_number,
+        a.account_id, a.bank_identity_id, a.bank_code, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at,
         i.user_key_hash AS owner_user_key_hash
         FROM bank_account a
-        JOIN bank_identity i ON a.identity_id = i.identity_id
+        JOIN bank_identity i ON a.bank_identity_id = i.bank_identity_id
         WHERE a.account_id = #{accountId}
     </select>
 

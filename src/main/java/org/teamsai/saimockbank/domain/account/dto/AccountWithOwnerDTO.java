@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class AccountWithOwnerDTO {
     private Long accountId;
-    private Long identityId;
+    private Long bankIdentityId;
     private String bankCode;
     private String accountNumber;
     private String accountName;

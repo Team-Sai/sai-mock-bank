@@ -4,11 +4,10 @@ import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 public record AccountDetailResponse(
         Long accountId,
-        Long identityId,
+        Long bankIdentityId,
         String bankCode,
         String accountHolderName,
         String accountName,
@@ -21,7 +20,7 @@ public record AccountDetailResponse(
     public static AccountDetailResponse from(BankAccountDTO account) {
         return new AccountDetailResponse(
                 account.getAccountId(),
-                account.getIdentityId(),
+                account.getBankIdentityId(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountHolderName(),
                 account.getAccountName(),
@@ -38,7 +37,7 @@ public record AccountDetailResponse(
     public static AccountDetailResponse from(AccountWithOwnerDTO account) {
         return new AccountDetailResponse(
                 account.getAccountId(),
-                account.getIdentityId(),
+                account.getBankIdentityId(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountHolderName(),
                 account.getAccountName(),

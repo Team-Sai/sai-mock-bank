@@ -13,7 +13,6 @@ import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
 import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

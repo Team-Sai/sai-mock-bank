@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @ToString
 public class BankAccountDTO{
     private Long accountId;
-    private Long identityId;
+    private Long bankIdentityId;
     private String bankCode;
     private String accountNumber;
     private String accountName;

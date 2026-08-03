@@ -25,12 +25,10 @@ public class BankLinkService {
 
     @Transactional
     public MockBankLinkResponse issueUserKey(String name, String userToken) {
-        //log.info("[issueUserKey] 요청 수신 -> name: '{}', userToken: '{}'", name, userToken);
 
         IdentityDTO identity = identityMapper.findByNameAndUserToken(name, userToken)
                 .orElseThrow(IdentityErrorCode.CORRECT_USER_NOT_FOUND::toException);
 
-        //log.info("[issueUserKey] 회원 조회 성공 -> identityId: {}, userKey 존재여부: {}",identity.getIdentityId(), identity.getUserKey() != null);
 
         if (identity.getUserKeyHash() != null) {
             throw IdentityErrorCode.CONFLICT.toException();
@@ -40,7 +38,7 @@ public class BankLinkService {
         String hashedKey = userKeyHasher.hash(rawKey);
         LocalDateTime issuedAt = LocalDateTime.now();
 
-        int updatedRow = identityMapper.updateUserKey(identity.getIdentityId(), hashedKey, issuedAt);
+        int updatedRow = identityMapper.updateUserKey(identity.getBankIdentityId(), hashedKey, issuedAt);
 
         if(updatedRow==0){
             throw IdentityErrorCode.CONFLICT.toException();

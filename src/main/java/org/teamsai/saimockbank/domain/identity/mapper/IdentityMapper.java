@@ -9,8 +9,10 @@ import java.util.Optional;
 
 @Mapper
 public interface IdentityMapper {
+    void insert(IdentityDTO identity);
+    
     Optional<IdentityDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
-    int updateUserKey(@Param("identityId") Long identityId,
+    int updateUserKey(@Param("bankIdentityId") Long identityId,
                        @Param("userKeyHash") String userKeyHash,
                        @Param("issuedAt") LocalDateTime issuedAt);
 }

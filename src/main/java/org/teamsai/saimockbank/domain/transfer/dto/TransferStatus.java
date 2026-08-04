@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.transfer.entity;
+package org.teamsai.saimockbank.domain.transfer.dto;
 
 public enum TransferStatus {
     PENDING,

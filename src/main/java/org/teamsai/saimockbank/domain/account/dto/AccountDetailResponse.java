@@ -1,39 +1,58 @@
 package org.teamsai.saimockbank.domain.account.dto;
 
-import org.teamsai.saimockbank.domain.account.entity.AccountStatus;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record AccountDetailResponse(
         Long accountId,
+        Long bankIdentityId,
         String bankCode,
         String bankName,
+        String accountHolderName,
         String accountName,
-        String maksedAccountNumber,
+        String accountNumber,
         BigDecimal balance,
-        AccountStatus status
+        AccountStatus status,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
-    public static AccountDetailResponse from(BankAccount account) {
+    public static AccountDetailResponse from(BankAccountDTO account) {
         return new AccountDetailResponse(
                 account.getAccountId(),
+                account.getBankIdentityId(),
                 account.getBankCode(),
                 resolveBankName(account.getBankCode()),
+                account.getAccountHolderName(),
                 account.getAccountName(),
                 AccountNumberMasker.mask(
                         account.getAccountNumber()
                 ),
                 account.getBalance(),
-                account.getStatus()
+                account.getStatus(),
+                account.getCreatedAt(),
+                account.getUpdatedAt()
         );
     }
+
+    public static AccountDetailResponse from(AccountWithOwnerDTO account) {
+        return new AccountDetailResponse(
+                account.getAccountId(),
+                account.getBankIdentityId(),
+                account.getBankCode(),
+                resolveBankName(account.getBankCode()),
+                account.getAccountHolderName(),
+                account.getAccountName(),
+                AccountNumberMasker.mask(account.getAccountNumber()),
+                account.getBalance(),
+                account.getStatus(),
+                account.getCreatedAt(),
+                account.getUpdatedAt()
+        );
+    }
+    
     private static String resolveBankName(String bankCode) {
-        return switch (bankCode) {
-            case "004" -> "국민은행";
-            case "020" -> "우리은행";
-            case "088" -> "신한은행";
-            default -> "기타은행";
-        };
+        return BankCode.getBankNameByCode(bankCode);
     }
 }

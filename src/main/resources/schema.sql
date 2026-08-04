@@ -8,7 +8,7 @@ CREATE TABLE bank_account (
                               bank_code VARCHAR(20) NOT NULL,
                               account_number VARCHAR(30) NOT NULL,
                               account_name VARCHAR(100) NOT NULL,
-                              owner_name VARCHAR(50) NOT NULL,
+                              account_holder_name VARCHAR(50) NOT NULL,
                               balance DECIMAL(19, 2) NOT NULL DEFAULT 0,
                               status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                               created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

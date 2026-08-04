@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.transaction.entity;
+package org.teamsai.saimockbank.domain.transaction.dto;
 
 public enum TransactionType {
     DEPOSIT,

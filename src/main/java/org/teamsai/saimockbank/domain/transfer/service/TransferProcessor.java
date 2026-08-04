@@ -2,15 +2,18 @@ package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.teamsai.saimockbank.domain.account.entity.AccountStatus;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
+import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.transaction.entity.BankTransaction;
-import org.teamsai.saimockbank.domain.transaction.entity.TransactionType;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
+import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
+import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
+import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
-import org.teamsai.saimockbank.domain.transfer.entity.BankTransfer;
-import org.teamsai.saimockbank.domain.transfer.entity.TransferStatus;
+import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
+import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
 
@@ -25,11 +28,22 @@ public class TransferProcessor {
     private final BankAccountMapper bankAccountMapper;
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
+    private final AccountOwnershipValidator accountOwnershipValidator;
 
-    public BankTransfer process(TransferRequest request){
-        BankAccount fromAccount = findAccountForUpdate(request.fromAccountId());
+    public BankTransferDTO process(TransferRequest request){
+        Long fromId = request.fromAccountId();
+        Long toId = request.toAccountId();
 
-        BankAccount toAccount = findAccountForUpdate(request.toAccountId());
+        AccountWithOwnerDTO fromAccount;
+        BankAccountDTO toAccount;
+
+        if (fromId < toId) {
+            fromAccount = findAccountForUpdateWithOwner(fromId);
+            toAccount = findAccountForUpdate(toId);
+        } else {
+            toAccount = findAccountForUpdate(toId);
+            fromAccount = findAccountForUpdateWithOwner(fromId);
+        }
 
         validateAccounts(fromAccount,toAccount,request);
 
@@ -39,7 +53,7 @@ public class TransferProcessor {
         updateBalances(request);
 
         LocalDateTime completedAt = LocalDateTime.now();
-        BankTransfer transfer = saveTransfer(request,completedAt);
+        BankTransferDTO transfer = saveTransfer(request,completedAt);
 
         saveTransactions(
                 request,
@@ -57,7 +71,16 @@ public class TransferProcessor {
 
     }
 
-    private BankAccount findAccountForUpdate(Long accountId) {
+    private AccountWithOwnerDTO findAccountForUpdateWithOwner(Long accountId) {
+        return bankAccountMapper
+                .findByIdForUpdateWithOwner(accountId)
+                .orElseThrow(
+                        TransferErrorCode.ACCOUNT_NOT_FOUND
+                                ::toException
+                );
+    }
+
+    private BankAccountDTO findAccountForUpdate(Long accountId) {
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
                 .orElseThrow(
@@ -67,16 +90,15 @@ public class TransferProcessor {
     }
 
     private void validateAccounts(
-            BankAccount fromAccount,
-            BankAccount toAccount,
+            AccountWithOwnerDTO fromAccount,
+            BankAccountDTO toAccount,
             TransferRequest request
     ) {
-        if (!fromAccount.getUserKey()
-                .equals(request.fromUserKey())) {
-
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
-        }
+        accountOwnershipValidator.verify(
+                fromAccount.getOwnerUserKeyHash(),
+                request.fromUserKey(),
+                TransferErrorCode.ACCOUNT_ACCESS_DENIED::toException
+        );
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE
                 || toAccount.getStatus() != AccountStatus.ACTIVE) {
@@ -114,11 +136,11 @@ public class TransferProcessor {
                     .toException();
         }
     }
-    private BankTransfer saveTransfer(
+    private BankTransferDTO saveTransfer(
             TransferRequest request,
             LocalDateTime completedAt
     ) {
-        BankTransfer transfer = BankTransfer.builder()
+        BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey(request.requestKey())
                 .fromAccountId(request.fromAccountId())
                 .toAccountId(request.toAccountId())
@@ -142,14 +164,14 @@ public class TransferProcessor {
     }
     private void saveTransactions(
             TransferRequest request,
-            BankAccount fromAccount,
-            BankAccount toAccount,
+            AccountWithOwnerDTO  fromAccount,
+            BankAccountDTO toAccount,
             Long transferId,
             BigDecimal fromBalanceAfter,
             BigDecimal toBalanceAfter,
             LocalDateTime transactionAt
     ) {
-        BankTransaction withdrawal =
+        BankTransactionDTO withdrawal =
                 createWithdrawTransaction(
                         request,
                         fromAccount,
@@ -159,7 +181,7 @@ public class TransferProcessor {
                         transactionAt
                 );
 
-        BankTransaction deposit =
+        BankTransactionDTO deposit =
                 createDepositTransaction(
                         request,
                         fromAccount,
@@ -182,20 +204,20 @@ public class TransferProcessor {
                     .toException();
         }
     }
-    private BankTransaction createWithdrawTransaction(
+    private BankTransactionDTO createWithdrawTransaction(
             TransferRequest request,
-            BankAccount fromAccount,
-            BankAccount toAccount,
+            AccountWithOwnerDTO fromAccount,
+            BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
-        return BankTransaction.builder()
+        return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.WITHDRAW)
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
-                .counterpartyName(toAccount.getOwnerName())
+                .counterpartyName(toAccount.getAccountHolderName())
                 .counterpartyAccountNumber(
                         toAccount.getAccountNumber()
                 )
@@ -206,20 +228,20 @@ public class TransferProcessor {
                 .build();
     }
 
-    private BankTransaction createDepositTransaction(
+    private BankTransactionDTO createDepositTransaction(
             TransferRequest request,
-            BankAccount fromAccount,
-            BankAccount toAccount,
+            AccountWithOwnerDTO  fromAccount,
+            BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
-        return BankTransaction.builder()
+        return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.DEPOSIT)
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
-                .counterpartyName(fromAccount.getOwnerName())
+                .counterpartyName(fromAccount.getAccountHolderName())
                 .counterpartyAccountNumber(
                         fromAccount.getAccountNumber()
                 )

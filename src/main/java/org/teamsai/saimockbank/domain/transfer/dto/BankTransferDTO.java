@@ -1,16 +1,15 @@
-package org.teamsai.saimockbank.domain.transfer.entity;
+package org.teamsai.saimockbank.domain.transfer.dto;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.teamsai.saimockbank.global.common.BaseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class BankTransfer extends BaseEntity {
+public class BankTransferDTO{
     private Long transferId;
     private String requestKey;
     private Long fromAccountId;
@@ -21,9 +20,11 @@ public class BankTransfer extends BaseEntity {
     private TransferStatus status;
     private String failureReason;
     private LocalDateTime completedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @Builder
-    private BankTransfer(
+    private BankTransferDTO(
             String requestKey,
             Long fromAccountId,
             Long toAccountId,
@@ -32,7 +33,9 @@ public class BankTransfer extends BaseEntity {
             String receiverMemo,
             TransferStatus status,
             String failureReason,
-            LocalDateTime completedAt
+            LocalDateTime completedAt,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         this.requestKey = requestKey;
         this.fromAccountId = fromAccountId;
@@ -43,6 +46,8 @@ public class BankTransfer extends BaseEntity {
         this.status = status;
         this.failureReason = failureReason;
         this.completedAt = completedAt;
+        this.createdAt = createdAt;
+        this.updatedAt =updatedAt;
     }
 
 }

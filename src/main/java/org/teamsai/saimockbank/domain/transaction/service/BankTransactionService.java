@@ -3,8 +3,11 @@ package org.teamsai.saimockbank.domain.transaction.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
+import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionResponse;
 import org.teamsai.saimockbank.domain.transaction.exception.TransactionErrorCode;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -18,6 +21,8 @@ public class BankTransactionService {
 
     private final BankAccountMapper bankAccountMapper;
     private final BankTransactionMapper bankTransactionMapper;
+    private final UserKeyHasher userKeyHasher;
+    private final AccountOwnershipValidator accountOwnershipValidator;
 
     public List<TransactionResponse> getTransactions(
             Long accountId,
@@ -26,16 +31,14 @@ public class BankTransactionService {
     ) {
         validateRequest(accountId, userKey);
 
-        BankAccount account = bankAccountMapper.findById(accountId)
-                .orElseThrow(
-                        TransactionErrorCode.ACCOUNT_NOT_FOUND
-                                ::toException
-                );
+        AccountWithOwnerDTO account = bankAccountMapper.findByIdWithOwner(accountId)
+                .orElseThrow(TransactionErrorCode.ACCOUNT_NOT_FOUND::toException);
 
-        if (!account.getUserKey().equals(userKey)) {
-            throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
-        }
+        accountOwnershipValidator.verify(
+                account.getOwnerUserKeyHash(),
+                userKey,
+                TransactionErrorCode.ACCOUNT_ACCESS_DENIED::toException
+        );
 
         long cursor =
                 afterTransactionId == null

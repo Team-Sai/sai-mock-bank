@@ -1,4 +1,4 @@
-package org.teamsai.saimockbank.domain.account.entity;
+package org.teamsai.saimockbank.domain.account.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

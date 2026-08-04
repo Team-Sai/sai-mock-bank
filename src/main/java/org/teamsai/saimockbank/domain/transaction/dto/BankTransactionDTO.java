@@ -1,16 +1,15 @@
-package org.teamsai.saimockbank.domain.transaction.entity;
+package org.teamsai.saimockbank.domain.transaction.dto;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.teamsai.saimockbank.global.common.BaseEntity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class BankTransaction extends BaseEntity {
+public class BankTransactionDTO{
     private Long transactionId;
     private String transactionKey;
     private TransactionType transactionType;
@@ -20,12 +19,14 @@ public class BankTransaction extends BaseEntity {
     private String counterpartyAccountNumber;
     private String memo;
     private LocalDateTime transactionAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     private Long transferId;
     private Long accountId;
 
     @Builder
-    private BankTransaction(
+    private BankTransactionDTO(
             String transactionKey,
             TransactionType transactionType,
             BigDecimal amount,
@@ -35,7 +36,9 @@ public class BankTransaction extends BaseEntity {
             String memo,
             LocalDateTime transactionAt,
             Long transferId,
-            Long accountId
+            Long accountId,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         this.transactionKey = transactionKey;
         this.transactionType = transactionType;
@@ -47,6 +50,8 @@ public class BankTransaction extends BaseEntity {
         this.transactionAt = transactionAt;
         this.transferId = transferId;
         this.accountId = accountId;
+        this.createdAt = createdAt;
+        this.updatedAt =updatedAt;
     }
 
 }

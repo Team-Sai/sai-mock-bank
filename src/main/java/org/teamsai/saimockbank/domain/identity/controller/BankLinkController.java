@@ -2,6 +2,7 @@ package org.teamsai.saimockbank.domain.identity.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ public class BankLinkController {
 
     private final BankLinkService bankLinkService;
 
+    @Valid
     @Operation(summary = "연동키 생성 응답")
     @PostMapping("/link")
     public ResponseEntity<MockBankLinkResponse> link(@RequestBody MockBankLinkRequest request) {

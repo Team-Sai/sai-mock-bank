@@ -3,8 +3,10 @@ package org.teamsai.saimockbank.domain.transfer.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
+import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
 import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
@@ -26,12 +28,22 @@ public class TransferProcessor {
     private final BankAccountMapper bankAccountMapper;
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
-    private final UserKeyHasher userKeyHasher;
+    private final AccountOwnershipValidator accountOwnershipValidator;
 
     public BankTransferDTO process(TransferRequest request){
-        BankAccountDTO fromAccount = findAccountForUpdate(request.fromAccountId());
+        Long fromId = request.fromAccountId();
+        Long toId = request.toAccountId();
 
-        BankAccountDTO toAccount = findAccountForUpdate(request.toAccountId());
+        AccountWithOwnerDTO fromAccount;
+        BankAccountDTO toAccount;
+
+        if (fromId < toId) {
+            fromAccount = findAccountForUpdateWithOwner(fromId);
+            toAccount = findAccountForUpdate(toId);
+        } else {
+            toAccount = findAccountForUpdate(toId);
+            fromAccount = findAccountForUpdateWithOwner(fromId);
+        }
 
         validateAccounts(fromAccount,toAccount,request);
 
@@ -59,6 +71,15 @@ public class TransferProcessor {
 
     }
 
+    private AccountWithOwnerDTO findAccountForUpdateWithOwner(Long accountId) {
+        return bankAccountMapper
+                .findByIdForUpdateWithOwner(accountId)
+                .orElseThrow(
+                        TransferErrorCode.ACCOUNT_NOT_FOUND
+                                ::toException
+                );
+    }
+
     private BankAccountDTO findAccountForUpdate(Long accountId) {
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
@@ -69,19 +90,15 @@ public class TransferProcessor {
     }
 
     private void validateAccounts(
-            BankAccountDTO fromAccount,
+            AccountWithOwnerDTO fromAccount,
             BankAccountDTO toAccount,
             TransferRequest request
     ) {
-        String ownerHash = bankAccountMapper
-                .findOwnerUserKeyHashByAccountId(fromAccount.getAccountId())
-                .orElseThrow(TransferErrorCode.ACCOUNT_ACCESS_DENIED::toException);
-
-        String hashedKey = userKeyHasher.hash(request.fromUserKey());
-
-        if (!ownerHash.equals(hashedKey)) {
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
-        }
+        accountOwnershipValidator.verify(
+                fromAccount.getOwnerUserKeyHash(),
+                request.fromUserKey(),
+                TransferErrorCode.ACCOUNT_ACCESS_DENIED::toException
+        );
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE
                 || toAccount.getStatus() != AccountStatus.ACTIVE) {
@@ -147,7 +164,7 @@ public class TransferProcessor {
     }
     private void saveTransactions(
             TransferRequest request,
-            BankAccountDTO fromAccount,
+            AccountWithOwnerDTO  fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal fromBalanceAfter,
@@ -189,7 +206,7 @@ public class TransferProcessor {
     }
     private BankTransactionDTO createWithdrawTransaction(
             TransferRequest request,
-            BankAccountDTO fromAccount,
+            AccountWithOwnerDTO fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,
@@ -213,7 +230,7 @@ public class TransferProcessor {
 
     private BankTransactionDTO createDepositTransaction(
             TransferRequest request,
-            BankAccountDTO fromAccount,
+            AccountWithOwnerDTO  fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,

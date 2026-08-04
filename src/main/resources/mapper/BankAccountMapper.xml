@@ -86,7 +86,7 @@
         ORDER BY a.account_id ASC
     </select>
 
-    <select id="findByUserKey" parameterType="string" resultType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
+    <select id="findByUserKey" parameterType="string" resultMap="bankAccountResultMap">
         SELECT a.account_id, a.bank_identity_id, a.bank_code, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at
@@ -121,21 +121,24 @@
         WHERE a.account_id = #{accountId}
     </select>
 
-    <select id="findByBankCodeAndAccountNumber"
-            resultMap="bankAccountResultMap">
-        SELECT
-        <include refid="accountColumns"/>
-        FROM bank_account
-        WHERE bank_code = #{bankCode}
-        AND account_number = #{accountNumber}
-    </select>
-
     <select id="findByIdForUpdate"
             resultMap="bankAccountResultMap">
         SELECT
         <include refid="accountColumns"/>
         FROM bank_account
         WHERE account_id = #{accountId}
+        FOR UPDATE
+    </select>
+
+    <select id="findByIdForUpdateWithOwner" resultMap="accountWithOwnerResultMap">
+        SELECT
+        a.account_id, a.identity_id, a.bank_code, a.account_number,
+        a.account_name, a.account_holder_name, a.balance, a.status,
+        a.created_at, a.updated_at,
+        i.user_key_hash AS owner_user_key_hash
+        FROM bank_account a
+        JOIN bank_identity i ON a.identity_id = i.identity_id
+        WHERE a.account_id = #{accountId}
         FOR UPDATE
     </select>
 

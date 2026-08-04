@@ -50,6 +50,7 @@ public class BankTransferService {
                 || isBlank(request.requestKey())
                 || isBlank(request.fromUserKey())
                 || request.fromAccountId() == null
+                || request.fromAccountId() <= 0
                 || request.toAccountId() == null
                 || request.amount() == null
                 || request.amount().compareTo(BigDecimal.ZERO) <= 0) {

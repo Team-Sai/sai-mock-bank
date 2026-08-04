@@ -29,10 +29,10 @@ public interface BankAccountMapper {
     List<BankAccountDTO> findByUserKey(
             @Param("userKey") String userKey
     );
-
-    Optional<String> findOwnerUserKeyHashByAccountId(@Param("accountId") Long accountId);
-
+    
     Optional<AccountWithOwnerDTO> findByIdWithOwner(@Param("accountId") Long accountId);
+
+    Optional<AccountWithOwnerDTO> findByIdForUpdateWithOwner(@Param("accountId") Long accountId);
 
     int increaseBalance(
             @Param("accountId") Long accountId,

@@ -9,6 +9,7 @@ public record AccountDetailResponse(
         Long accountId,
         Long bankIdentityId,
         String bankCode,
+        String bankName,
         String accountHolderName,
         String accountName,
         String accountNumber,
@@ -21,6 +22,7 @@ public record AccountDetailResponse(
         return new AccountDetailResponse(
                 account.getAccountId(),
                 account.getBankIdentityId(),
+                account.getBankCode(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountHolderName(),
                 account.getAccountName(),
@@ -38,6 +40,7 @@ public record AccountDetailResponse(
         return new AccountDetailResponse(
                 account.getAccountId(),
                 account.getBankIdentityId(),
+                account.getBankCode(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountHolderName(),
                 account.getAccountName(),

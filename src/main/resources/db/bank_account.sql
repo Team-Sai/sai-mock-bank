@@ -8,10 +8,10 @@ CREATE TABLE `bank_account` (
                                 `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'ACTIVE',
                                 `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                `identity_id` bigint NOT NULL,
-                                `user_token` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
-                                `user_key` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                                `bank_identity_id` bigint NOT NULL,
                                 PRIMARY KEY (`account_id`),
                                 UNIQUE KEY `uk_bank_account_number` (`account_number`),
+                                KEY `fk_bank_account_identity` (`bank_identity_id`),
+                                CONSTRAINT `fk_bank_account_identity` FOREIGN KEY (`bank_identity_id`) REFERENCES `bank_identity` (`bank_identity_id`),
                                 CONSTRAINT `chk_bank_account_balance` CHECK ((`balance` >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

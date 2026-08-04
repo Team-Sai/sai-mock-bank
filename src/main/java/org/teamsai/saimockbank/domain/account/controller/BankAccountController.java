@@ -3,7 +3,6 @@ package org.teamsai.saimockbank.domain.account.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
@@ -19,7 +18,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mock-bank/accounts")
-@Slf4j
 public class BankAccountController {
 
     private final BankAccountService bankAccountService;

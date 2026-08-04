@@ -31,7 +31,7 @@ public class BankLinkService {
 
 
         if (identity.getUserKeyHash() != null) {
-            throw IdentityErrorCode.CONFLICT.toException();
+            throw IdentityErrorCode.ALREADY_LINKED_USER.toException();
         }
 
         String rawKey = generateUserKey();
@@ -41,7 +41,7 @@ public class BankLinkService {
         int updatedRow = identityMapper.updateUserKey(identity.getBankIdentityId(), hashedKey, issuedAt);
 
         if(updatedRow==0){
-            throw IdentityErrorCode.CONFLICT.toException();
+            throw IdentityErrorCode.ALREADY_LINKED_USER.toException();
         }
         return new MockBankLinkResponse(rawKey, issuedAt);
     }

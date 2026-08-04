@@ -15,7 +15,7 @@ public class AccountOwnershipValidator {
 
     public void verify(String ownerHash, String rawUserKey, Supplier<DomainException> exceptionSupplier) {
         String hashedKey = userKeyHasher.hash(rawUserKey);
-        if (!ownerHash.equals(hashedKey)) {
+        if (ownerHash == null || !ownerHash.equals(hashedKey)) {
             throw exceptionSupplier.get();
         }
     }

@@ -85,7 +85,8 @@ class BankAccountServiceTest {
             AccountDetailResponse result = bankAccountService.getAccount(1L, RAW_USER_KEY);
 
             assertThat(result.accountId()).isEqualTo(1L);
-            assertThat(result.bankCode()).isEqualTo("신한은행");
+            assertThat(result.bankCode()).isEqualTo("088");        // 원본 코드
+            assertThat(result.bankName()).isEqualTo("신한은행");     // 변환된 이름
             verify(bankAccountMapper).findByIdWithOwner(1L);
             verify(ownershipValidator).verify(eq(HASHED_USER_KEY), eq(RAW_USER_KEY), any());
         }
@@ -163,6 +164,59 @@ class BankAccountServiceTest {
 
             verify(bankAccountMapper, never()).findByIdWithOwner(anyLong());
             verify(userKeyHasher, never()).hash(anyString());
+        }
+    }
+
+    @Nested
+    @DisplayName("getAccounts(userKey)")
+    class GetAccounts {
+
+        @Test
+        @DisplayName("원본 userKey를 해싱한 뒤 마스킹된 계좌 목록을 반환한다")
+        void returnsMaskedAccountListAfterHashing() {
+            BankAccountDTO account = createAccount(1L);
+            given(userKeyHasher.hash(RAW_USER_KEY)).willReturn(HASHED_USER_KEY);
+            given(bankAccountMapper.findAllByUserKey(HASHED_USER_KEY)).willReturn(List.of(account));
+
+            List<AccountListResponse> result = bankAccountService.getAccounts(RAW_USER_KEY);
+
+            assertThat(result).hasSize(1);
+
+            AccountListResponse response = result.get(0);
+            assertThat(response.accountId()).isEqualTo(1L);
+            assertThat(response.bankName()).isEqualTo("신한은행");
+            assertThat(response.maskedAccountNumber()).isEqualTo("*********0123");
+
+            verify(userKeyHasher).hash(RAW_USER_KEY);
+            verify(bankAccountMapper).findAllByUserKey(HASHED_USER_KEY);
+        }
+
+        @Test
+        @DisplayName("조회된 계좌가 없으면 빈 리스트를 반환한다")
+        void returnsEmptyListWhenNoAccountsFound() {
+            given(userKeyHasher.hash(RAW_USER_KEY)).willReturn(HASHED_USER_KEY);
+            given(bankAccountMapper.findAllByUserKey(HASHED_USER_KEY)).willReturn(List.of());
+
+            List<AccountListResponse> result = bankAccountService.getAccounts(RAW_USER_KEY);
+
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("userKey가 null이거나 공백이면 INVALID_ACCOUNT_REQUEST 예외가 발생하고 해싱/조회는 호출되지 않는다")
+        void throwsWhenUserKeyIsNullOrBlank() {
+            assertThatThrownBy(() -> bankAccountService.getAccounts(null))
+                    .isInstanceOf(DomainException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(AccountErrorCode.INVALID_ACCOUNT_REQUEST);
+
+            assertThatThrownBy(() -> bankAccountService.getAccounts("   "))
+                    .isInstanceOf(DomainException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(AccountErrorCode.INVALID_ACCOUNT_REQUEST);
+
+            verify(userKeyHasher, never()).hash(anyString());
+            verify(bankAccountMapper, never()).findAllByUserKey(anyString());
         }
     }
 

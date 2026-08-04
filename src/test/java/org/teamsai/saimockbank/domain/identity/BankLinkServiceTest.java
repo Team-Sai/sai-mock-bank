@@ -85,19 +85,24 @@ class BankLinkServiceTest {
     }
 
     @Test
-    @DisplayName("호출할 때마다 서로 다른 userKey를 발급한다")
-    void generatesDifferentUserKeyOnEachCall() {
+    @DisplayName("서로 다른 사용자에게는 서로 다른 userKey를 발급한다")
+    void generatesDifferentUserKeyForDifferentUsers() {
+        String name2 = "김철수";
+        String userToken2 = "user-token-def";
+
         IdentityDTO identity1 = createIdentity(IDENTITY_ID, null);
         IdentityDTO identity2 = createIdentity(2L, null);
+
         given(identityMapper.findByNameAndUserToken(NAME, USER_TOKEN))
-                .willReturn(Optional.of(identity1))
+                .willReturn(Optional.of(identity1));
+        given(identityMapper.findByNameAndUserToken(name2, userToken2))
                 .willReturn(Optional.of(identity2));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
         given(identityMapper.updateUserKey(anyLong(), anyString(), any(LocalDateTime.class)))
                 .willReturn(1);
 
         MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN);
-        MockBankLinkResponse second = bankLinkService.issueUserKey(NAME, USER_TOKEN);
+        MockBankLinkResponse second = bankLinkService.issueUserKey(name2, userToken2);
 
         assertThat(first.userKey()).isNotEqualTo(second.userKey());
     }
@@ -127,7 +132,7 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.CONFLICT);
+                .isEqualTo(IdentityErrorCode.ALREADY_LINKED_USER);
 
         verify(userKeyHasher, never()).hash(anyString());
         verify(identityMapper, never()).updateUserKey(any(), any(), any());
@@ -146,6 +151,6 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.CONFLICT);
+                .isEqualTo(IdentityErrorCode.ALREADY_LINKED_USER);
     }
 }

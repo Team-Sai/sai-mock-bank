@@ -13,7 +13,7 @@ public enum IdentityErrorCode implements BaseErrorCode<DomainException> {
             HttpStatus.NOT_FOUND,
             "일치하는 회원 정보가 없습니다."
     ),
-    CONFLICT(
+    ALREADY_LINKED_USER(
             HttpStatus.ALREADY_REPORTED,
             "이미 연동된 회원입니다."
     ),

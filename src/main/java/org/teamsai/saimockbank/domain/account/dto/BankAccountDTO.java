@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-@ToString
 public class BankAccountDTO{
     private Long accountId;
     private Long bankIdentityId;

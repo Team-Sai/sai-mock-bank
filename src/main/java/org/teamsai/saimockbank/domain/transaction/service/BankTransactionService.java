@@ -3,7 +3,7 @@ package org.teamsai.saimockbank.domain.transaction.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionResponse;
 import org.teamsai.saimockbank.domain.transaction.exception.TransactionErrorCode;
@@ -26,13 +26,13 @@ public class BankTransactionService {
     ) {
         validateRequest(accountId, userKey);
 
-        BankAccount account = bankAccountMapper.findById(accountId)
+        BankAccountDTO account = bankAccountMapper.findById(accountId)
                 .orElseThrow(
                         TransactionErrorCode.ACCOUNT_NOT_FOUND
                                 ::toException
                 );
 
-        if (!account.getUserKey().equals(userKey)) {
+        if (!account.getAccountId().equals(accountId)) {
             throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED
                     .toException();
         }

@@ -1,0 +1,290 @@
+[33mcommit 5533205f8b949c65e07bed3fb62c8df1032d9f51[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/#11[m[33m)[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Tue Aug 4 20:38:02 2026 +0900
+
+    feat(#11): 회원가입,로그인 구현 및 본인인증 추가
+
+[33mcommit 202a4fab12e484245a77e8b9e163c17e3fd5e0c7[m[33m ([m[1;31morigin/feat/#11[m[33m)[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Tue Aug 4 11:16:28 2026 +0900
+
+    feat(#11): 코드리뷰 반영
+
+[33mcommit d5761851bd78989acd0b17ff4cfa863b25b78423[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 20:14:28 2026 +0900
+
+    feat(#11): sai-backend 코드 리뷰 함꼐 반영 및 test 케이스 수정
+
+[33mcommit b0c4fa1e1e1eb834b7e59c678f50cbdbf2fe9980[m
+Merge: 41906d1 b02b182
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 14:46:47 2026 +0900
+
+    Merge branch 'feat/#11' of https://github.com/Team-Sai/sai-mock-bank into feat/#11
+
+[33mcommit 41906d1ae10ef45b97c9319df513361ad66c4b1e[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 14:45:29 2026 +0900
+
+    feat(#11): 클로드 코드 리뷰 반영
+
+[33mcommit b02b1821af8bb4cf6daf48952e3bdfc9971c4cc0[m
+Merge: 60a09b0 9f579c6
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 14:13:28 2026 +0900
+
+    Merge branch 'main' into feat/#11
+
+[33mcommit 9f579c657d30992e85b943759ecb6a2e87bd473f[m
+Merge: 8df3a59 fba0aa2
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 14:10:55 2026 +0900
+
+    Merge pull request #21 from Team-Sai/feat/#15
+    
+    feat(#15): 코드 리뷰 설정 수정
+
+[33mcommit fba0aa220fd6f3db45b512762be78c9391791178[m[33m ([m[1;31morigin/feat/#15[m[33m, [m[1;32mfeat/#15[m[33m)[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 14:09:36 2026 +0900
+
+    feat(#15): 코드 리뷰 설정 수정
+
+[33mcommit 8df3a59ee6868844f93fda9c42932a5b9e2c86ab[m[33m ([m[1;32mmain[m[33m)[m
+Merge: 3d9a435 20ede8d
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:42:22 2026 +0900
+
+    Merge pull request #20 from Team-Sai/revert-19-revert-18-feat/#15
+    
+    Revert "Revert "feat(#15): 코드 리뷰 설정 재수정""
+
+[33mcommit 20ede8d8cc73aa0e237642317276743ab3db92c8[m
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:42:09 2026 +0900
+
+    Revert "Revert "feat(#15): 코드 리뷰 설정 재수정""
+
+[33mcommit 3d9a43533fa07c0e779ec605e920bec7b09b0214[m
+Merge: a032737 ccbaffd
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:33:04 2026 +0900
+
+    Merge pull request #19 from Team-Sai/revert-18-feat/#15
+    
+    Revert "feat(#15): 코드 리뷰 설정 재수정"
+
+[33mcommit ccbaffd945c9eb798e578931bd7922d302fff539[m
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:32:53 2026 +0900
+
+    Revert "feat(#15): 코드 리뷰 설정 재수정"
+
+[33mcommit a032737060e1b265b334f3c89e0ef4e793432af3[m
+Merge: a895de3 597ae62
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:32:47 2026 +0900
+
+    Merge pull request #18 from Team-Sai/feat/#15
+    
+    feat(#15): 코드 리뷰 설정 재수정
+
+[33mcommit 597ae623ba5497521e8cc3e1ab4d7763da1931c5[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 12:32:30 2026 +0900
+
+    feat(#15): 코드 리뷰 설정 재수정
+
+[33mcommit 8015f8a1a245e598352bd4a7c0f4956967afbd7b[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 12:27:37 2026 +0900
+
+    feat(#15): 코드 리뷰 설정 재수정
+
+[33mcommit a895de3bec54dc28fdaad158b7ab086f0598c943[m
+Merge: daf8331 aa0cb21
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:13:46 2026 +0900
+
+    Merge pull request #17 from Team-Sai/revert-16-feat/#15
+    
+    Revert "feat(#15): 코드 리뷰 설정 수정"
+
+[33mcommit aa0cb217eb7d154b86e3bfadbe871be049b27c77[m
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:13:25 2026 +0900
+
+    Revert "feat(#15): 코드 리뷰 설정 수정"
+
+[33mcommit daf83311f99838cf2b0949bf6d7fbe2a44763f88[m
+Merge: 4eafc9b 1f3cf78
+Author: YANG YEEUN <118420214+yangyeeeun@users.noreply.github.com>
+Date:   Mon Aug 3 12:12:56 2026 +0900
+
+    Merge pull request #16 from Team-Sai/feat/#15
+    
+    feat(#15): 코드 리뷰 설정 수정
+
+[33mcommit 1f3cf7847ac789a80e2aa4d554a34150faaf48b0[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 12:09:49 2026 +0900
+
+    feat(#15): 코드 리뷰 설정 수정
+
+[33mcommit 60a09b045f342c9622ecd3c3c9704c75b854d476[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 11:44:30 2026 +0900
+
+    feat(#11) claude-pr-review.yml 수정
+
+[33mcommit 14619887a61c8745a0981e2c707a5a2348ea6580[m
+Merge: cef0bed e286c05
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Mon Aug 3 11:42:41 2026 +0900
+
+    Merge branch 'dev' of https://github.com/Team-Sai/sai-mock-bank into feat/#11
+
+[33mcommit cef0bedcc9b9003143379f8e40b389e1579464ce[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sun Aug 2 20:32:39 2026 +0900
+
+    feat(#11)테스트 케이스 수정
+
+[33mcommit 6e774b95563951fbfff3b2bcea7064134145e91d[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sun Aug 2 19:53:28 2026 +0900
+
+    feat(#11)중복 코드 제거
+
+[33mcommit d110647ca6d3b5b4b72cd7d00fe976d532f27075[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sun Aug 2 13:30:41 2026 +0900
+
+    feat(#11) identity테이블에서 userkey컬럼 제거 및 테스트 코드 추가
+
+[33mcommit 6c0653341a6b52c057b1fdf04cc351e13569601d[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sun Aug 2 10:51:23 2026 +0900
+
+    feat(#11) sql 추가
+
+[33mcommit 5b4ee11ea8d7a4a190180859ef48f053a296ea85[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sun Aug 2 10:38:38 2026 +0900
+
+    feat(#11)보유 계좌 목록 조회 -> LinkedBankAccount 테이블에 선택 계좌 정보 생성 + 백엔드v1 완료
+
+[33mcommit e31632ed647418a6613eec860296439359bb0d2f[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sat Aug 1 18:27:49 2026 +0900
+
+    feat(#11)연동키 email -> userToken사용으로 변경
+
+[33mcommit 5b55dd564d66624be89d9c47208d2f479beaeaf0[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sat Aug 1 16:41:31 2026 +0900
+
+    feat(#11)db 테이블명 형식 통일
+
+[33mcommit efcb5502c6b171c3c572b42e19357b46bcf85345[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sat Aug 1 16:05:17 2026 +0900
+
+    mapper 분리 및 이름변경
+
+[33mcommit 19949b05a3421583787ae48c82c518023bd6a0b7[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Sat Aug 1 09:54:46 2026 +0900
+
+    entity삭제 후 DTO로 변경
+
+[33mcommit 18409e35029d95153c4e278042a7da60d48d3919[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Fri Jul 31 12:12:34 2026 +0900
+
+    feat(#11)미사용 메서드 제거 및 연동키 해시 적용
+
+[33mcommit c33df6b02bb486a1145301693d9fca07662fb1fb[m
+Author: YANG YEEUN <beautifulsilversheep@gmail.com>
+Date:   Fri Jul 31 09:22:41 2026 +0900
+
+    연동키 생성 및 계좌 조회 userKey 파라미터 추가
+
+[33mcommit 4eafc9b55f314790ca61af26724a2a2f80828c5e[m
+Merge: 3baec85 e286c05
+Author: yeonchaepark <127640204+yeonchaepark@users.noreply.github.com>
+Date:   Thu Jul 30 01:58:50 2026 +0900
+
+    [PROD] 은행 기본 API 및 Claude 코드 리뷰 설정 병합
+    
+    [PROD] 은행 기본 API 및 Claude 코드 리뷰 설정 병합
+
+[33mcommit e286c0554a26383c5e7dc516d2635e85e93b3eb1[m[33m ([m[1;31morigin/feat/#13[m[33m, [m[1;31morigin/dev[m[33m, [m[1;32mdev[m[33m)[m
+Merge: 41bf033 a36f72c
+Author: yeonchaepark <127640204+yeonchaepark@users.noreply.github.com>
+Date:   Thu Jul 30 01:56:22 2026 +0900
+
+    feat(#7): claude 코드 리뷰 설정
+    
+    feat(#7): claude 코드 리뷰 설정
+
+[33mcommit a36f72c75a5444c708361c0234c6f26d45419c8d[m[33m ([m[1;31morigin/feat/#7[m[33m)[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Thu Jul 30 01:52:48 2026 +0900
+
+    feat(#7): claude 코드 리뷰 설정
+
+[33mcommit 41bf033a3af29a36e861932d14f35d86999a6079[m
+Merge: 56edd52 65f5a3a
+Author: yeonchaepark <127640204+yeonchaepark@users.noreply.github.com>
+Date:   Mon Jul 27 01:30:53 2026 +0900
+
+    feat(#3): 은행 서비스 거래 내역 조회 및 이체 기능 추가
+    
+    feat(#3): 은행 서비스 거래 내역 조회 및 이체 기능 추가
+
+[33mcommit 65f5a3a01872cc790570b9cb7e15d82d4c6a3db4[m[33m ([m[1;31morigin/feat/#3[m[33m)[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Mon Jul 27 01:27:58 2026 +0900
+
+    feat(#3): 은행 서비스 거래 내역 조회 및 이체 기능 추가
+
+[33mcommit 56edd522f6f8a5bc4eeafe948392dd469842cb21[m
+Merge: 3baec85 94716ce
+Author: yeonchaepark <127640204+yeonchaepark@users.noreply.github.com>
+Date:   Sun Jul 26 21:05:17 2026 +0900
+
+    feat(#1): 은행 서비스 데이터 모델 및 Mybatis 기반 구축
+    
+    feat(#1): 은행 서비스 데이터 모델 및 Mybatis 기반 구축
+
+[33mcommit 94716ce8a7a61b1d302a9d0ef48b1d4c86efe4de[m[33m ([m[1;31morigin/feat/#1[m[33m)[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Sun Jul 26 20:58:10 2026 +0900
+
+    feat(#1): 은행 서비스 데이터 모델 및 Mybatis 기반 구축
+
+[33mcommit 3baec85d596590ad80ad74594fd3d0144e000fba[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Sun Jul 26 05:07:17 2026 +0900
+
+    chore: pull request 템플릿 추가
+
+[33mcommit 52f8d9548ef9d16a5caa784c57e21d1213d23bd3[m
+Author: yeonchaepark <127640204+yeonchaepark@users.noreply.github.com>
+Date:   Sun Jul 26 04:59:45 2026 +0900
+
+    chore: 이슈 템플릿 추가
+
+[33mcommit c295637cc7fcb45986162b585f7b6e7f76de17b2[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Sun Jul 26 04:42:29 2026 +0900
+
+    chore: Swagger 및 예외 처리 공통 설정 추가
+
+[33mcommit 8aab4a316359374ef64ec512c744daf688a8ec62[m
+Author: yeonchaepark <check4732@naver.com>
+Date:   Sun Jul 26 02:47:28 2026 +0900
+
+    Initial commit

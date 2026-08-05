@@ -1,8 +1,5 @@
 package org.teamsai.saimockbank.domain.transfer.dto;
 
-import org.teamsai.saimockbank.domain.transfer.entity.BankTransfer;
-import org.teamsai.saimockbank.domain.transfer.entity.TransferStatus;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -17,7 +14,7 @@ public record TransferResponse(
         LocalDateTime completedAt
 ) {
 
-    public static TransferResponse from(BankTransfer transfer) {
+    public static TransferResponse from(BankTransferDTO transfer) {
         return new TransferResponse(
                 transfer.getTransferId(),
                 transfer.getRequestKey(),

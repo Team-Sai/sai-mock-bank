@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
 import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.exception.AccountErrorCode;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
+import org.teamsai.saimockbank.domain.user.service.UserKeyHasher;
 
 import java.util.List;
 
@@ -17,11 +19,22 @@ import java.util.List;
 public class BankAccountService {
 
     private final BankAccountMapper bankAccountMapper;
+    private final UserKeyHasher userKeyHasher;
+    private final AccountOwnershipValidator accountOwnershipValidator;
+
+    public List<AccountListResponse> getMyAccounts(Long bankUserId) {
+        return bankAccountMapper.findAllByBankUserId(bankUserId)
+                .stream()
+                .map(AccountListResponse::from)
+                .toList();
+    }
 
     public List<AccountListResponse> getAccounts(String userKey) {
         validateUserKey(userKey);
 
-        return bankAccountMapper.findAllByUserKey(userKey)
+        String hashedKey = userKeyHasher.hash(userKey);
+
+        return bankAccountMapper.findAllByUserKey(hashedKey)
                 .stream()
                 .map(AccountListResponse::from)
                 .toList();
@@ -33,23 +46,24 @@ public class BankAccountService {
     ) {
         validateRequest(accountId, userKey);
 
-        BankAccount account = bankAccountMapper.findById(accountId)
-                .orElseThrow(
-                        AccountErrorCode.ACCOUNT_NOT_FOUND::toException
-                );
+        BankAccountDTO account = bankAccountMapper.findById(accountId)
+                .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
 
-        if (!account.getUserKey().equals(userKey)) {
-            throw AccountErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
-        }
+        String ownerHash = bankAccountMapper.findOwnerUserKeyHashByAccountId(accountId)
+                .orElse(null);
+
+        accountOwnershipValidator.verify(
+                ownerHash,
+                userKey,
+                AccountErrorCode.ACCOUNT_ACCESS_DENIED::toException
+        );
 
         return AccountDetailResponse.from(account);
     }
 
     private void validateUserKey(String userKey) {
         if (userKey == null || userKey.isBlank()) {
-            throw AccountErrorCode.INVALID_ACCOUNT_REQUEST
-                    .toException();
+            throw AccountErrorCode.INVALID_ACCOUNT_REQUEST.toException();
         }
     }
 
@@ -61,8 +75,7 @@ public class BankAccountService {
                 || accountId <= 0
                 || userKey == null
                 || userKey.isBlank()) {
-            throw AccountErrorCode.INVALID_ACCOUNT_REQUEST
-                    .toException();
+            throw AccountErrorCode.INVALID_ACCOUNT_REQUEST.toException();
         }
     }
 }

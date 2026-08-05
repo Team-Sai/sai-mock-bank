@@ -1,31 +1,36 @@
 package org.teamsai.saimockbank.domain.account.dto;
 
-import org.teamsai.saimockbank.domain.account.entity.AccountStatus;
-import org.teamsai.saimockbank.domain.account.entity.BankAccount;
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record AccountDetailResponse(
         Long accountId,
+        Long bankUserId,
         String bankCode,
         String bankName,
         String accountName,
-        String maksedAccountNumber,
+        String accountHolderName,
+        String maskedAccountNumber,
         BigDecimal balance,
-        AccountStatus status
+        AccountStatus status,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
-    public static AccountDetailResponse from(BankAccount account) {
+    public static AccountDetailResponse from(BankAccountDTO account) {
         return new AccountDetailResponse(
                 account.getAccountId(),
+                account.getBankUserId(),
                 account.getBankCode(),
                 resolveBankName(account.getBankCode()),
                 account.getAccountName(),
-                AccountNumberMasker.mask(
-                        account.getAccountNumber()
-                ),
+                account.getAccountHolderName(),
+                AccountNumberMasker.mask(account.getAccountNumber()),
                 account.getBalance(),
-                account.getStatus()
+                account.getStatus(),
+                account.getCreatedAt(),
+                account.getUpdatedAt()
         );
     }
     private static String resolveBankName(String bankCode) {

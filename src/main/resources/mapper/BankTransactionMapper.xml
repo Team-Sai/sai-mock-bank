@@ -6,7 +6,7 @@
 <mapper namespace="org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper">
 
     <resultMap id="bankTransactionResultMap"
-               type="org.teamsai.saimockbank.domain.transaction.entity.BankTransaction">
+               type="org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO">
 
         <id property="transactionId" column="transaction_id"/>
 
@@ -67,7 +67,7 @@
     </select>
 
     <insert id="insert"
-            parameterType="org.teamsai.saimockbank.domain.transaction.entity.BankTransaction"
+            parameterType="org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO"
             useGeneratedKeys="true"
             keyProperty="transactionId"
             keyColumn="transaction_id">

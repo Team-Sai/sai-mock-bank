@@ -1,7 +1,5 @@
 package org.teamsai.saimockbank.domain.transaction.dto;
 
-import org.teamsai.saimockbank.domain.transaction.entity.BankTransaction;
-import org.teamsai.saimockbank.domain.transaction.entity.TransactionType;
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
@@ -22,7 +20,7 @@ public record TransactionResponse(
 ) {
 
     public static TransactionResponse from(
-            BankTransaction transaction
+            BankTransactionDTO transaction
     ) {
         return new TransactionResponse(
                 transaction.getTransactionId(),

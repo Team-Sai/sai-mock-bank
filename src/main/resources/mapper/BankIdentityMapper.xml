@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.teamsai.saimockbank.domain.identity.mapper.IdentityMapper">
+
+    <select id="findByNameAndUserToken" resultType="org.teamsai.saimockbank.domain.identity.dto.IdentityDTO">
+        SELECT bank_identity_id, name, user_key_hash, issued_at, created_at, updated_at
+        FROM bank_identity
+        WHERE name = #{name} AND user_token = #{userToken}
+    </select>
+
+    <update id="updateUserKey">
+    UPDATE bank_identity
+    SET user_key_hash = #{userKeyHash},
+        issued_at = #{issuedAt},
+        updated_at = #{issuedAt}
+    WHERE bank_identity_id = #{bankIdentityId} AND user_key_hash IS NULL
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="bankIdentityId">
+        INSERT INTO bank_identity (
+        name, user_token, user_key_hash, issued_at, created_at, updated_at
+        ) VALUES (
+        #{name}, #{userToken}, #{userKeyHash}, #{issuedAt}, #{createdAt}, #{updatedAt}
+        )
+    </insert>
+</mapper>

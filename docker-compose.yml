@@ -24,5 +24,7 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
 
+      SAI_BACKEND_BASE_URL: ${SAI_BACKEND_BASE_URL}
+
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"

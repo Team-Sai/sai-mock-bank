@@ -25,21 +25,26 @@ public class BankAccountController {
     @Operation(summary = "사용자 보유 계좌 목록 조회")
     @GetMapping
     public ResponseEntity<List<AccountListResponse>> getAccounts(
-            @RequestParam String userKey
+            @RequestParam("userKey") String userKey
     ) {
-        return ResponseEntity.ok(
-                bankAccountService.getAccounts(userKey)
-        );
+
+        List<AccountListResponse> accounts = bankAccountService.getAccounts(userKey);
+
+
+        return ResponseEntity.ok(accounts);
     }
 
     @Operation(summary = "계좌 상세 조회")
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountDetailResponse> getAccount(
             @PathVariable Long accountId,
-            @RequestParam String userKey
+            @RequestParam("userKey") String userKey
     ) {
+
         return ResponseEntity.ok(
                 bankAccountService.getAccount(accountId, userKey)
         );
     }
+
+    
 }

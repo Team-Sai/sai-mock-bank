@@ -2,20 +2,20 @@ package org.teamsai.saimockbank.domain.transfer.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.teamsai.saimockbank.domain.transfer.entity.BankTransfer;
+import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 
 import java.util.Optional;
 
 @Mapper
 public interface BankTransferMapper {
 
-    Optional<BankTransfer> findById(
+    Optional<BankTransferDTO> findById(
             @Param("transferId") Long transferId
     );
 
-    Optional<BankTransfer> findByRequestKey(
+    Optional<BankTransferDTO> findByRequestKey(
             @Param("requestKey") String requestKey
     );
 
-    int insert(BankTransfer transfer);
+    int insert(BankTransferDTO transfer);
 }

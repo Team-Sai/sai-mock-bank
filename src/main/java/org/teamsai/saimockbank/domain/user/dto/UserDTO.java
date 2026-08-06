@@ -14,14 +14,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-    Long bankUserId;
-    String email;
-    String password;
-    String name;
-    LocalDateTime issuedAt; //userKey 발급날짜
-    LocalDateTime createdAt; //bank 가입날짜
-    LocalDate birthDate;
-    LocalDateTime updatedAt;
-    String userToken;
-    String userKeyHash;
+    private Long bankUserId;
+    private String email;
+    private String password;
+    private String name;
+    private LocalDateTime issuedAt; //userKey 발급날짜
+    private LocalDateTime createdAt; //bank 가입날짜
+    private LocalDate birthDate;
+    private LocalDateTime updatedAt;
+    private String userToken;
+    private String userKeyHash;
 }

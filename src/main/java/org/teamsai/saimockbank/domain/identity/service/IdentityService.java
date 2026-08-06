@@ -11,13 +11,11 @@ import org.teamsai.saimockbank.domain.identity.dto.response.IdentityPrepareRespo
 import org.teamsai.saimockbank.domain.identity.dto.response.PortOneIdentityResponse;
 import org.teamsai.saimockbank.domain.identity.exception.IdentityErrorCode;
 import org.teamsai.saimockbank.domain.identity.mapper.IdentityMapper;
-import org.teamsai.saimockbank.domain.identity.type.IdentityPurpose;
 import org.teamsai.saimockbank.domain.identity.type.IdentityStatus;
 import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.exception.UserErrorCode;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import org.teamsai.saimockbank.global.exception.DomainException;
-
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -226,35 +224,6 @@ public class IdentityService {
                 verifiedAt,
                 expiresAt
         );
-    }
-
-    @Transactional
-    public void consume(
-            Long userId,
-            String identityVerificationId,
-            IdentityPurpose purpose
-    ) {
-        validateUserId(userId);
-        validateIdentityVerificationId(identityVerificationId);
-
-        if (purpose == null) {
-            throw IdentityErrorCode
-                    .INVALID_IDENTITY_PURPOSE
-                    .toException();
-        }
-
-        int updatedCount =
-                identityMapper.consume(
-                        identityVerificationId,
-                        userId,
-                        purpose
-                );
-
-        if (updatedCount != 1) {
-            throw IdentityErrorCode
-                    .IDENTITY_VERIFICATION_CONSUME_FAILED
-                    .toException();
-        }
     }
 
     private IdentityDTO findIdentity(

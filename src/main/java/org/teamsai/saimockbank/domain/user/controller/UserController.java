@@ -111,7 +111,7 @@ public class UserController {
             @Parameter(hidden = true)
             @AuthenticationPrincipal(expression = "userId")
             Long userId,
-            @Parameter(description = "요청 대상 회원 토큰", example = "SAI_ABCD1234")
+            @Parameter(description = "요청 대상 회원 토큰", example = "SAI-ABCD1234")
             @PathVariable String userToken
     ){
         UserDTO targetUser = userService.findRequestTarget(userId, userToken);

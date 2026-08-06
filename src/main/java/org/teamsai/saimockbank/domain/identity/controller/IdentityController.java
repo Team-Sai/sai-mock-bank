@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.identity.dto.request.IdentityPrepareRequest;
 import org.teamsai.saimockbank.domain.identity.dto.response.IdentityCompleteResponse;
@@ -22,36 +21,12 @@ import org.teamsai.saimockbank.domain.identity.service.IdentityService;
         name = "본인인증 API",
         description = "포트원 본인인증 요청 준비 및 결과 검증 API"
 )
-@Controller
+@RestController
 @RequiredArgsConstructor
 public class IdentityController {
 
     private final IdentityService identityService;
-
-
-    @GetMapping("/identity-test")
-    public String identityTestPage() {
-        return "identity/identity-test";
-    }
-
-    @Operation(
-            summary = "본인인증 요청 준비",
-            description = "본인인증 요청을 생성하고 포트원 SDK 호출에 필요한 정보를 반환합니다."
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "본인인증 요청 생성 성공"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "잘못된 본인인증 목적"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "인증되지 않은 사용자"
-            )
-    })
+    
     @ResponseBody
     @PostMapping("/api/identity-verifications")
     public ResponseEntity<IdentityPrepareResponse> prepare(

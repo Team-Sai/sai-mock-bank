@@ -25,13 +25,9 @@ public interface UserMapper {
     int updateUserKey(@Param("bankUserId") Long bankUserId,
                        @Param("userKeyHash") String userKeyHash,
                        @Param("issuedAt") LocalDateTime issuedAt);
-    int deleteByUserId(Long userId);
+    int deleteByUserId(@Param("userId") Long userId);
 
     boolean existsByUserToken(
             @Param("userToken") String userToken
-    );
-
-    String findUserKeyByUserId(
-            @Param("userId") Long userId
     );
 }

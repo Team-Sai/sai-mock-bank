@@ -57,7 +57,7 @@ public enum IdentityErrorCode
     ),
 
     PORTONE_VERIFICATION_NOT_VERIFIED(
-            HttpStatus.BAD_REQUEST,
+            HttpStatus.CONFLICT,
             "포트원 본인인증이 정상적으로 완료되지 않았습니다."
     ),
 

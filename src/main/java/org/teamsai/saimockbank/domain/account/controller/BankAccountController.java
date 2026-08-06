@@ -25,7 +25,7 @@ public class BankAccountController {
     @Operation(summary = "사용자 보유 계좌 목록 조회")
     @GetMapping
     public ResponseEntity<List<AccountListResponse>> getAccounts(
-            @RequestParam("userKey") String userKey
+            @RequestHeader("X-User-Key") String userKey
     ) {
 
         List<AccountListResponse> accounts = bankAccountService.getAccounts(userKey);
@@ -38,7 +38,7 @@ public class BankAccountController {
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountDetailResponse> getAccount(
             @PathVariable Long accountId,
-            @RequestParam("userKey") String userKey
+            @RequestHeader("X-User-Key") String userKey
     ) {
 
         return ResponseEntity.ok(

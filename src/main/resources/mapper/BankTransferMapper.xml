@@ -6,7 +6,7 @@
 <mapper namespace="org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper">
 
     <resultMap id="bankTransferResultMap"
-               type="org.teamsai.saimockbank.domain.transfer.entity.BankTransfer">
+               type="org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO">
 
         <id property="transferId" column="transfer_id"/>
 
@@ -55,7 +55,7 @@
     </select>
 
     <insert id="insert"
-            parameterType="org.teamsai.saimockbank.domain.transfer.entity.BankTransfer"
+            parameterType="org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO"
             useGeneratedKeys="true"
             keyProperty="transferId"
             keyColumn="transfer_id">

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.teamsai.saimockbank.domain.user.mapper.UserMapper">
+    <resultMap id="userResultMap"
+               type="org.teamsai.saimockbank.domain.user.dto.UserDTO">
+        <id property="bankUserId" column="bank_user_id"/>
+        <result property="name" column="name"/>
+        <result property="email" column="email"/>
+        <result property="password" column="password"/>
+        <result property="userToken" column="user_token"/>
+        <result property="userKeyHash" column="user_key_hash"/>
+        <result property="issuedAt" column="issued_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="birthDate" column="birth_date"/>
+    
+    </resultMap>
+
+    <select id="findByNameAndUserToken" resultType="org.teamsai.saimockbank.domain.user.dto.UserDTO">
+    SELECT bank_user_id, name, user_key_hash, issued_at, created_at, updated_at, birth_date
+    FROM bank_user
+    WHERE name = #{name} AND user_token = #{userToken}
+    </select>
+
+    <update id="updateUserKey">
+    UPDATE bank_user
+    SET user_key_hash = #{userKeyHash},
+    issued_at = #{issuedAt},
+    updated_at = #{issuedAt}
+    WHERE bank_user_id = #{bankUserId}
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="bankUserId">
+        INSERT INTO bank_user (
+        name, email, password, user_token, user_key_hash,
+        issued_at, created_at, updated_at, birth_date
+        ) VALUES (
+        #{name}, #{email}, #{password}, #{userToken}, #{userKeyHash},
+        #{issuedAt}, #{createdAt}, #{updatedAt}, #{birthDate}
+        )
+    </insert>
+
+    <select id="existsByEmail" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM bank_user
+    WHERE email = #{email}
+    )
+    </select>
+
+    <select id="findByEmail" resultMap="userResultMap">
+    SELECT bank_user_id, name, email, password, user_token, user_key_hash,
+    issued_at, created_at, updated_at, birth_date
+    FROM bank_user
+    WHERE email = #{email}
+    </select>
+
+    <select id="findByUserToken" resultMap="userResultMap">
+    SELECT bank_user_id, name, email, password, user_token, user_key_hash,
+    issued_at, created_at, updated_at, birth_date
+    FROM bank_user
+    WHERE user_token = #{userToken}
+    </select>
+
+    <select id="findById" resultMap="userResultMap">
+    SELECT bank_user_id, name, email, password, user_token, user_key_hash,
+    issued_at, created_at, updated_at, birth_date
+    FROM bank_user
+    WHERE bank_user_id = #{bankUserId}
+    </select>
+    
+    <select id="existsByUserToken" resultType="boolean">
+    SELECT EXISTS (
+    SELECT 1
+    FROM bank_user
+    WHERE user_token = #{userToken}
+    )
+    </select>
+
+    <select id="findUserKeyByUserId" resultType="java.lang.String">
+    SELECT user_key_hash
+    FROM bank_user
+    WHERE bank_user_id = #{userId}
+    </select>
+
+    <delete id="deleteByUserId">
+    DELETE FROM bank_user
+    WHERE bank_user_id = #{userId}
+    </delete>
+</mapper>

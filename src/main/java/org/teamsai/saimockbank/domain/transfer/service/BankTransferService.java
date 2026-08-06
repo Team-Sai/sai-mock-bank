@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferResponse;
-import org.teamsai.saimockbank.domain.transfer.entity.BankTransfer;
+import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
 
@@ -21,13 +21,13 @@ public class BankTransferService {
     public TransferResponse transfer(TransferRequest request){
         validateRequest(request);
 
-        BankTransfer existTransfer = bankTransferMapper.findByRequestKey(request.requestKey()).orElse(null);
+        BankTransferDTO existTransfer = bankTransferMapper.findByRequestKey(request.requestKey()).orElse(null);
         if(existTransfer != null){
             validateDuplicateRequest(existTransfer, request);
             return TransferResponse.from(existTransfer);
         }
 
-        BankTransfer transfer = transferProcessor.process(request);
+        BankTransferDTO transfer = transferProcessor.process(request);
 
         return TransferResponse.from(transfer);
     }
@@ -38,7 +38,7 @@ public class BankTransferService {
             throw TransferErrorCode.INVALID_TRANSFER_REQUEST.toException();
         }
 
-        BankTransfer transfer = bankTransferMapper.findById(transferId)
+        BankTransferDTO transfer = bankTransferMapper.findById(transferId)
                 .orElseThrow(
                         TransferErrorCode.TRANSFER_NOT_FOUND::toException
                 );
@@ -50,6 +50,7 @@ public class BankTransferService {
                 || isBlank(request.requestKey())
                 || isBlank(request.fromUserKey())
                 || request.fromAccountId() == null
+                || request.fromAccountId() <= 0
                 || request.toAccountId() == null
                 || request.amount() == null
                 || request.amount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -66,7 +67,7 @@ public class BankTransferService {
         }
     }
     private void validateDuplicateRequest(
-            BankTransfer existingTransfer,
+            BankTransferDTO existingTransfer,
             TransferRequest request
     ) {
         boolean sameTransfer =

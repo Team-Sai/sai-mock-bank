@@ -6,53 +6,83 @@
 <mapper namespace="org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper">
 
     <resultMap id="bankAccountResultMap"
-               type="org.teamsai.saimockbank.domain.account.entity.BankAccount">
-
+               type="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
         <id property="accountId" column="account_id"/>
-
-        <result property="userKey" column="user_key"/>
+        <result property="bankUserId" column="bank_user_id"/>
         <result property="bankCode" column="bank_code"/>
         <result property="accountNumber" column="account_number"/>
         <result property="accountName" column="account_name"/>
-        <result property="ownerName" column="owner_name"/>
+        <result property="accountHolderName" column="account_holder_name"/>
         <result property="balance" column="balance"/>
         <result property="status" column="status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <sql id="accountColumns">
-        account_id,
-        user_key,
+    <insert id="insert"
+            parameterType="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO"
+            useGeneratedKeys="true"
+            keyProperty="accountId"
+            keyColumn="account_id">
+        INSERT INTO bank_account (
+        bank_user_id,
         bank_code,
         account_number,
         account_name,
-        owner_name,
+        account_holder_name,
+        balance,
+        status
+        ) VALUES (
+        #{bankUserId},
+        #{bankCode},
+        #{accountNumber},
+        #{accountName},
+        #{accountHolderName},
+        #{balance},
+        #{status}
+        )
+    </insert>
+
+    <sql id="accountColumns">
+        account_id,
+        bank_user_id,
+        bank_code,
+        account_number,
+        account_name,
+        account_holder_name,
         balance,
         status,
         created_at,
         updated_at
     </sql>
 
-    <select id="findAllByUserKey"
-            resultMap="bankAccountResultMap">
-        SELECT
-        <include refid="accountColumns"/>
-        FROM bank_account
-        WHERE user_key = #{userKey}
-        ORDER BY account_id ASC
+    <select id="findAllByUserKey" resultMap="bankAccountResultMap">
+        SELECT a.account_id, a.bank_user_id, a.bank_code, a.account_number,
+        a.account_name, a.account_holder_name, a.balance, a.status,
+        a.created_at, a.updated_at
+        FROM bank_account a
+        JOIN bank_user i ON a.bank_user_id = i.bank_user_id
+        WHERE i.user_key_hash = #{userKey}
+        ORDER BY a.account_id ASC
     </select>
 
-    <select id="findById"
-            resultMap="bankAccountResultMap">
+    <select id="findByUserKey" parameterType="string" resultMap="bankAccountResultMap">
+        SELECT a.account_id, a.bank_user_id, a.bank_code, a.account_number,
+        a.account_name, a.account_holder_name, a.balance, a.status,
+        a.created_at, a.updated_at
+        FROM bank_account a
+        JOIN bank_user i ON a.bank_user_id = i.bank_user_id
+        WHERE i.user_key_hash = #{userKey}
+    </select>
+
+    <select id="findById" resultMap="bankAccountResultMap">
         SELECT
         <include refid="accountColumns"/>
         FROM bank_account
         WHERE account_id = #{accountId}
     </select>
 
-    <select id="findByBankCodeAndAccountNumber"
-            resultMap="bankAccountResultMap">
+    <select id="findByBankCodeAndAccountNumber" resultMap="bankAccountResultMap">
         SELECT
         <include refid="accountColumns"/>
         FROM bank_account
@@ -60,13 +90,27 @@
         AND account_number = #{accountNumber}
     </select>
 
-    <select id="findByIdForUpdate"
-            resultMap="bankAccountResultMap">
+    <select id="findOwnerUserKeyHashByAccountId" resultType="java.lang.String">
+        SELECT i.user_key_hash
+        FROM bank_account a
+        JOIN bank_user i ON a.bank_user_id = i.bank_user_id
+        WHERE a.account_id = #{accountId}
+    </select>
+
+    <select id="findByIdForUpdate" resultMap="bankAccountResultMap">
         SELECT
         <include refid="accountColumns"/>
         FROM bank_account
         WHERE account_id = #{accountId}
         FOR UPDATE
+    </select>
+
+    <select id="findAllByBankUserId" resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE bank_user_id = #{bankUserId}
+        ORDER BY account_id ASC
     </select>
 
     <update id="decreaseBalance">

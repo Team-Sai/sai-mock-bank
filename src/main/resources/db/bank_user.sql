@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS bank_user (
                              user_key_hash varchar(50) DEFAULT NULL,
                              birth_date date NOT NULL,
                              email varchar(255) NOT NULL,
-                             PASSWORD varchar(255) DEFAULT NULL,
+                             `PASSWORD` varchar(255) DEFAULT NULL,
                              PRIMARY KEY (bank_user_id),
                              UNIQUE KEY user_token (user_token),
                              UNIQUE KEY uk_bank_user_email (email)

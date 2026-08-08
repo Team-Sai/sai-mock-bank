@@ -8,4 +8,4 @@ CREATE TABLE IF NOT EXISTS bank_identity (
                                  user_key_hash varchar(50) DEFAULT NULL,
                                  PRIMARY KEY (bank_identity_id),
                                  UNIQUE KEY user_token (user_token)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

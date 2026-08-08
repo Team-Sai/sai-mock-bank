@@ -24,14 +24,9 @@ public class BankTransactionController {
     @GetMapping("/{accountId}/transactions")
     public List<TransactionResponse> getTransactions(
             @PathVariable Long accountId,
-            @RequestParam String userKey,
-            @RequestParam(required = false, defaultValue = "0")
-            Long afterTransactionId
+            @RequestHeader("X-User-Key") String userKey,
+            @RequestParam(required = false, defaultValue = "0") Long afterTransactionId
     ) {
-        return bankTransactionService.getTransactions(
-                accountId,
-                userKey,
-                afterTransactionId
-        );
+        return bankTransactionService.getTransactions(accountId, userKey, afterTransactionId);
     }
 }

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXITSTSbank_account (
+CREATE TABLE IF NOT EXISTS bank_account (
                                 account_id bigint NOT NULL AUTO_INCREMENT,
                                 bank_code varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
                                 account_number varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXITSTSbank_account (
                                 KEY fk_bank_account_identity (bank_user_id),
                                 CONSTRAINT fk_bank_account_identity FOREIGN KEY (bank_user_id) REFERENCES bank_user (bank_user_id),
                                 CONSTRAINT chk_bank_account_balance CHECK ((balance >= 0))
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_bank_account_user_key
     ON bank_account (user_key);

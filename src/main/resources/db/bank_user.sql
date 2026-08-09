@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS bank_user (
                              PRIMARY KEY (bank_user_id),
                              UNIQUE KEY user_token (user_token),
                              UNIQUE KEY uk_bank_user_email (email)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

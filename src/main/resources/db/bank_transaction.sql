@@ -1,4 +1,4 @@
-CREATE TABLE bank_transaction (
+CREATE TABLE IF NOT EXISTS bank_transaction (
                                   transaction_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                   transaction_key VARCHAR(100) NOT NULL,
                                   transaction_type VARCHAR(20) NOT NULL,
@@ -34,9 +34,3 @@ CREATE TABLE bank_transaction (
     ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_unicode_ci;
-
-CREATE INDEX idx_bank_transaction_account_date
-    ON bank_transaction (account_id, transaction_at);
-
-CREATE INDEX idx_bank_transaction_transfer
-    ON bank_transaction (transfer_id);

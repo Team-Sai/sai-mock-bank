@@ -1,4 +1,4 @@
-CREATE TABLE bank_transfer (
+CREATE TABLE IF NOT EXISTS bank_transfer (
                                transfer_id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                request_key VARCHAR(100) NOT NULL,
                                from_account_id BIGINT NOT NULL,
@@ -33,9 +33,3 @@ CREATE TABLE bank_transfer (
     ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_unicode_ci;
-
-CREATE INDEX idx_bank_transfer_from_account
-    ON bank_transfer (from_account_id);
-
-CREATE INDEX idx_bank_transfer_to_account
-    ON bank_transfer (to_account_id);

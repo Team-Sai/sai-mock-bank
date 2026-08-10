@@ -47,6 +47,12 @@ public class SecurityConfig {
                         authorize
 
                                 .requestMatchers(
+                                        "/swagger-ui/**",
+                                        "/swagger-ui.html",
+                                        "/v3/api-docs/**",
+                                        "/v3/api-docs.yaml"
+                                ).permitAll()
+                                .requestMatchers(
                                         "/api/auth/signup",
                                         "/api/auth/login",
                                         "/api/mock-bank/**"

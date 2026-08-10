@@ -1,19 +1,27 @@
 document.addEventListener("DOMContentLoaded", () => {
     const FILE_PREVIEW = window.location.protocol === "file:";
-
     const ROUTES = {
         main: FILE_PREVIEW ? "../login/login.html" : "/login",
         signup: FILE_PREVIEW ? "../signup/signup.html" : "/signup",
     };
-
     const API = {
         login: "/api/auth/login"
     };
 
+    const params = new URLSearchParams(window.location.search);   // ← 위로 이동
+
     document.querySelectorAll("[data-route]").forEach(link => {
         const routeName = link.dataset.route;
+        if (!ROUTES[routeName]) {
+            return;
+        }
 
-        if (ROUTES[routeName]) {
+        if (routeName === "signup") {
+            const nextParam = params.get("next");
+            link.href = nextParam
+                ? `${ROUTES.signup}?next=${encodeURIComponent(nextParam)}`
+                : ROUTES.signup;
+        } else {
             link.href = ROUTES[routeName];
         }
     });
@@ -33,9 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!form) {
         return;
     }
-
-    const params = new URLSearchParams(window.location.search);
-
+    
     if (params.get("signup") === "success") {
         pageMessage.textContent =
             "회원가입이 완료되었습니다. 로그인해 주세요.";

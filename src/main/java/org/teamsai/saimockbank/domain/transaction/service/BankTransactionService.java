@@ -3,8 +3,8 @@ package org.teamsai.saimockbank.domain.transaction.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionResponse;
 import org.teamsai.saimockbank.domain.transaction.exception.TransactionErrorCode;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -18,6 +18,7 @@ public class BankTransactionService {
 
     private final BankAccountMapper bankAccountMapper;
     private final BankTransactionMapper bankTransactionMapper;
+    private final AccountOwnershipValidator ownershipValidator;
 
     public List<TransactionResponse> getTransactions(
             Long accountId,
@@ -26,16 +27,20 @@ public class BankTransactionService {
     ) {
         validateRequest(accountId, userKey);
 
-        BankAccountDTO account = bankAccountMapper.findById(accountId)
+        bankAccountMapper.findById(accountId)
                 .orElseThrow(
                         TransactionErrorCode.ACCOUNT_NOT_FOUND
                                 ::toException
                 );
 
-        if (!account.getAccountId().equals(accountId)) {
-            throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED
-                    .toException();
-        }
+        String ownerHash = bankAccountMapper.findOwnerUserKeyHashByAccountId(accountId)
+                .orElse(null);
+
+        ownershipValidator.verify(
+                ownerHash,
+                userKey,
+                TransactionErrorCode.ACCOUNT_ACCESS_DENIED::toException
+        );
 
         long cursor =
                 afterTransactionId == null

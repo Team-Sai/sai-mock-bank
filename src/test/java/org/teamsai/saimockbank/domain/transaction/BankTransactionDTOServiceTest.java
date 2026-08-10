@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BankTransactionService 단위 테스트")
-class BankTransactionServiceTest {
+class BankTransactionDTOServiceTest {
 
     @Mock
     private BankAccountMapper bankAccountMapper;

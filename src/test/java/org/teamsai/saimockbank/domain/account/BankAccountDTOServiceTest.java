@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("BankAccountService 단위 테스트")
-class BankAccountServiceTest {
+class BankAccountDTOServiceTest {
 
     @Mock
     private BankAccountMapper bankAccountMapper;

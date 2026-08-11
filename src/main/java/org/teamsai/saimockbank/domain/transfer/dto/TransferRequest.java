@@ -4,9 +4,8 @@ import java.math.BigDecimal;
 
 public record TransferRequest(
         String requestKey,
-        String fromUserKey,
         Long fromAccountId,
-        Long toAccountId,
+        String toAccountNumber,
         BigDecimal amount,
         String senderMemo,
         String receiverMemo

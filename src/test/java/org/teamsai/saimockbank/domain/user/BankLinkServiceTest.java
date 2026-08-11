@@ -152,6 +152,6 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.LINK_KEY_UPDATE_CONFLICT);  // UserErrorCode → IdentityErrorCode로 변경
+                .isEqualTo(IdentityErrorCode.LINK_KEY_UPDATE_CONFLICT);
     }
 }

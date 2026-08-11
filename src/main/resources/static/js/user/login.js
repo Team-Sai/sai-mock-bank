@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const API = {
         login: "/api/auth/login"
     };
-    const params = new URLSearchParams(window.location.search);   // ← 위로 이동
+    const params = new URLSearchParams(window.location.search);
     document.querySelectorAll("[data-route]").forEach(link => {
         const routeName = link.dataset.route;
         if (!ROUTES[routeName]) {

@@ -69,7 +69,6 @@ async function lookupTransfer(transferId) {
     }
 }
 
-// URL에 ?transferId=가 있으면 자동으로 채워서 조회 (이체 화면의 "상세 내역 보기" 링크에서 넘어온 경우)
 (function autoLookupFromQuery() {
     const params = new URLSearchParams(window.location.search);
     const transferId = params.get('transferId');

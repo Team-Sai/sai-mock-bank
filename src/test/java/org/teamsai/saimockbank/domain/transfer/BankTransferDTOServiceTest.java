@@ -58,7 +58,6 @@ class BankTransferDTOServiceTest {
                 .completedAt(LocalDateTime.now())
                 .build();
 
-        // 계좌번호 -> accountId 변환
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
 
@@ -68,7 +67,6 @@ class BankTransferDTOServiceTest {
         when(transferProcessor.process(request, LOGIN_USER_ID, 2L))
                 .thenReturn(transfer);
 
-        // 응답에 마스킹된 계좌번호를 채우기 위한 조회
         when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
         when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
 
@@ -114,7 +112,6 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
         when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
 
-        // 로그인한 사용자(LOGIN_USER_ID)는 출금/입금 계좌 어느 쪽 소유자도 아님
         assertThatThrownBy(() ->
                 bankTransferService.getTransfer(LOGIN_USER_ID, 1L)
         )

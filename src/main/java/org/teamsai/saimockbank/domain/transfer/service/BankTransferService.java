@@ -25,8 +25,7 @@ public class BankTransferService {
     public TransferResponse transfer(Long loginUserId, TransferRequest request) {
         validateRequest(request);
 
-        // 계좌번호 -> accountId 변환은 여기서 한 번만. 이후 단계는 전부 accountId 기준으로만 다룸.
-        Long toAccountId = resolveToAccountId(request.toAccountNumber());
+       Long toAccountId = resolveToAccountId(request.toAccountNumber());
 
         BankTransferDTO existTransfer = bankTransferMapper.findByRequestKey(request.requestKey()).orElse(null);
         if (existTransfer != null) {
@@ -53,7 +52,6 @@ public class BankTransferService {
         return toResponse(transfer);
     }
 
-    // 이체 당사자(출금/입금 어느 쪽이든) 본인 확인. 이체 결과 조회는 남의 것을 볼 수 없어야 함.
     private void validateParticipant(Long loginUserId, BankTransferDTO transfer) {
         boolean isParticipant =
                 bankAccountMapper.findById(transfer.getFromAccountId())
@@ -68,7 +66,6 @@ public class BankTransferService {
         }
     }
 
-    // 응답에 마스킹된 계좌번호를 채우기 위해 두 계좌를 조회해서 팩토리로 넘김.
     private TransferResponse toResponse(BankTransferDTO transfer) {
         BankAccountDTO fromAccount = bankAccountMapper.findById(transfer.getFromAccountId()).orElse(null);
         BankAccountDTO toAccount = bankAccountMapper.findById(transfer.getToAccountId()).orElse(null);

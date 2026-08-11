@@ -17,7 +17,6 @@ const toAccountNumberInput = document.getElementById('toAccountNumber');
 const toAccountPreview = document.getElementById('toAccountPreview');
 const amountInput = document.getElementById('amount');
 
-// 요청 키(멱등성 키) 자동 발급
 function generateRequestKey() {
     if (window.crypto && window.crypto.randomUUID) {
         return window.crypto.randomUUID();
@@ -27,13 +26,11 @@ function generateRequestKey() {
 
 requestKeyInput.value = generateRequestKey();
 
-// 로그인 시 저장해둔 JWT를 Authorization 헤더로 변환
 function getAuthHeader() {
     const token = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
     return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// 출금 계좌 목록 로드 (로그인한 사용자의 계좌만 반환됨)
 async function loadMyAccounts() {
     try {
         const response = await fetch(MY_ACCOUNTS_ENDPOINT, {
@@ -71,7 +68,6 @@ async function loadMyAccounts() {
 
 loadMyAccounts();
 
-// 받는 분 계좌번호로 예금주명/은행명 조회 (디바운스)
 let lookupTimer = null;
 let toAccountVerified = false;
 
@@ -133,7 +129,6 @@ function setToAccountPreview(text, state) {
     }
 }
 
-// 금액 입력: 숫자만 남기고 천 단위 콤마 표시
 amountInput.addEventListener('input', () => {
     const digitsOnly = amountInput.value.replace(/[^0-9]/g, '');
     amountInput.value = digitsOnly === '' ? '' : Number(digitsOnly).toLocaleString('ko-KR');

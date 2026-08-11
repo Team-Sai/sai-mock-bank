@@ -120,7 +120,7 @@ class BankTransactionDTOServiceTest {
 
             given(bankAccountMapper.findById(1L)).willReturn(Optional.of(account));
             given(bankAccountMapper.findOwnerUserKeyHashByAccountId(1L))
-                    .willReturn(Optional.of("HASHED_USER_002")); // 계좌 실제 주인은 USER_002
+                    .willReturn(Optional.of("HASHED_USER_002"));
 
             willThrow(TransactionErrorCode.ACCOUNT_ACCESS_DENIED.toException())
                     .given(ownershipValidator)

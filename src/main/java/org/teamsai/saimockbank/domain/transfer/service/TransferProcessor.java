@@ -25,11 +25,7 @@ public class TransferProcessor {
     private final BankAccountMapper bankAccountMapper;
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
-    // AccountOwnershipValidator는 오픈뱅킹 연동(userKey 해시 검증) 쪽 전용으로 남겨두고
-    // 로그인 고객 이체 흐름에서는 더 이상 사용하지 않음.
 
-    // toAccountId는 BankTransferService에서 계좌번호를 미리 accountId로 변환해 전달.
-    // 이 클래스는 계좌번호 관련 로직을 전혀 몰라도 됨 — 오직 accountId 기준으로만 락/처리.
     public BankTransferDTO process(TransferRequest request, Long loginUserId, Long toAccountId) {
         BankAccountDTO fromAccount = findAccountForUpdate(request.fromAccountId());
         BankAccountDTO toAccount = findAccountForUpdate(toAccountId);
@@ -69,7 +65,6 @@ public class TransferProcessor {
             TransferRequest request,
             Long loginUserId
     ) {
-        // 오픈뱅킹 방식의 userKey 해시 검증 대신, 로그인 사용자와 출금 계좌 소유자를 직접 비교
         if (!fromAccount.getBankUserId().equals(loginUserId)) {
             throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }

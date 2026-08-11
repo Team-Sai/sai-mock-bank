@@ -13,6 +13,10 @@ public class StaticPageController {
 
     @GetMapping("/home")
     public String homePage() {
-        return "home"; // templates/home.html
+        return "/home/home";
+    }
+    @GetMapping("/transfer-history")
+    public String transferHistoryPage() {
+        return "/transfer/transfer-history";
     }
 }

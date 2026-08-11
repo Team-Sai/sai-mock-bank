@@ -72,7 +72,8 @@ public class SecurityConfig {
                                         "/home",
                                         "/link/start",
                                         "/link/select",
-                                        "/transfer"
+                                        "/transfer",
+                                        "/transfer-history"
                                 )
                                 .permitAll()
 

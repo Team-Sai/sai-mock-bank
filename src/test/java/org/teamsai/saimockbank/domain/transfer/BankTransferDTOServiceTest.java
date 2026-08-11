@@ -139,6 +139,75 @@ class BankTransferDTOServiceTest {
         verifyNoInteractions(transferProcessor);
     }
 
+    @Test
+    void 다른_사용자가_동일한_requestKey로_요청하면_소유권_예외가_발생한다() {
+        TransferRequest request = createRequest("TRANSFER-005");
+
+        BankAccountDTO toAccount = createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+
+        BankTransferDTO existingTransfer = BankTransferDTO.builder()
+                .requestKey("TRANSFER-005")
+                .fromAccountId(1L)
+                .toAccountId(2L)
+                .amount(new BigDecimal("10000"))
+                .status(TransferStatus.SUCCESS)
+                .completedAt(LocalDateTime.now())
+                .build();
+
+        // fromAccountId(1L), toAccountId(2L) 계좌 모두 로그인 사용자(LOGIN_USER_ID)의 소유가 아님
+        BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
+        BankAccountDTO toAccountForOwnerCheck = createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
+
+        when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
+                .thenReturn(Optional.of(toAccount));
+        when(bankTransferMapper.findByRequestKey("TRANSFER-005"))
+                .thenReturn(Optional.of(existingTransfer));
+        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
+        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccountForOwnerCheck));
+
+        assertThatThrownBy(() ->
+                bankTransferService.transfer(LOGIN_USER_ID, request)
+        )
+                .isInstanceOf(DomainException.class)
+                .hasMessage(
+                        TransferErrorCode.ACCOUNT_ACCESS_DENIED.getMessage()
+                );
+
+        verifyNoInteractions(transferProcessor);
+    }
+
+    @Test
+    void 본인이_참여한_이체는_동일한_requestKey로_재요청해도_정상_응답된다() {
+        TransferRequest request = createRequest("TRANSFER-006");
+
+        BankAccountDTO toAccount = createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+
+        BankTransferDTO existingTransfer = BankTransferDTO.builder()
+                .requestKey("TRANSFER-006")
+                .fromAccountId(1L)
+                .toAccountId(2L)
+                .amount(new BigDecimal("10000"))
+                .status(TransferStatus.SUCCESS)
+                .completedAt(LocalDateTime.now())
+                .build();
+
+        BankAccountDTO fromAccount = createAccount(1L, LOGIN_USER_ID, "110-111-111111");
+
+        when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
+                .thenReturn(Optional.of(toAccount));
+        when(bankTransferMapper.findByRequestKey("TRANSFER-006"))
+                .thenReturn(Optional.of(existingTransfer));
+        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
+        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
+
+        var result = bankTransferService.transfer(LOGIN_USER_ID, request);
+
+        assertThat(result.status()).isEqualTo(TransferStatus.SUCCESS);
+        assertThat(result.amount()).isEqualByComparingTo("10000");
+
+        verifyNoInteractions(transferProcessor); // 신규 처리 없이 기존 이체 결과를 그대로 반환
+    }
+
     private TransferRequest createRequest(String requestKey) {
         return new TransferRequest(
                 requestKey,

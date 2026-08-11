@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class StaticPageController {
-
     @GetMapping("/transfer")
     public String transferPage() {
         return "transfer/transfer";

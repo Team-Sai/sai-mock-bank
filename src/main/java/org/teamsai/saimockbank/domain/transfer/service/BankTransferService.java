@@ -29,6 +29,7 @@ public class BankTransferService {
 
         BankTransferDTO existTransfer = bankTransferMapper.findByRequestKey(request.requestKey()).orElse(null);
         if (existTransfer != null) {
+            validateParticipant(loginUserId, existTransfer);
             validateDuplicateRequest(existTransfer, request, toAccountId);
             return toResponse(existTransfer);
         }

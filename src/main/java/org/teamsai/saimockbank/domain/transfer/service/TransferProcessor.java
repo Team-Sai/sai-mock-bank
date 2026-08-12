@@ -27,8 +27,18 @@ public class TransferProcessor {
     private final BankTransactionMapper bankTransactionMapper;
 
     public BankTransferDTO process(TransferRequest request, Long loginUserId, Long toAccountId) {
-        BankAccountDTO fromAccount = findAccountForUpdate(request.fromAccountId());
-        BankAccountDTO toAccount = findAccountForUpdate(toAccountId);
+        Long fromAccountId = request.fromAccountId();
+
+        BankAccountDTO fromAccount;
+        BankAccountDTO toAccount;
+
+        if (fromAccountId < toAccountId) {
+            fromAccount = findAccountForUpdate(fromAccountId);
+            toAccount = findAccountForUpdate(toAccountId);
+        } else {
+            toAccount = findAccountForUpdate(toAccountId);
+            fromAccount = findAccountForUpdate(fromAccountId);
+        }
 
         validateAccounts(fromAccount, toAccount, request, loginUserId);
 

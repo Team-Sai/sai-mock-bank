@@ -2,6 +2,7 @@ package org.teamsai.saimockbank.domain.transfer.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +25,7 @@ public class BankTransferController {
     @PostMapping("/api/mock-bank/transfers")
     public TransferResponse transfer(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody TransferRequest request
+            @Valid @RequestBody TransferRequest request
             ){
         return bankTransferService.transfer(userDetails.getUserId(),request);
     }

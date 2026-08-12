@@ -21,7 +21,6 @@ import org.teamsai.saimockbank.global.util.LinkIdentityHasher;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,19 +49,18 @@ public class LinkFlowController {
             @RequestParam(required = false) String excludeAccountIds,
             HttpSession session
     ) {
-        Optional<String> expectedIdentityHashOpt = jwtTokenProvider.getIdentityHashFromLinkState(state);
-
-        if (expectedIdentityHashOpt.isEmpty()) {
-            log.warn("[LinkFlowController] 유효하지 않은 state로 연동 시작 시도");
-            return "redirect:/link/identity-mismatch";
-        }
-
-        session.setAttribute(SESSION_RETURN_URL, returnUrl);
-        session.setAttribute(SESSION_STATE, state);
-        session.setAttribute(SESSION_EXCLUDE_ACCOUNT_IDS, excludeAccountIds);
-        session.setAttribute(SESSION_EXPECTED_IDENTITY_HASH, expectedIdentityHashOpt.get());
-
-        return "redirect:/login?next=/link/select";
+        return jwtTokenProvider.getIdentityHashFromLinkState(state)
+                .map(expectedIdentityHash -> {
+                    session.setAttribute(SESSION_RETURN_URL, returnUrl);
+                    session.setAttribute(SESSION_STATE, state);
+                    session.setAttribute(SESSION_EXCLUDE_ACCOUNT_IDS, excludeAccountIds);
+                    session.setAttribute(SESSION_EXPECTED_IDENTITY_HASH, expectedIdentityHash);
+                    return "redirect:/login?next=/link/select";
+                })
+                .orElseGet(() -> {
+                    log.warn("[LinkFlowController] 유효하지 않은 state로 연동 시작 시도");
+                    return "redirect:/link/invalid";
+                });
     }
 
     @GetMapping("/link/select")
@@ -73,6 +71,11 @@ public class LinkFlowController {
     @GetMapping("/link/identity-mismatch")
     public String linkIdentityMismatchPage() {
         return "link/link-identity-mismatch";
+    }
+
+    @GetMapping("/link/invalid")
+    public String linkInvalidPage() {
+        return "link/link-invalid";
     }
 
     @GetMapping("/api/bank-user/accounts")

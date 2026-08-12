@@ -1,6 +1,6 @@
 const API_BASE_URL = '';
 const TRANSFER_ENDPOINT = `${API_BASE_URL}/api/mock-bank/transfers`;
-const MY_ACCOUNTS_ENDPOINT = `${API_BASE_URL}/api/bank-user/accounts`;
+const MY_ACCOUNTS_ENDPOINT = `${API_BASE_URL}/api/mock-bank/accounts/my`;
 const ACCOUNT_LOOKUP_ENDPOINT = `${API_BASE_URL}/api/mock-bank/customer-accounts/lookup`;
 const ACCESS_TOKEN_STORAGE_KEY = 'accessToken';
 

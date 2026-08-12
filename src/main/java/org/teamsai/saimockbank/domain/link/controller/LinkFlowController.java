@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.link.controller;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import org.teamsai.saimockbank.global.util.LinkIdentityHasher;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,9 @@ public class LinkFlowController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @Value("${link-identity.hash-secret}")
+    private String linkIdentityHashSecret;
+
     private static final String SESSION_RETURN_URL = "linkReturnUrl";
     private static final String SESSION_STATE = "linkState";
     private static final String SESSION_EXCLUDE_ACCOUNT_IDS = "excludeAccountIds";
@@ -45,13 +50,17 @@ public class LinkFlowController {
             @RequestParam(required = false) String excludeAccountIds,
             HttpSession session
     ) {
-        String expectedIdentityHash = jwtTokenProvider.getIdentityHashFromLinkState(state)
-                .orElseThrow(UserErrorCode.INVALID_LINK_STATE::toException);
+        Optional<String> expectedIdentityHashOpt = jwtTokenProvider.getIdentityHashFromLinkState(state);
+
+        if (expectedIdentityHashOpt.isEmpty()) {
+            log.warn("[LinkFlowController] 유효하지 않은 state로 연동 시작 시도");
+            return "redirect:/link/identity-mismatch";
+        }
 
         session.setAttribute(SESSION_RETURN_URL, returnUrl);
         session.setAttribute(SESSION_STATE, state);
         session.setAttribute(SESSION_EXCLUDE_ACCOUNT_IDS, excludeAccountIds);
-        session.setAttribute(SESSION_EXPECTED_IDENTITY_HASH, expectedIdentityHash);
+        session.setAttribute(SESSION_EXPECTED_IDENTITY_HASH, expectedIdentityHashOpt.get());
 
         return "redirect:/login?next=/link/select";
     }
@@ -133,7 +142,11 @@ public class LinkFlowController {
         }
 
         UserResponse loggedInUser = userService.getMyInfo(userDetails.getUserId());
-        String loggedInIdentityHash = LinkIdentityHasher.hash(loggedInUser.getName(), loggedInUser.getBirthDate());
+        String loggedInIdentityHash = LinkIdentityHasher.hash(
+                loggedInUser.getName(),
+                loggedInUser.getBirthDate(),
+                linkIdentityHashSecret
+        );
 
         if (!expectedIdentityHash.equals(loggedInIdentityHash)) {
             log.warn("[LinkFlowController] 계좌 연동 명의 불일치 - loggedInUserId: {}", userDetails.getUserId());

@@ -48,7 +48,8 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
-                                        "/api/bank-user/**"
+                                        "/api/bank-user/**",
+                                        "/api/mock-bank/accounts/my"
                                 )
                                 .authenticated()
 

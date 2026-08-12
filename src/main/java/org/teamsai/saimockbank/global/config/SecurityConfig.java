@@ -45,6 +45,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(authorize ->
                         authorize
+                                .requestMatchers(
+                                        "/api/mock-bank/transfers/**",
+                                        "/api/mock-bank/customer-accounts/**",
+                                        "/api/bank-user/**"
+                                )
+                                .authenticated()
 
                                 .requestMatchers(
                                         "/swagger-ui/**",
@@ -63,8 +69,11 @@ public class SecurityConfig {
                                         "/",
                                         "/login",
                                         "/signup",
+                                        "/home",
                                         "/link/start",
-                                        "/link/select"
+                                        "/link/select",
+                                        "/transfer",
+                                        "/transfer-history"
                                 )
                                 .permitAll()
 

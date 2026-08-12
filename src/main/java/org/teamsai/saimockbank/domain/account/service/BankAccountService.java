@@ -61,6 +61,13 @@ public class BankAccountService {
         return AccountDetailResponse.from(account);
     }
 
+
+    @Transactional(readOnly = true)
+    public BankAccountDTO findByAccountNumber(String accountNumber) {
+        return bankAccountMapper.findByAccountNumber(accountNumber)
+                .orElseThrow(AccountErrorCode.ACCOUNT_NOT_FOUND::toException);
+    }
+
     private void validateUserKey(String userKey) {
         if (userKey == null || userKey.isBlank()) {
             throw AccountErrorCode.INVALID_ACCOUNT_REQUEST.toException();

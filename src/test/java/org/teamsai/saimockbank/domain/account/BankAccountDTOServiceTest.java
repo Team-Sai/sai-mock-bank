@@ -113,8 +113,6 @@ class BankAccountDTOServiceTest {
             given(bankAccountMapper.findById(1L)).willReturn(Optional.of(account));
             given(bankAccountMapper.findOwnerUserKeyHashByAccountId(1L))
                     .willReturn(Optional.of(HASHED_USER_KEY));
-            // accountOwnershipValidator.verify()는 통과 시 아무 것도 안 하므로 별도 스텁 불필요
-
             var result = bankAccountService.getAccount(1L, RAW_USER_KEY);
 
             assertThat(result).isNotNull();

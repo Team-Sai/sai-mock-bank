@@ -20,7 +20,9 @@ public interface UserMapper {
     Optional<UserDTO> findByUserToken(
             @Param("userToken") String userToken
     );
-    Optional<UserDTO> findById(@Param("bankUserId") Long bankUserId);
+    Optional<UserDTO> findById(
+            @Param("bankUserId") Long bankUserId
+    );
     Optional<UserDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
     int updateUserKey(@Param("bankUserId") Long bankUserId,
                        @Param("userKeyHash") String userKeyHash,

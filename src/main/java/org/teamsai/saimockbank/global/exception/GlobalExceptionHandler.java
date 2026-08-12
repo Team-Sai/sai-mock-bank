@@ -11,6 +11,26 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handleDomainException(DomainException exception) {
+        HttpStatus httpStatus = exception.getHttpStatus();
+
+        log.warn(
+                "도메인 예외 발생: status={}, message={}",
+                httpStatus.value(),
+                exception.getMessage()
+        );
+
+        return ResponseEntity
+                .status(httpStatus)
+                .body(
+                        ErrorResponse.of(
+                                httpStatus.value(),
+                                exception.getMessage()
+                        )
+                );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(
             MethodArgumentNotValidException exception

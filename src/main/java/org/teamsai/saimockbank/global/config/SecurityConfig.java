@@ -73,7 +73,8 @@ public class SecurityConfig {
                                         "/link/start",
                                         "/link/select",
                                         "/transfer",
-                                        "/transfer-history"
+                                        "/transfer-history",
+                                        "/link/identity-mismatch"
                                 )
                                 .permitAll()
 

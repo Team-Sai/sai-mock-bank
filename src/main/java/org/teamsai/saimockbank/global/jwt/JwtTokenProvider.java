@@ -14,6 +14,9 @@ import java.util.Optional;
 
 @Component
 public class JwtTokenProvider {
+    private static final String CLAIM_PURPOSE = "purpose";
+    private static final String PURPOSE_ACCESS = "access";
+    private static final String PURPOSE_BANK_LINK = "bank-link";
 
     private final SecretKey signingKey;
     private final long accessTokenExpirationMs;
@@ -24,7 +27,6 @@ public class JwtTokenProvider {
             long accessTokenExpirationMs
     ) {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
-
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenExpirationMs = accessTokenExpirationMs;
     }
@@ -37,6 +39,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim(CLAIM_PURPOSE, PURPOSE_ACCESS)
                 .issuedAt(issuedAt)
                 .expiration(expiration)
                 .signWith(signingKey)
@@ -46,6 +49,11 @@ public class JwtTokenProvider {
     public Optional<Long> getUserIdIfValid(String token) {
         try {
             Claims claims = parseClaims(token);
+
+            if (!PURPOSE_ACCESS.equals(claims.get(CLAIM_PURPOSE, String.class))) {
+                return Optional.empty();
+            }
+
             String subject = claims.getSubject();
 
             if (subject == null || subject.isBlank()) {
@@ -58,6 +66,20 @@ public class JwtTokenProvider {
         }
     }
 
+    public Optional<String> getIdentityHashFromLinkState(String token) {
+        try {
+            Claims claims = parseClaims(token);
+
+            if (!PURPOSE_BANK_LINK.equals(claims.get(CLAIM_PURPOSE, String.class))) {
+                return Optional.empty();
+            }
+
+            String identityHash = claims.get("identity-hash", String.class);
+            return Optional.ofNullable(identityHash);
+        } catch (JwtException | IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
 
     private Claims parseClaims(String token) {
         return Jwts.parser()

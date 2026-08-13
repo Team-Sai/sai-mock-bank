@@ -23,22 +23,30 @@ class JwtTokenProviderTest {
 
     private static final Long USER_ID = 1L;
 
-    private String secret;
+    private String accessSecret;
+    private String linkStateSecret;
     private SecretKey signingKey;
     private JwtTokenProvider jwtTokenProvider;
 
     @BeforeEach
     void setUp() {
-        byte[] keyBytes =
+        byte[] accessKeyBytes =
                 "01234567890123456789012345678901"
                         .getBytes(StandardCharsets.UTF_8);
 
-        secret = Encoders.BASE64.encode(keyBytes);
-        signingKey = Keys.hmacShaKeyFor(keyBytes);
+        accessSecret = Encoders.BASE64.encode(accessKeyBytes);
+        signingKey = Keys.hmacShaKeyFor(accessKeyBytes);
+
+        byte[] linkStateKeyBytes =
+                "98765432109876543210987654321098"
+                        .getBytes(StandardCharsets.UTF_8);
+
+        linkStateSecret = Encoders.BASE64.encode(linkStateKeyBytes);
 
         jwtTokenProvider =
                 new JwtTokenProvider(
-                        secret,
+                        accessSecret,
+                        linkStateSecret,
                         ACCESS_TOKEN_EXPIRATION_MS
                 );
     }

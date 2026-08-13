@@ -65,7 +65,7 @@ class BankLinkServiceTest {
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
 
-        assertThat(response.userKey()).isNotNull().startsWith("sai_");
+        assertThat(response.userKey()).isNotNull().startsWith("mb_");
         assertThat(response.issuedAt()).isNotNull();
 
         ArgumentCaptor<String> hashInputCaptor = ArgumentCaptor.forClass(String.class);
@@ -134,7 +134,7 @@ class BankLinkServiceTest {
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
 
-        assertThat(response.userKey()).isNotNull().startsWith("sai_");
+        assertThat(response.userKey()).isNotNull().startsWith("mb_");
         verify(userKeyHasher).hash(anyString());
         verify(userMapper).updateUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class));
     }

@@ -15,17 +15,22 @@ import java.util.Optional;
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey signingKey;
+    private static final String CLAIM_PURPOSE = "purpose";
+    private static final String PURPOSE_ACCESS = "access";
+    private static final String PURPOSE_BANK_LINK = "bank-link";
+
+    private final SecretKey accessSigningKey;
+    private final SecretKey linkStateSigningKey;
     private final long accessTokenExpirationMs;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.secret}") String accessSecret,
+            @Value("${link-state.secret}") String linkStateSecret,
             @Value("${jwt.access-token-expiration-ms}")
             long accessTokenExpirationMs
     ) {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
-
-        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+        this.accessSigningKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecret));
+        this.linkStateSigningKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(linkStateSecret));
         this.accessTokenExpirationMs = accessTokenExpirationMs;
     }
 
@@ -34,34 +39,47 @@ public class JwtTokenProvider {
         Date expiration = new Date(
                 issuedAt.getTime() + accessTokenExpirationMs
         );
-
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .claim(CLAIM_PURPOSE, PURPOSE_ACCESS)
                 .issuedAt(issuedAt)
                 .expiration(expiration)
-                .signWith(signingKey)
+                .signWith(accessSigningKey)
                 .compact();
     }
 
     public Optional<Long> getUserIdIfValid(String token) {
         try {
-            Claims claims = parseClaims(token);
+            Claims claims = parseClaims(token, accessSigningKey);
+            if (!PURPOSE_ACCESS.equals(claims.get(CLAIM_PURPOSE, String.class))) {
+                return Optional.empty();
+            }
             String subject = claims.getSubject();
-
             if (subject == null || subject.isBlank()) {
                 return Optional.empty();
             }
-
             return Optional.of(Long.valueOf(subject));
         } catch (JwtException | IllegalArgumentException exception) {
             return Optional.empty();
         }
     }
 
+    public Optional<String> getIdentityHashFromLinkState(String token) {
+        try {
+            Claims claims = parseClaims(token, linkStateSigningKey);
+            if (!PURPOSE_BANK_LINK.equals(claims.get(CLAIM_PURPOSE, String.class))) {
+                return Optional.empty();
+            }
+            String identityHash = claims.get("identity-hash", String.class);
+            return Optional.ofNullable(identityHash);
+        } catch (JwtException | IllegalArgumentException exception) {
+            return Optional.empty();
+        }
+    }
 
-    private Claims parseClaims(String token) {
+    private Claims parseClaims(String token, SecretKey key) {
         return Jwts.parser()
-                .verifyWith(signingKey)
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

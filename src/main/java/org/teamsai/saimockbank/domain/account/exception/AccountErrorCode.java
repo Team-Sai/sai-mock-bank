@@ -24,7 +24,16 @@ public enum AccountErrorCode
     ACCOUNT_ACCESS_DENIED(
             HttpStatus.FORBIDDEN,
             "해당 계좌에 접근할 수 없습니다."
-    );
+    ),
+    INVALID_RETURN_URL(
+            HttpStatus.BAD_REQUEST,
+            "허용되지 않은 콜백 주소입니다."),
+    INVALID_LINK_REQUEST(
+            HttpStatus.BAD_REQUEST,
+            "연동할 계좌를 선택해주세요."),
+    INVALID_ACCOUNT_SELECTION(
+            HttpStatus.FORBIDDEN,
+            "본인 소유의 연동 가능한 계좌만 선택할 수 있습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

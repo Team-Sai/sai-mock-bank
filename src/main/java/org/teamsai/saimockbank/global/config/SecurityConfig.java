@@ -48,7 +48,8 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
-                                        "/api/bank-user/**"
+                                        "/api/bank-user/**",
+                                        "/api/mock-bank/accounts/my"
                                 )
                                 .authenticated()
 
@@ -73,7 +74,9 @@ public class SecurityConfig {
                                         "/link/start",
                                         "/link/select",
                                         "/transfer",
-                                        "/transfer-history"
+                                        "/transfer-history",
+                                        "/link/identity-mismatch",
+                                        "/link/invalid"
                                 )
                                 .permitAll()
 

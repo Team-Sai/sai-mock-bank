@@ -46,8 +46,16 @@ public enum UserErrorCode
             "본인은 요청 대상으로 선택할 수 없습니다."
     ),
     ALREADY_LINKED_USER(
-            HttpStatus.ALREADY_REPORTED,
+            HttpStatus.CONFLICT,
             "이미 연동된 회원입니다."
+    ),
+    LINK_IDENTITY_MISMATCH(
+            HttpStatus.FORBIDDEN,
+            "사이원장에 등록된 본인 명의로 로그인해야 계좌를 연동할 수 있습니다."
+    ),
+    INVALID_LINK_STATE(
+            HttpStatus.BAD_REQUEST,
+            "연결 상태가 올바르지 않습니다."
     );
 
     private final HttpStatus httpStatus;

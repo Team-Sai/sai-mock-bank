@@ -123,8 +123,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                 headers: { "Authorization": `Bearer ${token}` }
             });
 
-            if (response.status === 401 || response.status === 403) {
+            if (response.status === 401) {
                 redirectToLogin();
+                return;
+            }
+
+            if (response.status === 400) {
+                window.location.replace("/link/invalid");
+                return;
+            }
+
+            if (response.status === 403) {
+                // NOTE: 경로에 "link/"를 중복으로 붙이지 않는다.
+                // 실제 매핑은 @GetMapping("/link/identity-mismatch") 이다.
+                window.location.replace("/link/identity-mismatch");
                 return;
             }
 
@@ -143,9 +155,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     agreeCheckbox?.addEventListener("change", updateConfirmState);
 
     cancelButton?.addEventListener("click", () => {
-        window.location.href = "/";
+        if (window.opener || window.history.length <= 1) {
+           window.close();
+        }
+        setTimeout(() => {
+            if (!window.closed) {
+                document.body.innerHTML = "<p style='text-align:center; margin-top:40px;'>이 창을 닫아주세요.</p>";
+            }
+        }, 300);
     });
-
     confirmButton?.addEventListener("click", async () => {
         const token = getToken();
         if (!token) {
@@ -166,6 +184,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                 },
                 body: JSON.stringify({ accountIds: Array.from(selectedIds) })
             });
+
+            if (response.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            if (response.status === 400) {
+                window.location.replace("/link/invalid");
+                return;
+            }
+
+            if (response.status === 403) {
+                window.location.replace("/link/identity-mismatch");
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error("계좌 연결에 실패했습니다.");

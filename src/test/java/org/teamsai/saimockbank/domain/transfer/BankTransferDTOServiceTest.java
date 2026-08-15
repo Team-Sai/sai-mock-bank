@@ -154,8 +154,7 @@ class BankTransferDTOServiceTest {
                 .completedAt(LocalDateTime.now())
                 .build();
 
-        // fromAccountId(1L), toAccountId(2L) 계좌 모두 로그인 사용자(LOGIN_USER_ID)의 소유가 아님
-        BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
+BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
         BankAccountDTO toAccountForOwnerCheck = createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))

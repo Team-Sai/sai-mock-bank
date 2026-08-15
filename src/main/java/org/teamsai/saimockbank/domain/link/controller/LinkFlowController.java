@@ -53,8 +53,6 @@ public class LinkFlowController {
             @RequestParam(required = false) String excludeAccountIds,
             HttpSession session
     ) {
-        log.info("[DEBUG] linkStart 호출 - returnUrl: {}, state: {}", returnUrl, state); // 임시 로그
-
         validateReturnUrl(returnUrl);
 
         return jwtTokenProvider.getIdentityHashFromLinkState(state)

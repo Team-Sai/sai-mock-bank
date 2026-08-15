@@ -71,6 +71,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(
             Exception exception
     ) {
+        log.error("처리되지 않은 예외가 발생했습니다.", exception);
 
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

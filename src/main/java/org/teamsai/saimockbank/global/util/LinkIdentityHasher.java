@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.global.util;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.util.HexFormat;
 
@@ -34,9 +35,12 @@ public final class LinkIdentityHasher {
     }
 
     private static String normalizeName(String name) {
-        return name == null ? "" : name.replaceAll("\\s+", "");
+        if (name == null) {
+            return "";
+        }
+        return Normalizer.normalize(name.strip(), Normalizer.Form.NFC);
     }
-
+    
     private static String normalizeBirthDate(LocalDate birthDate) {
         return birthDate == null ? "" : birthDate.toString();
     }

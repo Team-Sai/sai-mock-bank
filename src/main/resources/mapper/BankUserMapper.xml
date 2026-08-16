@@ -24,14 +24,6 @@
     WHERE name = #{name} AND user_token = #{userToken}
     </select>
 
-    <update id="updateUserKey">
-    UPDATE bank_user
-    SET user_key_hash = #{userKeyHash},
-    issued_at = #{issuedAt},
-    updated_at = #{issuedAt}
-    WHERE bank_user_id = #{bankUserId}
-    </update>
-
     <insert id="insert" useGeneratedKeys="true" keyProperty="bankUserId">
         INSERT INTO bank_user (
         name, email, password, user_token, user_key_hash,
@@ -93,34 +85,34 @@
     <update id="savePendingUserKey">
         UPDATE bank_user
         SET pending_user_key   = #{pendingUserKey},
-        key_status         = 'PENDING',
+        key_status         = #{pendingStatus},
         pending_issued_at  = #{pendingIssuedAt},
         pending_expires_at = #{pendingExpiresAt}
         WHERE bank_user_id = #{bankUserId}
-        AND (key_status IS NULL OR key_status != 'PENDING' OR pending_expires_at &lt; NOW())
+        AND (key_status IS NULL OR key_status != #{pendingStatus} OR pending_expires_at &lt; NOW())
     </update>
 
     <update id="promotePendingToActive">
         UPDATE bank_user
         SET user_key_hash       = pending_user_key,
         issued_at           = pending_issued_at,
-        key_status          = 'ACTIVE',
+        key_status          = #{activeStatus},
         pending_user_key    = NULL,
         pending_issued_at   = NULL,
         pending_expires_at  = NULL
         WHERE pending_user_key = #{hashedKey}
-        AND key_status = 'PENDING'
-        AND pending_expires_at > NOW()
+        AND key_status = #{pendingStatus}
+        AND pending_expires_at &gt; NOW()
     </update>
 
     <update id="markPendingExpired">
         UPDATE bank_user
-        SET key_status          = 'EXPIRED',
+        SET key_status          = #{expiredStatus},
         pending_user_key    = NULL,
         pending_issued_at   = NULL,
         pending_expires_at  = NULL
         WHERE bank_user_id = #{bankUserId}
-        AND key_status = 'PENDING'
+        AND key_status = #{pendingStatus}
         AND pending_issued_at = #{pendingIssuedAt}
     </update>
 

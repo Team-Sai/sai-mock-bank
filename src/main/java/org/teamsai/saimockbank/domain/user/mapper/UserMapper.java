@@ -13,7 +13,8 @@ public interface UserMapper {
             @Param("bankUserId") Long bankUserId,
             @Param("pendingUserKey") String pendingUserKey,
             @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt,
-            @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt
+            @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt,
+            @Param("pendingStatus") String pendingStatus
     );
 
     int insert(UserDTO user);
@@ -31,19 +32,23 @@ public interface UserMapper {
             @Param("bankUserId") Long bankUserId
     );
     Optional<UserDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
-    int updateUserKey(@Param("bankUserId") Long bankUserId,
-                       @Param("userKeyHash") String userKeyHash,
-                       @Param("issuedAt") LocalDateTime issuedAt);
+
     int deleteByUserId(@Param("userId") Long userId);
 
     boolean existsByUserToken(
             @Param("userToken") String userToken
     );
 
-    int promotePendingToActive(@Param("hashedKey") String hashedKey);
+    int promotePendingToActive(
+            @Param("hashedKey") String hashedKey,
+            @Param("activeStatus") String activeStatus,
+            @Param("pendingStatus") String pendingStatus
+    );
 
     int markPendingExpired(
             @Param("bankUserId") Long bankUserId,
-            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt
+            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt,
+            @Param("expiredStatus") String expiredStatus,
+            @Param("pendingStatus") String pendingStatus
     );
 }

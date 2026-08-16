@@ -5,10 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.identity.exception.IdentityErrorCode;
-import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.dto.MockBankLinkResponse;
+import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.exception.UserErrorCode;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
+import org.teamsai.saimockbank.domain.user.type.UserKeyStatus;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -35,7 +36,9 @@ public class BankLinkService {
         LocalDateTime expiresAt = issuedAt.plusMinutes(PENDING_TTL_MINUTES);
 
         int updatedRow = userMapper.savePendingUserKey(
-                user.getBankUserId(), hashedKey, issuedAt, expiresAt);
+                user.getBankUserId(), hashedKey, issuedAt, expiresAt,
+                UserKeyStatus.PENDING.name()
+        );
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS.toException();
         }
@@ -48,7 +51,11 @@ public class BankLinkService {
     @Transactional
     public void confirmUserKey(String rawUserKey) {
         String hashedKey = userKeyHasher.hash(rawUserKey);
-        int updatedRow = userMapper.promotePendingToActive(hashedKey);
+        int updatedRow = userMapper.promotePendingToActive(
+                hashedKey,
+                UserKeyStatus.ACTIVE.name(),
+                UserKeyStatus.PENDING.name()
+        );
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
         }
@@ -56,8 +63,11 @@ public class BankLinkService {
 
     @Transactional
     public void expireUserKey(Long bankUserId, LocalDateTime pendingIssuedAt) {
-        userMapper.markPendingExpired(bankUserId, pendingIssuedAt);
-        // updatedRow == 0이어도 무시: 이미 confirm됐거나 배치가 먼저 처리한 정상 상황
+        userMapper.markPendingExpired(
+                bankUserId, pendingIssuedAt,
+                UserKeyStatus.EXPIRED.name(),
+                UserKeyStatus.PENDING.name()
+        );
     }
 
     private String generateUserKey() {

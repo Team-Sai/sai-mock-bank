@@ -116,10 +116,13 @@
         AND pending_issued_at = #{pendingIssuedAt}
     </update>
 
-    <update id="revokeUserKey">
+    <update id="revokeActiveKey">
         UPDATE bank_user
-        SET key_status    = 'EXPIRED',
-        user_key_hash = NULL
+        SET key_status          = 'EXPIRED',
+        user_key_hash       = NULL,
+        pending_user_key    = NULL,
+        pending_issued_at   = NULL,
+        pending_expires_at  = NULL
         WHERE user_key_hash = #{hashedKey}
     </update>
 

@@ -24,6 +24,15 @@ public class BankLinkService {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final long PENDING_TTL_MINUTES = 5;
 
+    /**
+     * 새 userKey를 발급하되, 즉시 활성화하지 않고 PENDING 상태로만 저장합니다.
+     *
+     * 주의: key_status가 'PENDING'으로 바뀌어도 기존 user_key_hash(구 키)는
+     * 그대로 남아 계속 유효합니다. 실제 계좌 접근 권한 검사는 key_status가 아니라
+     * user_key_hash IS NOT NULL 여부로만 이루어지므로, key_status는 "재발급
+     * 워크플로우의 진행 상태"를 나타낼 뿐 "현재 인증 가능 여부"를 나타내지 않습니다.
+     * 이는 콜백 유실 시에도 서비스가 끊기지 않도록 하기 위한 의도된 설계입니다.
+     */
     @Transactional
     public MockBankLinkResponse issueUserKey(String name, String userToken) {
         UserDTO user = userMapper.findByNameAndUserToken(name, userToken)

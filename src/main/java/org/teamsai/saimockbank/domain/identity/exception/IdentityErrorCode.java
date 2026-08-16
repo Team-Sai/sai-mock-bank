@@ -87,6 +87,14 @@ public enum IdentityErrorCode
     LINK_KEY_UPDATE_CONFLICT(
             HttpStatus.CONFLICT,
             "연동키 갱신에 실패했습니다. 잠시 후 다시 시도해주세요."
+    ),
+    PENDING_KEY_ALREADY_EXISTS(
+            HttpStatus.CONFLICT,
+            "이미 진행 중인 연동키 발급 요청이 있습니다. 잠시 후 다시 시도해주세요."
+    ),
+    PENDING_KEY_NOT_FOUND(
+            HttpStatus.CONFLICT,
+            "확정할 대기 중인 연동키를 찾을 수 없습니다."
     );
     private final HttpStatus httpStatus;
     private final String message;

@@ -26,21 +26,38 @@ public class BankLinkService {
 
     @Transactional
     public MockBankLinkResponse issueUserKey(String name, String userToken) {
-
         UserDTO user = userMapper.findByNameAndUserToken(name, userToken)
                 .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
 
         String rawKey = generateUserKey();
         String hashedKey = userKeyHasher.hash(rawKey);
         LocalDateTime issuedAt = LocalDateTime.now();
+        LocalDateTime expiresAt = issuedAt.plusMinutes(PENDING_TTL_MINUTES);
 
-        int updatedRow = userMapper.updateUserKey(user.getBankUserId(), hashedKey, issuedAt);
-
+        int updatedRow = userMapper.savePendingUserKey(
+                user.getBankUserId(), hashedKey, issuedAt, expiresAt);
         if (updatedRow == 0) {
-            throw IdentityErrorCode.LINK_KEY_UPDATE_CONFLICT.toException();
+            throw IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS.toException();
         }
 
         return new MockBankLinkResponse(rawKey, issuedAt);
+    }
+
+    private static final long PENDING_TTL_MINUTES = 5;
+
+    @Transactional
+    public void confirmUserKey(String rawUserKey) {
+        String hashedKey = userKeyHasher.hash(rawUserKey);
+        int updatedRow = userMapper.promotePendingToActive(hashedKey);
+        if (updatedRow == 0) {
+            throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
+        }
+    }
+
+    @Transactional
+    public void expireUserKey(Long bankUserId, LocalDateTime pendingIssuedAt) {
+        userMapper.markPendingExpired(bankUserId, pendingIssuedAt);
+        // updatedRow == 0이어도 무시: 이미 confirm됐거나 배치가 먼저 처리한 정상 상황
     }
 
     private String generateUserKey() {

@@ -13,3 +13,12 @@ CREATE TABLE IF NOT EXISTS bank_user (
                              UNIQUE KEY user_token (user_token),
                              UNIQUE KEY uk_bank_user_email (email)
 ) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS pending_user_key    VARCHAR(255) NULL;
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS key_status          VARCHAR(20)  NULL DEFAULT NULL;
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS pending_issued_at   DATETIME     NULL;
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS pending_expires_at  DATETIME     NULL;

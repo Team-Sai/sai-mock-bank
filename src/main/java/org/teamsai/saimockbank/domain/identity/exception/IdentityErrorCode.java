@@ -95,6 +95,10 @@ public enum IdentityErrorCode
     PENDING_KEY_NOT_FOUND(
             HttpStatus.CONFLICT,
             "확정할 대기 중인 연동키를 찾을 수 없습니다."
+    ),
+    ACTIVE_KEY_NOT_FOUND(
+            HttpStatus.CONFLICT,
+            "해지할 활성화된 연동키를 찾을 수 없습니다."
     );
     private final HttpStatus httpStatus;
     private final String message;

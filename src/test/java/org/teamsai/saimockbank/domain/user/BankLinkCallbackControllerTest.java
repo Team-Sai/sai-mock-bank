@@ -96,4 +96,50 @@ class BankLinkCallbackControllerTest {
                         .content("{}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void revokeKey_헤더없으면_401() throws Exception {
+        mockMvc.perform(post("/api/link/revoke-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userKey\":\"rawKey\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void revokeKey_잘못된키면_401() throws Exception {
+        mockMvc.perform(post("/api/link/revoke-key")
+                        .header("X-Internal-Api-Key", "wrong-key")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userKey\":\"rawKey\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void revokeKey_올바른키면_200() throws Exception {
+        mockMvc.perform(post("/api/link/revoke-key")
+                        .header("X-Internal-Api-Key", validApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userKey\":\"rawKey\"}"))
+                .andExpect(status().isOk());
+
+        verify(bankLinkService).revokeUserKey("rawKey");
+    }
+
+    @Test
+    void revokeKey_userKey가_빈값이면_400() throws Exception {
+        mockMvc.perform(post("/api/link/revoke-key")
+                        .header("X-Internal-Api-Key", validApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userKey\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void revokeKey_userKey가_null이면_400() throws Exception {
+        mockMvc.perform(post("/api/link/revoke-key")
+                        .header("X-Internal-Api-Key", validApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
 }

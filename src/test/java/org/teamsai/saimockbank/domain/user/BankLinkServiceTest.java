@@ -194,7 +194,7 @@ class BankLinkServiceTest {
     }
 
     @Test
-    @DisplayName("대응하는 ACTIVE 키가 없으면 PENDING_KEY_NOT_FOUND 예외가 발생한다")
+    @DisplayName("대응하는 ACTIVE 키가 없으면 ACTIVE_KEY_NOT_FOUND 예외가 발생한다")
     void throwsWhenActiveKeyNotFoundOnRevoke() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
         given(userMapper.revokeActiveKey(HASHED_VALUE)).willReturn(0);
@@ -202,6 +202,6 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.revokeUserKey("raw-key"))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
+                .isEqualTo(IdentityErrorCode.ACTIVE_KEY_NOT_FOUND);
     }
 }

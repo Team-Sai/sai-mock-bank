@@ -62,7 +62,7 @@ public class BankLinkService {
         String hashedKey = userKeyHasher.hash(rawUserKey);
         int updatedRow = userMapper.revokeActiveKey(hashedKey);
         if (updatedRow == 0) {
-            throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
+            throw IdentityErrorCode.ACTIVE_KEY_NOT_FOUND.toException();
         }
     }
 

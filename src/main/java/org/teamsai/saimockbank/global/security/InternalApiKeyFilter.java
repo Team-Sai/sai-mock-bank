@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Component
 public class InternalApiKeyFilter extends OncePerRequestFilter {
@@ -25,10 +27,19 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         String providedKey = request.getHeader(HEADER_NAME);
-        if (expectedApiKey.equals(providedKey)) {
+        if (isValidKey(providedKey)) {
             filterChain.doFilter(request, response);
             return;
         }
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    private boolean isValidKey(String providedKey) {
+        if (providedKey == null) {
+            return false;
+        }
+        byte[] expectedBytes = expectedApiKey.getBytes(StandardCharsets.UTF_8);
+        byte[] providedBytes = providedKey.getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expectedBytes, providedBytes);
     }
 }

@@ -60,7 +60,13 @@ public class BankLinkService {
             throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
         }
     }
-
+    /**
+     * 만료된 PENDING 상태를 EXPIRED로 정리합니다.
+     * TODO(#139): 현재 이 메서드를 호출하는 배치/스케줄러가 없습니다.
+     *   confirm 안 된 PENDING은 promotePendingToActive/savePendingUserKey의
+     *   만료 조건으로 기능상 우회되지만, key_status='PENDING' 값 자체는
+     *   DB에 영구히 남습니다. 별도 이슈에서 @Scheduled 배치로 정리 예정.
+     */
     @Transactional
     public void expireUserKey(Long bankUserId, LocalDateTime pendingIssuedAt) {
         userMapper.markPendingExpired(

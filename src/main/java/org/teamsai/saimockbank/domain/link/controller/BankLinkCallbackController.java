@@ -9,9 +9,9 @@ import org.teamsai.saimockbank.domain.user.service.BankLinkService;
 
 @Controller
 @RequiredArgsConstructor
-public class BankLinkCalbackController {
+public class BankLinkCallbackController {
     private final BankLinkService bankLinkService;
-    
+
     @PostMapping("/api/link/confirm-key")
     @ResponseBody
     public void confirmUserKey(@RequestBody ConfirmKeyRequest request) {

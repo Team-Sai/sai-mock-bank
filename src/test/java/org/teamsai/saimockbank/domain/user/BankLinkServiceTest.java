@@ -33,10 +33,8 @@ class BankLinkServiceTest {
 
     @Mock
     private UserMapper userMapper;
-
     @Mock
     private UserKeyHasher userKeyHasher;
-
     @InjectMocks
     private BankLinkService bankLinkService;
 
@@ -54,13 +52,13 @@ class BankLinkServiceTest {
     }
 
     @Test
-    @DisplayName("연동되지 않은 회원이면 userKey를 발급하고 원본 값을 응답으로 반환한다")
-    void issuesUserKeyWhenNotLinkedYet() {
+    @DisplayName("연동되지 않은 회원이면 PENDING 상태로 userKey를 저장하고 원본 값을 응답으로 반환한다")
+    void issuesPendingUserKeyWhenNotLinkedYet() {
         UserDTO identity = createIdentity(BANK_USER_ID, null);
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(identity));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.updateUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class)))
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(1);
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
@@ -72,16 +70,18 @@ class BankLinkServiceTest {
         verify(userKeyHasher).hash(hashInputCaptor.capture());
         assertThat(hashInputCaptor.getValue()).isEqualTo(response.userKey());
 
-        ArgumentCaptor<String> userKeyHashCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> pendingKeyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<LocalDateTime> issuedAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(userMapper).updateUserKey(
+        ArgumentCaptor<LocalDateTime> expiresAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(userMapper).savePendingUserKey(
                 eq(BANK_USER_ID),
-                userKeyHashCaptor.capture(),
-                issuedAtCaptor.capture()
+                pendingKeyCaptor.capture(),
+                issuedAtCaptor.capture(),
+                expiresAtCaptor.capture()
         );
-
-        assertThat(userKeyHashCaptor.getValue()).isEqualTo(HASHED_VALUE);
+        assertThat(pendingKeyCaptor.getValue()).isEqualTo(HASHED_VALUE);
         assertThat(issuedAtCaptor.getValue()).isEqualTo(response.issuedAt());
+        assertThat(expiresAtCaptor.getValue()).isAfter(issuedAtCaptor.getValue());
     }
 
     @Test
@@ -89,16 +89,14 @@ class BankLinkServiceTest {
     void generatesDifferentUserKeyForDifferentUsers() {
         String name2 = "김철수";
         String userToken2 = "user-token-def";
-
         UserDTO identity1 = createIdentity(BANK_USER_ID, null);
         UserDTO identity2 = createIdentity(2L, null);
-
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(identity1));
         given(userMapper.findByNameAndUserToken(name2, userToken2))
                 .willReturn(Optional.of(identity2));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.updateUserKey(anyLong(), anyString(), any(LocalDateTime.class)))
+        given(userMapper.savePendingUserKey(anyLong(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(1);
 
         MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN);
@@ -108,7 +106,7 @@ class BankLinkServiceTest {
     }
 
     @Test
-    @DisplayName("일치하는 회원이 없으면 USER_NOT_FOUND 예외가 발생하고 해싱/업데이트는 호출되지 않는다")
+    @DisplayName("일치하는 회원이 없으면 USER_NOT_FOUND 예외가 발생하고 해싱/저장은 호출되지 않는다")
     void throwsWhenUserNotFound() {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.empty());
@@ -119,39 +117,62 @@ class BankLinkServiceTest {
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
 
         verify(userKeyHasher, never()).hash(anyString());
-        verify(userMapper, never()).updateUserKey(any(), any(), any());
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any());
     }
 
     @Test
-    @DisplayName("이미 userKeyHash가 발급된 회원도 재연동 시 새 userKey를 발급받는다")
-    void reissuesUserKeyWhenAlreadyLinked() {
+    @DisplayName("이미 연동된 회원도 재연동 시 새 PENDING userKey를 발급받는다")
+    void reissuesPendingUserKeyWhenAlreadyLinked() {
         UserDTO alreadyLinkedUser = createIdentity(BANK_USER_ID, "existing-hashed-user-key");
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(alreadyLinkedUser));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.updateUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class)))
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(1);
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
 
         assertThat(response.userKey()).isNotNull().startsWith("mb_");
         verify(userKeyHasher).hash(anyString());
-        verify(userMapper).updateUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class));
+        verify(userMapper).savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class));
     }
 
     @Test
-    @DisplayName("동시 요청으로 인해 업데이트가 반영되지 않으면 LINK_KEY_UPDATE_CONFLICT 예외가 발생한다")
-    void throwsWhenConcurrentUpdateFails() {
+    @DisplayName("이미 유효한 PENDING이 진행 중이면 PENDING_KEY_ALREADY_EXISTS 예외가 발생한다")
+    void throwsWhenPendingAlreadyExists() {
         UserDTO user = createIdentity(BANK_USER_ID, null);
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(user));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.updateUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class)))
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .willReturn(0);
 
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
-                .isEqualTo(IdentityErrorCode.LINK_KEY_UPDATE_CONFLICT);
+                .isEqualTo(IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS);
+    }
+
+    @Test
+    @DisplayName("유효한 PENDING의 rawKey로 confirm하면 ACTIVE로 전환된다")
+    void confirmsUserKeySuccessfully() {
+        given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
+        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(1);
+
+        bankLinkService.confirmUserKey("raw-key");
+
+        verify(userMapper).promotePendingToActive(HASHED_VALUE);
+    }
+
+    @Test
+    @DisplayName("대응하는 PENDING이 없으면 PENDING_KEY_NOT_FOUND 예외가 발생한다")
+    void throwsWhenPendingKeyNotFoundOnConfirm() {
+        given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
+        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(0);
+
+        assertThatThrownBy(() -> bankLinkService.confirmUserKey("raw-key"))
+                .isInstanceOf(DomainException.class)
+                .extracting("errorCode")
+                .isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
     }
 }

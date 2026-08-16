@@ -15,7 +15,6 @@ import org.teamsai.saimockbank.domain.user.exception.UserErrorCode;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import org.teamsai.saimockbank.domain.user.service.BankLinkService;
 import org.teamsai.saimockbank.domain.user.service.UserKeyHasher;
-import org.teamsai.saimockbank.domain.user.type.UserKeyStatus;
 import org.teamsai.saimockbank.global.exception.DomainException;
 
 import java.time.LocalDateTime;
@@ -60,8 +59,7 @@ class BankLinkServiceTest {
                 .willReturn(Optional.of(identity));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
         given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class),
-                eq(UserKeyStatus.PENDING.name())
+                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).willReturn(1);
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
@@ -76,18 +74,15 @@ class BankLinkServiceTest {
         ArgumentCaptor<String> pendingKeyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<LocalDateTime> issuedAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> expiresAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-        ArgumentCaptor<String> statusCaptor = ArgumentCaptor.forClass(String.class);
         verify(userMapper).savePendingUserKey(
                 eq(BANK_USER_ID),
                 pendingKeyCaptor.capture(),
                 issuedAtCaptor.capture(),
-                expiresAtCaptor.capture(),
-                statusCaptor.capture()
+                expiresAtCaptor.capture()
         );
         assertThat(pendingKeyCaptor.getValue()).isEqualTo(HASHED_VALUE);
         assertThat(issuedAtCaptor.getValue()).isEqualTo(response.issuedAt());
         assertThat(expiresAtCaptor.getValue()).isAfter(issuedAtCaptor.getValue());
-        assertThat(statusCaptor.getValue()).isEqualTo(UserKeyStatus.PENDING.name());
     }
 
     @Test
@@ -103,7 +98,7 @@ class BankLinkServiceTest {
                 .willReturn(Optional.of(identity2));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
         given(userMapper.savePendingUserKey(
-                anyLong(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), anyString()
+                anyLong(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).willReturn(1);
 
         MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN);
@@ -124,7 +119,7 @@ class BankLinkServiceTest {
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
 
         verify(userKeyHasher, never()).hash(anyString());
-        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), any());
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any());
     }
 
     @Test
@@ -135,7 +130,7 @@ class BankLinkServiceTest {
                 .willReturn(Optional.of(alreadyLinkedUser));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
         given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), anyString()
+                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).willReturn(1);
 
         MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
@@ -143,7 +138,7 @@ class BankLinkServiceTest {
         assertThat(response.userKey()).isNotNull().startsWith("mb_");
         verify(userKeyHasher).hash(anyString());
         verify(userMapper).savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), anyString()
+                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
         );
     }
 
@@ -155,7 +150,7 @@ class BankLinkServiceTest {
                 .willReturn(Optional.of(user));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
         given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), anyString()
+                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
         )).willReturn(0);
 
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
@@ -168,26 +163,43 @@ class BankLinkServiceTest {
     @DisplayName("유효한 PENDING의 rawKey로 confirm하면 ACTIVE로 전환된다")
     void confirmsUserKeySuccessfully() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.promotePendingToActive(
-                HASHED_VALUE, UserKeyStatus.ACTIVE.name(), UserKeyStatus.PENDING.name()
-        )).willReturn(1);
+        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(1);
 
         bankLinkService.confirmUserKey("raw-key");
 
-        verify(userMapper).promotePendingToActive(
-                HASHED_VALUE, UserKeyStatus.ACTIVE.name(), UserKeyStatus.PENDING.name()
-        );
+        verify(userMapper).promotePendingToActive(HASHED_VALUE);
     }
 
     @Test
     @DisplayName("대응하는 PENDING이 없으면 PENDING_KEY_NOT_FOUND 예외가 발생한다")
     void throwsWhenPendingKeyNotFoundOnConfirm() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.promotePendingToActive(
-                HASHED_VALUE, UserKeyStatus.ACTIVE.name(), UserKeyStatus.PENDING.name()
-        )).willReturn(0);
+        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(0);
 
         assertThatThrownBy(() -> bankLinkService.confirmUserKey("raw-key"))
+                .isInstanceOf(DomainException.class)
+                .extracting("errorCode")
+                .isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("ACTIVE 상태의 rawKey로 revoke하면 EXPIRED로 전환된다")
+    void revokesActiveKeySuccessfully() {
+        given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
+        given(userMapper.revokeActiveKey(HASHED_VALUE)).willReturn(1);
+
+        bankLinkService.revokeUserKey("raw-key");
+
+        verify(userMapper).revokeActiveKey(HASHED_VALUE);
+    }
+
+    @Test
+    @DisplayName("대응하는 ACTIVE 키가 없으면 PENDING_KEY_NOT_FOUND 예외가 발생한다")
+    void throwsWhenActiveKeyNotFoundOnRevoke() {
+        given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
+        given(userMapper.revokeActiveKey(HASHED_VALUE)).willReturn(0);
+
+        assertThatThrownBy(() -> bankLinkService.revokeUserKey("raw-key"))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
                 .isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);

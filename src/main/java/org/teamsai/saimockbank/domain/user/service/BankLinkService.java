@@ -9,7 +9,6 @@ import org.teamsai.saimockbank.domain.user.dto.MockBankLinkResponse;
 import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.exception.UserErrorCode;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
-import org.teamsai.saimockbank.domain.user.type.UserKeyStatus;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -36,39 +35,35 @@ public class BankLinkService {
         LocalDateTime expiresAt = issuedAt.plusMinutes(PENDING_TTL_MINUTES);
 
         int updatedRow = userMapper.savePendingUserKey(
-                user.getBankUserId(), hashedKey, issuedAt, expiresAt,
-                UserKeyStatus.PENDING.name()
+                user.getBankUserId(), hashedKey, issuedAt, expiresAt
         );
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS.toException();
         }
-
         return new MockBankLinkResponse(rawKey, issuedAt);
     }
 
     @Transactional
     public void confirmUserKey(String rawUserKey) {
         String hashedKey = userKeyHasher.hash(rawUserKey);
-        int updatedRow = userMapper.promotePendingToActive(
-                hashedKey,
-                UserKeyStatus.ACTIVE.name(),
-                UserKeyStatus.PENDING.name()
-        );
+        int updatedRow = userMapper.promotePendingToActive(hashedKey);
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
         }
     }
-    /**
-     * 만료된 PENDING 상태를 EXPIRED로 정리.
-     * 별도 이슈(#139)에서 @Scheduled 배치로 정리 예정.
-     */
+
     @Transactional
     public void expireUserKey(Long bankUserId, LocalDateTime pendingIssuedAt) {
-        userMapper.markPendingExpired(
-                bankUserId, pendingIssuedAt,
-                UserKeyStatus.EXPIRED.name(),
-                UserKeyStatus.PENDING.name()
-        );
+        userMapper.markPendingExpired(bankUserId, pendingIssuedAt);
+    }
+
+    @Transactional
+    public void revokeUserKey(String rawUserKey) {
+        String hashedKey = userKeyHasher.hash(rawUserKey);
+        int updatedRow = userMapper.revokeActiveKey(hashedKey);
+        if (updatedRow == 0) {
+            throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
+        }
     }
 
     private String generateUserKey() {

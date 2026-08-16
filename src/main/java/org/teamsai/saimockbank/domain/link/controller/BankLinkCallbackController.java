@@ -25,6 +25,12 @@ public class BankLinkCallbackController {
         bankLinkService.confirmUserKey(request.userKey());
     }
 
+    @PostMapping("/api/link/revoke-key")
+    @ResponseBody
+    public void revokeUserKey(@Valid @RequestBody ConfirmKeyRequest request) {
+        bankLinkService.revokeUserKey(request.userKey());
+    }
+
     public record ConfirmKeyRequest(
             @NotBlank(message = "userKey는 필수입니다.") String userKey
     ) {}

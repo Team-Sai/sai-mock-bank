@@ -13,8 +13,11 @@ public interface UserMapper {
             @Param("bankUserId") Long bankUserId,
             @Param("pendingUserKey") String pendingUserKey,
             @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt,
-            @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt,
-            @Param("pendingStatus") String pendingStatus
+            @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt
+    );
+
+    int revokeActiveKey(
+            @Param("hashedKey") String hashedKey
     );
 
     int insert(UserDTO user);
@@ -40,15 +43,11 @@ public interface UserMapper {
     );
 
     int promotePendingToActive(
-            @Param("hashedKey") String hashedKey,
-            @Param("activeStatus") String activeStatus,
-            @Param("pendingStatus") String pendingStatus
+            @Param("hashedKey") String hashedKey
     );
 
     int markPendingExpired(
             @Param("bankUserId") Long bankUserId,
-            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt,
-            @Param("expiredStatus") String expiredStatus,
-            @Param("pendingStatus") String pendingStatus
+            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt
     );
 }

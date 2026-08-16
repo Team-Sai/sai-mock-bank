@@ -121,7 +121,6 @@
         SET key_status    = 'EXPIRED',
         user_key_hash = NULL
         WHERE user_key_hash = #{hashedKey}
-        AND key_status = 'ACTIVE'
     </update>
 
 </mapper>

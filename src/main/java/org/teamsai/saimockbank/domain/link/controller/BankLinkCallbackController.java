@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.teamsai.saimockbank.domain.user.service.BankLinkService;
 
+/**
+ * 사이원장이 계좌 연동 콜백 처리를 마친 뒤 서버 간 호출로
+ * PENDING 상태의 userKey를 ACTIVE로 확정시키는 엔드포인트
+ * 이 컨트롤러를 호출하는 코드는 mock-bank 안에 없음.
+ */
 @Controller
 @RequiredArgsConstructor
 public class BankLinkCallbackController {

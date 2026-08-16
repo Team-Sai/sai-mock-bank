@@ -22,8 +22,8 @@ public class BankLinkService {
 
     private final UserMapper userMapper;
     private final UserKeyHasher userKeyHasher;
-
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+    private static final long PENDING_TTL_MINUTES = 5;
 
     @Transactional
     public MockBankLinkResponse issueUserKey(String name, String userToken) {
@@ -46,8 +46,6 @@ public class BankLinkService {
         return new MockBankLinkResponse(rawKey, issuedAt);
     }
 
-    private static final long PENDING_TTL_MINUTES = 5;
-
     @Transactional
     public void confirmUserKey(String rawUserKey) {
         String hashedKey = userKeyHasher.hash(rawUserKey);
@@ -61,11 +59,8 @@ public class BankLinkService {
         }
     }
     /**
-     * 만료된 PENDING 상태를 EXPIRED로 정리합니다.
-     * TODO(#139): 현재 이 메서드를 호출하는 배치/스케줄러가 없습니다.
-     *   confirm 안 된 PENDING은 promotePendingToActive/savePendingUserKey의
-     *   만료 조건으로 기능상 우회되지만, key_status='PENDING' 값 자체는
-     *   DB에 영구히 남습니다. 별도 이슈에서 @Scheduled 배치로 정리 예정.
+     * 만료된 PENDING 상태를 EXPIRED로 정리.
+     * 별도 이슈(#139)에서 @Scheduled 배치로 정리 예정.
      */
     @Transactional
     public void expireUserKey(Long bankUserId, LocalDateTime pendingIssuedAt) {

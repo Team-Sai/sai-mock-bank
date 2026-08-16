@@ -116,7 +116,7 @@
         AND pending_issued_at = #{pendingIssuedAt}
     </update>
 
-    <update id="revokeActiveKey">
+    <update id="revokeUserKey">
         UPDATE bank_user
         SET key_status    = 'EXPIRED',
         user_key_hash = NULL

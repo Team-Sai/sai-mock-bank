@@ -16,7 +16,7 @@ public interface UserMapper {
             @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt
     );
 
-    int revokeActiveKey(
+    int revokeUserKey(
             @Param("hashedKey") String hashedKey
     );
 

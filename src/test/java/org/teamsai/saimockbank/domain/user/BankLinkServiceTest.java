@@ -186,18 +186,18 @@ class BankLinkServiceTest {
     @DisplayName("ACTIVE 상태의 rawKey로 revoke하면 EXPIRED로 전환된다")
     void revokesActiveKeySuccessfully() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.revokeActiveKey(HASHED_VALUE)).willReturn(1);
+        given(userMapper.revokeUserKey(HASHED_VALUE)).willReturn(1);
 
         bankLinkService.revokeUserKey("raw-key");
 
-        verify(userMapper).revokeActiveKey(HASHED_VALUE);
+        verify(userMapper).revokeUserKey(HASHED_VALUE);
     }
 
     @Test
     @DisplayName("대응하는 ACTIVE 키가 없으면 ACTIVE_KEY_NOT_FOUND 예외가 발생한다")
     void throwsWhenActiveKeyNotFoundOnRevoke() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.revokeActiveKey(HASHED_VALUE)).willReturn(0);
+        given(userMapper.revokeUserKey(HASHED_VALUE)).willReturn(0);
 
         assertThatThrownBy(() -> bankLinkService.revokeUserKey("raw-key"))
                 .isInstanceOf(DomainException.class)

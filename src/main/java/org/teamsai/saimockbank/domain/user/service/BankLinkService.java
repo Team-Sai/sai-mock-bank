@@ -60,7 +60,7 @@ public class BankLinkService {
     @Transactional
     public void revokeUserKey(String rawUserKey) {
         String hashedKey = userKeyHasher.hash(rawUserKey);
-        int updatedRow = userMapper.revokeActiveKey(hashedKey);
+        int updatedRow = userMapper.revokeUserKey(hashedKey);
         if (updatedRow == 0) {
             throw IdentityErrorCode.ACTIVE_KEY_NOT_FOUND.toException();
         }

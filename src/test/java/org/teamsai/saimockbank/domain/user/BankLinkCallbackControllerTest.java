@@ -78,4 +78,22 @@ class BankLinkCallbackControllerTest {
 
         verify(bankLinkService).confirmUserKey("rawKey");
     }
+
+    @Test
+    void confirmKey_userKey가_빈값이면_400() throws Exception {
+        mockMvc.perform(post("/api/link/confirm-key")
+                        .header("X-Internal-Api-Key", validApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userKey\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void confirmKey_userKey가_null이면_400() throws Exception {
+        mockMvc.perform(post("/api/link/confirm-key")
+                        .header("X-Internal-Api-Key", validApiKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
 }

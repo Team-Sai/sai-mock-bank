@@ -1,5 +1,7 @@
 package org.teamsai.saimockbank.domain.link.controller;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,9 +16,11 @@ public class BankLinkCallbackController {
 
     @PostMapping("/api/link/confirm-key")
     @ResponseBody
-    public void confirmUserKey(@RequestBody ConfirmKeyRequest request) {
+    public void confirmUserKey(@Valid @RequestBody ConfirmKeyRequest request) {
         bankLinkService.confirmUserKey(request.userKey());
     }
 
-    public record ConfirmKeyRequest(String userKey) {}
+    public record ConfirmKeyRequest(
+            @NotBlank(message = "userKey는 필수입니다.") String userKey
+    ) {}
 }

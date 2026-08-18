@@ -9,6 +9,21 @@ import java.util.Optional;
 
 @Mapper
 public interface UserMapper {
+    int savePendingUserKey(
+            @Param("bankUserId") Long bankUserId,
+            @Param("pendingUserKey") String pendingUserKey,
+            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt,
+            @Param("pendingExpiresAt") LocalDateTime pendingExpiresAt
+    );
+
+    int revokeUserKey(
+            @Param("hashedKey") String hashedKey
+    );
+
+    int restoreActiveKey(
+            @Param("CurrentHashedKey") String currentHashedKey,
+            @Param("previousHashedKey") String previousHashedKey);
+
     int insert(UserDTO user);
 
     boolean existsByEmail(
@@ -24,12 +39,19 @@ public interface UserMapper {
             @Param("bankUserId") Long bankUserId
     );
     Optional<UserDTO> findByNameAndUserToken(@Param("name") String name, @Param("userToken") String userToken);
-    int updateUserKey(@Param("bankUserId") Long bankUserId,
-                       @Param("userKeyHash") String userKeyHash,
-                       @Param("issuedAt") LocalDateTime issuedAt);
+
     int deleteByUserId(@Param("userId") Long userId);
 
     boolean existsByUserToken(
             @Param("userToken") String userToken
+    );
+
+    int promotePendingToActive(
+            @Param("hashedKey") String hashedKey
+    );
+
+    int markPendingExpired(
+            @Param("bankUserId") Long bankUserId,
+            @Param("pendingIssuedAt") LocalDateTime pendingIssuedAt
     );
 }

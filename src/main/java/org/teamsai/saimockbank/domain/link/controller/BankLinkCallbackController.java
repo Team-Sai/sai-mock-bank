@@ -31,6 +31,17 @@ public class BankLinkCallbackController {
         bankLinkService.revokeUserKey(request.userKey());
     }
 
+    @PostMapping("/api/link/restore-key")
+    @ResponseBody
+    public void restoreUserKey(@Valid @RequestBody RestoreKeyRequest request) {
+        bankLinkService.restoreUserKey(request.currentUserKey(), request.previousUserKey());
+    }
+
+    public record RestoreKeyRequest(
+            @NotBlank(message = "currentUserKey는 필수입니다.") String currentUserKey,
+            @NotBlank(message = "previousUserKey는 필수입니다.") String previousUserKey
+    ) {}
+
     public record ConfirmKeyRequest(
             @NotBlank(message = "userKey는 필수입니다.") String userKey
     ) {}

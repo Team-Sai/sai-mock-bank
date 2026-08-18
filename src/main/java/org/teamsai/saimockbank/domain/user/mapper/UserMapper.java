@@ -20,6 +20,10 @@ public interface UserMapper {
             @Param("hashedKey") String hashedKey
     );
 
+    int restoreActiveKey(
+            @Param("CurrentHashedKey") String currentHashedKey,
+            @Param("previousHashedKey") String previousHashedKey);
+
     int insert(UserDTO user);
 
     boolean existsByEmail(

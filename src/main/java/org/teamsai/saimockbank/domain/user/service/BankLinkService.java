@@ -75,6 +75,16 @@ public class BankLinkService {
         }
     }
 
+    @Transactional
+    public void restoreUserKey(String currentRawKey, String previousRawKey) {
+        String currentHashed = userKeyHasher.hash(currentRawKey);
+        String previousHashed = userKeyHasher.hash(previousRawKey);
+        int updatedRow = userMapper.restoreActiveKey(currentHashed, previousHashed);
+        if (updatedRow == 0) {
+            throw IdentityErrorCode.ACTIVE_KEY_NOT_FOUND.toException();
+        }
+    }
+    
     private String generateUserKey() {
         byte[] bytes = new byte[32];
         SECURE_RANDOM.nextBytes(bytes);

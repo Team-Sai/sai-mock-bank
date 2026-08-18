@@ -126,4 +126,14 @@
         WHERE user_key_hash = #{hashedKey}
     </update>
 
+    <update id="restoreActiveKey">
+        UPDATE bank_user
+        SET user_key_hash       = #{previousHashedKey},
+        key_status          = 'ACTIVE',
+        pending_user_key    = NULL,
+        pending_issued_at   = NULL,
+        pending_expires_at  = NULL
+        WHERE user_key_hash = #{currentHashedKey}
+    </update>
+
 </mapper>

@@ -58,7 +58,7 @@ public class SecurityConfig {
             HttpSecurity http,
             InternalApiKeyFilter internalApiKeyFilter
     ) throws Exception {
-        http.securityMatcher("/api/link/confirm-key", "/api/link/revoke-key")
+        http.securityMatcher("/api/link/confirm-key", "/api/link/revoke-key", "/api/link/restore-key")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

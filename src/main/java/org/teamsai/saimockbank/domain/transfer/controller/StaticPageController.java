@@ -23,4 +23,9 @@ public class StaticPageController { //더이상 이체 기능에 수정이 필�
     public String transactions() {
         return "transaction/transactions";
     }
+
+    @GetMapping("/link-invalid")
+    public String linkInvalid() {
+        return "link/link-invalid";
+    }
 }

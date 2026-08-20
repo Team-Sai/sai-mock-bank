@@ -123,7 +123,7 @@ public class SecurityConfig {
                                         "/transfer-history",
                                         "/link/identity-mismatch",
                                         "/transactions",
-                                        "/link/invalid"
+                                        "/link-invalid"
                                 )
                                 .permitAll()
 

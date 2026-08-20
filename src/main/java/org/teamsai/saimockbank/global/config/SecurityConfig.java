@@ -122,6 +122,7 @@ public class SecurityConfig {
                                         "/transfer",
                                         "/transfer-history",
                                         "/link/identity-mismatch",
+                                        "/transactions",
                                         "/link/invalid"
                                 )
                                 .permitAll()

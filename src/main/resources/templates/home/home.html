@@ -20,8 +20,8 @@
 
         <nav class="main-nav" aria-label="주요 메뉴">
             <a data-route="main" href="/home" class="main-nav__link is-active">계좌</a>
-            <a href="/transfer" class="main-nav__link">이체</a>
-            <a href="/transfer-history" class="main-nav__link">내역</a>
+            <a href="/transfer-history" class="main-nav__link">이체</a>
+            <a href="/transactions" class="main-nav__link">내역</a>
             <span class="main-nav__link is-disabled" aria-disabled="true" title="사이원장에서 신청해주세요">서비스</span>
         </nav>
 
@@ -59,7 +59,7 @@
     <section class="transactions">
         <div class="transactions__header">
             <h3 class="transactions__title">최근 거래 내역</h3>
-            <a href="/transfer-history" class="transactions__more">
+            <a href="/transactions" class="transactions__more">
                 전체 보기
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5 12h14"></path>
@@ -95,6 +95,7 @@
     </div>
 </footer>
 
+<script th:src="@{/js/common/transaction-utils.js}" src="/js/common/transaction-utils.js"></script>
 <script th:src="@{/js/home/home.js}" src="/js/home/home.js" defer></script>
 </body>
 </html>

@@ -32,15 +32,28 @@ public class BankTransactionController {
         return bankTransactionService.getTransactions(accountId, userKey, afterTransactionId);
     }
 
-    @Operation(summary = "내 계좌 거래내역 조회 (로그인 기반)")
+    @Operation(summary = "내 계좌 거래내역 조회 - 최신순 페이지네이션 (로그인 기반)")
     @GetMapping("/my/{accountId}/transactions")
     public List<TransactionResponse> getMyTransactions(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long accountId,
-            @RequestParam(required = false, defaultValue = "0") Long afterTransactionId
+            @RequestParam(required = false) Long beforeTransactionId,
+            @RequestParam(required = false, defaultValue = "10") int size
     ) {
         return bankTransactionService.getMyTransactions(
-                userDetails.getUserId(), accountId, afterTransactionId
+                userDetails.getUserId(), accountId, beforeTransactionId, size
+        );
+    }
+
+    @Operation(summary = "내 전체 계좌 거래내역 조회 - 최신순 페이지네이션 (로그인 기반)")
+    @GetMapping("/my/transactions")
+    public List<TransactionResponse> getMyAllTransactions(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long beforeTransactionId,
+            @RequestParam(required = false, defaultValue = "10") int size
+    ) {
+        return bankTransactionService.getMyAllTransactions(
+                userDetails.getUserId(), beforeTransactionId, size
         );
     }
 }

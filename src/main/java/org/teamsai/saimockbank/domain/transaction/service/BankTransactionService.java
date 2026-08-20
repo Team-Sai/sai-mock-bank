@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.transaction.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
 import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionResponse;
@@ -96,5 +97,46 @@ public class BankTransactionService {
         if (accountId == null || accountId <= 0 || bankUserId == null) {
             throw TransactionErrorCode.INVALID_TRANSACTION_REQUEST.toException();
         }
+    }
+
+    public List<TransactionResponse> getMyTransactions(
+            Long bankUserId,
+            Long accountId,
+            Long beforeTransactionId,
+            int size
+    ) {
+        validateRequest(accountId, bankUserId);
+
+        boolean owned = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
+                .anyMatch(account -> account.getAccountId().equals(accountId));
+        if (!owned) {
+            throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+        }
+
+        return bankTransactionMapper
+                .findRecentByAccountId(accountId, beforeTransactionId, size)
+                .stream()
+                .map(TransactionResponse::from)
+                .toList();
+    }
+
+    public List<TransactionResponse> getMyAllTransactions(
+            Long bankUserId,
+            Long beforeTransactionId,
+            int size
+    ) {
+        List<Long> accountIds = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
+                .map(BankAccountDTO::getAccountId)
+                .toList();
+
+        if (accountIds.isEmpty()) {
+            return List.of();
+        }
+
+        return bankTransactionMapper
+                .findRecentByAccountIds(accountIds, beforeTransactionId, size)
+                .stream()
+                .map(TransactionResponse::from)
+                .toList();
     }
 }

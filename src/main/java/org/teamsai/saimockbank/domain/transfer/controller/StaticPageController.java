@@ -18,4 +18,9 @@ public class StaticPageController { //더이상 이체 기능에 수정이 필�
     public String transferHistoryPage() {
         return "transfer/transfer-history";
     }
+
+    @GetMapping("/transactions")
+    public String transactions() {
+        return "transaction/transactions";
+    }
 }

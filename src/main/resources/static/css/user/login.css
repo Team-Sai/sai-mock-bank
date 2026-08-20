@@ -27,6 +27,18 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-image {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+
 button,
 input {
     font: inherit;

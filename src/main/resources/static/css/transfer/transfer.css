@@ -1,53 +1,48 @@
 :root {
-    --bank-page: #f6f5fb;
+    --bank-page: #f9fafb;
     --bank-surface: #ffffff;
-    --bank-primary: #7c5cd6;
-    --bank-primary-hover: #6b4bc4;
-    --bank-primary-soft: #f0ecfc;
-    --bank-text: #191b23;
+    --bank-primary: #9333ea;
+    --bank-primary-hover: #7e22ce;
+    --bank-primary-soft: #f3e8ff;
+    --bank-text: #111827;
     --bank-muted: #6b7280;
-    --bank-line: #e3e1ef;
+    --bank-line: #e5e7eb;
     --bank-error: #ba1a1a;
     --bank-error-bg: #fff2f1;
     --bank-error-line: #f0beb9;
-    --bank-success-bg: #eef8f0;
-    --bank-success-text: #1c7a3c;
+    --bank-success-bg: #f6f4ff;
+    --bank-success-text: #421ba8;
     --bank-pending-bg: #fff7e6;
     --bank-pending-text: #9a6b00;
-
-    --font-ui: 'Pretendard';
+    --font-ui: 'Pretendard', sans-serif;
     --font-mono: "JetBrains Mono", monospace;
 }
-
 * {
     box-sizing: border-box;
 }
-
 html, body {
     margin: 0;
     padding: 0;
 }
-
 body {
     background: var(--bank-page);
     color: var(--bank-text);
     font-family: var(--font-ui);
     line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
-
 button, input {
     font: inherit;
 }
-
 button {
     cursor: pointer;
 }
-
 a {
     color: inherit;
     text-decoration: none;
 }
-
 svg {
     fill: none;
     stroke: currentColor;
@@ -55,235 +50,85 @@ svg {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-
 .mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.02em;
 }
-
-/* Top header (공통 헤더 — 마이페이지/계좌 연결과 동일) */
-
-.top-header {
-    height: 56px;
-    padding: 0 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bank-surface);
-    border-bottom: 1px solid #c3c6d7;
-}
-
-.breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-}
-
-.breadcrumb a {
-    color: #434655;
-}
-
-.header-tools {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.search-box {
-    width: 200px;
-    height: 36px;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    background: #f7f7fb;
-    border-radius: 10px;
-}
-
-.search-box svg {
-    width: 17px;
-    height: 17px;
-    color: #596071;
-}
-
-.search-box input {
-    width: 100%;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    font-size: 12px;
-}
-
-.icon-button {
-    width: 31px;
-    height: 31px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #414756;
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-}
-
-.icon-button:hover {
-    color: var(--bank-primary);
-    background: #f1f3f7;
-}
-
-.icon-button svg {
-    width: 18px;
-    height: 18px;
-}
-
-.notification-button {
-    position: relative;
-}
-
-.notification-button span {
-    position: absolute;
-    top: 4px;
-    right: 5px;
-    width: 6px;
-    height: 6px;
-    background: #c62424;
-    border-radius: 50%;
-}
-
-.header-user-name {
-    min-width: 38px;
-    text-align: right;
-    font-size: 12px;
-}
-
-.header-profile {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: #f3f5f8;
-    border: 1px solid #c3c6d7;
-    border-radius: 50%;
-}
-
-.header-profile img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.header-profile svg {
-    width: 18px;
-    height: 18px;
-    color: #8b93a2;
-}
-
-@media (max-width: 820px) {
-    .search-box {
-        display: none;
-    }
-}
-
-@media (max-width: 640px) {
-    .top-header {
-        padding: 0 18px;
-    }
-
-    .header-user-name {
-        display: none;
-    }
-}
-
 /* Page */
-
 .page {
     max-width: 960px;
     margin: 0 auto;
     padding: 48px 24px 96px;
+    flex: 1 0 auto;
+    width: 100%;
 }
 
-/* Header */
-
-.page-header {
-    margin-bottom: 40px;
-    text-align: left;
-}
-
-.brand {
+.section-header {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 20px;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--bank-text);
+    padding-bottom: 17px;
+    margin-bottom: 8px;
 }
 
-.brand-mark {
-    font-weight: 800;
-    font-size: 16px;
-    color: var(--bank-primary);
-    letter-spacing: -0.01em;
-}
-
-.brand-sub {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--bank-muted);
-    letter-spacing: 0.12em;
-}
-
-.page-header h1 {
-    margin: 0 0 8px;
+.page-title {
+    margin: 0;
     font-size: 26px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--bank-text);
 }
 
+.back-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--bank-primary);
+}
+
+.back-link svg {
+    width: 11px;
+    height: 9px;
+    stroke-width: 2;
+}
+
 .page-desc {
-    margin: 0;
+    margin: 8px 0 32px;
     font-size: 14px;
     color: var(--bank-muted);
 }
-
 /* Grid */
-
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     align-items: start;
 }
-
 @media (max-width: 760px) {
     .grid {
         grid-template-columns: 1fr;
     }
-
     .field-row {
         grid-template-columns: 1fr;
     }
 }
-
 /* Panel */
-
 .panel {
     background: var(--bank-surface);
-    border: 1.5px solid var(--bank-line);
-    border-radius: 12px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 28px;
 }
-
 .panel-head {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 24px;
 }
-
 .panel-index {
     display: inline-flex;
     align-items: center;
@@ -298,31 +143,26 @@ svg {
     background: var(--bank-primary-soft);
     border-radius: 999px;
 }
-
 .panel-head h2 {
     margin: 0;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: -0.01em;
 }
-
 /* Form */
-
 .form {
     display: flex;
     flex-direction: column;
     gap: 18px;
 }
-
 .field {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
-
 .field select {
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 11px 12px;
     font-size: 14px;
     font-family: inherit;
@@ -338,34 +178,29 @@ svg {
     color: var(--bank-muted);
     background: #FAFAFC;
 }
-
 .field-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
-
 .field label {
     font-size: 13px;
     font-weight: 700;
     color: var(--bank-text);
 }
-
 .field label .optional {
     font-weight: 400;
     color: var(--bank-muted);
     margin-left: 4px;
 }
-
 .field-hint {
     margin: 2px 0 0;
     font-size: 12px;
     color: var(--bank-muted);
 }
-
 .field input {
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 11px 12px;
     font-size: 14px;
     font-family: inherit;
@@ -373,76 +208,64 @@ svg {
     background: var(--bank-surface);
     transition: border-color .15s, background .15s;
 }
-
 .field input::placeholder {
     color: #A7A9B5;
 }
-
 .field input:focus {
     outline: none;
     border-color: var(--bank-primary);
     background: var(--bank-primary-soft);
 }
-
 .field input:focus-visible {
     outline: 2px solid var(--bank-primary);
     outline-offset: 1px;
 }
-
 .request-key-row {
     display: flex;
     gap: 8px;
 }
-
 .request-key-row input {
     flex: 1;
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 11px 12px;
     font-size: 13px;
     color: var(--bank-muted);
     background: #FAFAFC;
 }
-
 .request-key-row input:focus {
     outline: none;
     border-color: var(--bank-primary);
     color: var(--bank-text);
     background: var(--bank-primary-soft);
 }
-
 .btn-ghost {
     flex-shrink: 0;
     width: 40px;
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     background: var(--bank-surface);
     color: var(--bank-primary);
     font-size: 16px;
 }
-
 .btn-ghost:hover {
     border-color: var(--bank-primary);
     background: var(--bank-primary-soft);
 }
-
 .btn-ghost:focus-visible {
     outline: 2px solid var(--bank-primary);
     outline-offset: 2px;
 }
-
 .amount-input {
     position: relative;
     display: flex;
     align-items: center;
 }
-
 .amount-input input {
     width: 100%;
     padding-right: 40px;
     text-align: right;
 }
-
 .amount-input .unit {
     position: absolute;
     right: 12px;
@@ -450,67 +273,74 @@ svg {
     color: var(--bank-muted);
     pointer-events: none;
 }
-
 .form-error {
     font-size: 12px;
     color: var(--bank-error);
     background: var(--bank-error-bg);
     border: 1px solid var(--bank-error-line);
-    border-radius: 8px;
+    border-radius: 0;
     padding: 12px 14px;
     text-align: left;
 }
-
+.form-success {
+    font-size: 13px;
+    color: var(--bank-success-text);
+    background: var(--bank-success-bg);
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
+    padding: 14px 16px;
+    text-align: left;
+}
+.form-success p {
+    margin: 0 0 6px;
+}
+.form-success-link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--bank-primary);
+}
 .btn-primary {
     margin-top: 4px;
     height: 46px;
     background: var(--bank-primary);
     color: #FFFFFF;
     border: 0;
-    border-radius: 8px;
+    border-radius: 0;
     font-size: 14px;
     font-weight: 700;
     font-family: inherit;
 }
-
 .btn-primary:hover {
     background: var(--bank-primary-hover);
 }
-
 .btn-primary:disabled {
     background: #cfc7e8;
     cursor: not-allowed;
 }
-
 .btn-primary:focus-visible {
     outline: 2px solid var(--bank-primary);
     outline-offset: 2px;
 }
-
 .btn-secondary {
     background: var(--bank-surface);
     color: var(--bank-text);
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 10px 16px;
     font-size: 13px;
     font-weight: 700;
     font-family: inherit;
     white-space: nowrap;
 }
-
 .btn-secondary:hover {
     border-color: #c9bdec;
     background: var(--bank-primary-soft);
 }
-
 .btn-secondary:focus-visible {
     outline: 2px solid var(--bank-primary);
     outline-offset: 2px;
 }
-
 /* Lookup */
-
 .lookup {
     display: flex;
     flex-direction: column;
@@ -519,55 +349,44 @@ svg {
     padding-bottom: 20px;
     border-bottom: 1px dashed var(--bank-line);
 }
-
 .lookup label {
     font-size: 13px;
     font-weight: 700;
 }
-
 .lookup-row {
     display: flex;
     gap: 8px;
 }
-
 .lookup-row input {
     flex: 1;
-    border: 1.5px solid var(--bank-line);
-    border-radius: 8px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     padding: 11px 12px;
     font-size: 14px;
 }
-
 .lookup-row input:focus {
     outline: none;
     border-color: var(--bank-primary);
     background: var(--bank-primary-soft);
 }
-
 /* Result: empty state */
-
 .result-empty {
-    border: 1.5px dashed var(--bank-line);
-    border-radius: 12px;
+    border: 1px dashed var(--bank-line);
+    border-radius: 0;
     padding: 32px 16px;
     text-align: center;
 }
-
 .result-empty p {
     margin: 0;
     font-size: 13px;
     color: var(--bank-muted);
 }
-
 /* Result: slip (receipt) */
-
 .slip {
-    border: 1.5px solid var(--bank-line);
-    border-radius: 12px;
+    border: 1px solid var(--bank-line);
+    border-radius: 0;
     background: var(--bank-surface);
-    overflow: hidden;
 }
-
 .slip-status {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -578,17 +397,14 @@ svg {
     color: var(--bank-success-text);
     border-bottom: 1px dashed var(--bank-line);
 }
-
 .slip-status.is-error {
     background: var(--bank-error-bg);
     color: var(--bank-error);
 }
-
 .slip-status.is-pending {
     background: var(--bank-pending-bg);
     color: var(--bank-pending-text);
 }
-
 .slip-rows {
     margin: 0;
     padding: 18px 20px 20px;
@@ -596,7 +412,6 @@ svg {
     flex-direction: column;
     gap: 10px;
 }
-
 .slip-row {
     display: flex;
     align-items: baseline;
@@ -604,40 +419,33 @@ svg {
     gap: 12px;
     font-size: 13px;
 }
-
 .slip-row dt {
     color: var(--bank-muted);
     flex-shrink: 0;
 }
-
 .slip-row dd {
     margin: 0;
     text-align: right;
     word-break: break-all;
 }
-
 .slip-row-amount {
     padding-top: 8px;
     border-top: 1px solid var(--bank-line);
 }
-
 .slip-row-amount dt {
     color: var(--bank-text);
     font-weight: 700;
 }
-
 .slip-row-amount .amount {
     font-size: 18px;
     font-weight: 700;
     color: var(--bank-primary);
 }
-
 .slip-perforation {
     height: 0;
     border-top: 1px dashed var(--bank-line);
     margin: 0 20px;
 }
-
 .slip-footer {
     padding: 12px 20px 16px;
     font-family: var(--font-mono);
@@ -646,16 +454,13 @@ svg {
     color: var(--bank-muted);
     text-align: center;
 }
-
 #toAccountPreview {
     min-height: 16px;
 }
-
 #toAccountPreview.is-confirmed {
     color: var(--bank-success-text);
     font-weight: 600;
 }
-
 #toAccountPreview.is-error {
     color: var(--bank-error);
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사이원장 | 내 정보</title>
+    <title>사이뱅크 | 내 정보</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,13 +15,13 @@
         src="/js/user/mypage.js"
         defer></script>
 <body>
-<header class="top-header">
-    <nav class="breadcrumb">
-        <a data-route="main" href="/">메인</a>
-        <span>›</span>
-        <strong>내 정보</strong>
-    </nav>
-
+<header class="site-header">
+    <a class="logo" data-route="main" href="/">
+        <img src="/img/sai-bank-logo.png"
+             th:src="@{/img/sai-bank-logo.png}"
+             alt="" class="logo-image">
+        사이뱅크
+    </a>
     <div class="header-tools">
         <label class="search-box">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -30,7 +30,6 @@
             </svg>
             <input type="search" placeholder="검색어 입력">
         </label>
-
         <button class="icon-button notification-button"
                 type="button"
                 aria-label="알림">
@@ -40,9 +39,7 @@
             </svg>
             <span></span>
         </button>
-
         <strong id="header-user-name" class="header-user-name"></strong>
-
         <div class="header-profile">
             <img id="header-profile-image" alt="프로필 이미지" hidden>
             <svg id="header-profile-placeholder"

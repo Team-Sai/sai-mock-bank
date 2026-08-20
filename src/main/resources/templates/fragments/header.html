@@ -13,15 +13,16 @@
             <img src="/img/sai-bank-logo.png"
                  th:src="@{/img/sai-bank-logo.png}"
                  alt="사이 은행" class="tx2-brand__logo">
+            <span class="tx2-brand__name">사이뱅크</span>
         </a>
 
         <nav class="tx2-nav" aria-label="주요 메뉴">
             <a href="/home" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'home'} ? ' tx2-nav__link--active' : ''">계좌</a>
+               th:classappend="${activeRoute == 'home'} ? ' tx2-nav__link--active' : ''">계좌/이체</a>
             <a href="/transfer-history" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'transfer-history'} ? ' tx2-nav__link--active' : ''">이체</a>
+               th:classappend="${activeRoute == 'transfer-history'} ? ' tx2-nav__link--active' : ''">거래내역 조회</a>
             <a href="/transactions" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'transactions'} ? ' tx2-nav__link--active' : ''">내역</a>
+               th:classappend="${activeRoute == 'transactions'} ? ' tx2-nav__link--active' : ''">전체 거래내역</a>
             <span class="tx2-nav__link tx2-nav__link--disabled" aria-disabled="true" title="사이원장에서 신청해주세요">서비스</span>
         </nav>
 

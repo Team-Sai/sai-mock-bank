@@ -17,9 +17,15 @@
 <body>
 <div class="page">
     <header class="site-header">
-        <a class="logo" data-route="main" href="/">사이뱅크</a>
-        <a class="header-link" data-route="signup" href="/signup">회원가입</a>
+        <a class="logo" data-route="main" href="/">
+            <img src="/img/sai-bank-logo.png"
+                 th:src="@{/img/sai-bank-logo.png}"
+                 alt="" class="logo-image">
+            사이뱅크
+        </a>
+        <a class="header-link" data-route="login" href="/login">로그인</a>
     </header>
+
 
     <main class="auth-main">
         <section class="auth-wrap">
@@ -89,7 +95,7 @@
                     </button>
 
                     <div class="sub-link">
-                        아직 사이원장 회원이 아니신가요?
+                        아직 사이뱅크 회원이 아니신가요?
                         <a data-route="signup" href="/signup">회원가입</a>
                     </div>
                 </form>

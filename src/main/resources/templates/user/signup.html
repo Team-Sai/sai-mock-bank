@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사이원장 | 회원가입</title>
+    <title>사이뱅크 | 회원가입</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,15 +17,20 @@
 <body>
 <div class="page">
     <header class="site-header">
-        <a class="logo" data-route="main" href="/">사이원장</a>
-        <a class="header-link" data-route="login" href="/login">로그인</a>
+        <a class="logo" data-route="main" href="/">
+            <img src="/img/sai-bank-logo.png"
+                 th:src="@{/img/sai-bank-logo.png}"
+                 alt="" class="logo-image">
+            사이뱅크
+        </a>
+        <a class="header-link" data-route="signup" href="/signup">회원가입</a>
     </header>
 
     <main class="auth-main">
         <section class="auth-wrap">
             <div class="page-heading">
                 <h1>회원가입</h1>
-                <p>사이원장과 함께 거래 관리를 시작하세요.</p>
+                <p>사이뱅크를 이용해 보세요.</p>
             </div>
 
             <div class="auth-card">

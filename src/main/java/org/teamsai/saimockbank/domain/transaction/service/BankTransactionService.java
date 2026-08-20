@@ -68,4 +68,33 @@ public class BankTransactionService {
                     .toException();
         }
     }
+
+    public List<TransactionResponse> getMyTransactions(
+            Long bankUserId,
+            Long accountId,
+            Long afterTransactionId
+    ) {
+        validateRequest(accountId, bankUserId);
+
+        boolean owned = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
+                .anyMatch(account -> account.getAccountId().equals(accountId));
+
+        if (!owned) {
+            throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+        }
+
+        long cursor = afterTransactionId == null ? 0L : afterTransactionId;
+
+        return bankTransactionMapper
+                .findAllByAccountIdAfter(accountId, cursor)
+                .stream()
+                .map(TransactionResponse::from)
+                .toList();
+    }
+
+    private void validateRequest(Long accountId, Long bankUserId) {
+        if (accountId == null || accountId <= 0 || bankUserId == null) {
+            throw TransactionErrorCode.INVALID_TRANSACTION_REQUEST.toException();
+        }
+    }
 }

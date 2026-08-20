@@ -20,6 +20,6 @@ public enum BankCode {
                 .filter(bankCode -> bankCode.code.equals(code))
                 .findFirst()
                 .map(BankCode::getBankName)
-                .orElse("알 수 없는 은행");
+                .orElse("기타");
     }
 }

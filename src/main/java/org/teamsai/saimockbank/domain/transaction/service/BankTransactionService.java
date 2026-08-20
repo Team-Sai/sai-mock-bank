@@ -17,6 +17,9 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class BankTransactionService {
 
+    private static final int MIN_PAGE_SIZE = 1;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final BankAccountMapper bankAccountMapper;
     private final BankTransactionMapper bankTransactionMapper;
     private final AccountOwnershipValidator ownershipValidator;
@@ -73,9 +76,11 @@ public class BankTransactionService {
     public List<TransactionResponse> getMyTransactions(
             Long bankUserId,
             Long accountId,
-            Long afterTransactionId
+            Long beforeTransactionId,
+            int size
     ) {
         validateRequest(accountId, bankUserId);
+        int safeSize = clampSize(size);
 
         boolean owned = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
                 .anyMatch(account -> account.getAccountId().equals(accountId));
@@ -84,10 +89,8 @@ public class BankTransactionService {
             throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
 
-        long cursor = afterTransactionId == null ? 0L : afterTransactionId;
-
         return bankTransactionMapper
-                .findAllByAccountIdAfter(accountId, cursor)
+                .findRecentByAccountId(accountId, beforeTransactionId, safeSize)
                 .stream()
                 .map(TransactionResponse::from)
                 .toList();
@@ -99,32 +102,13 @@ public class BankTransactionService {
         }
     }
 
-    public List<TransactionResponse> getMyTransactions(
-            Long bankUserId,
-            Long accountId,
-            Long beforeTransactionId,
-            int size
-    ) {
-        validateRequest(accountId, bankUserId);
-
-        boolean owned = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
-                .anyMatch(account -> account.getAccountId().equals(accountId));
-        if (!owned) {
-            throw TransactionErrorCode.ACCOUNT_ACCESS_DENIED.toException();
-        }
-
-        return bankTransactionMapper
-                .findRecentByAccountId(accountId, beforeTransactionId, size)
-                .stream()
-                .map(TransactionResponse::from)
-                .toList();
-    }
-
     public List<TransactionResponse> getMyAllTransactions(
             Long bankUserId,
             Long beforeTransactionId,
             int size
     ) {
+        int safeSize = clampSize(size);
+
         List<Long> accountIds = bankAccountMapper.findAllByBankUserId(bankUserId).stream()
                 .map(BankAccountDTO::getAccountId)
                 .toList();
@@ -134,9 +118,19 @@ public class BankTransactionService {
         }
 
         return bankTransactionMapper
-                .findRecentByAccountIds(accountIds, beforeTransactionId, size)
+                .findRecentByAccountIds(accountIds, beforeTransactionId, safeSize)
                 .stream()
                 .map(TransactionResponse::from)
                 .toList();
+    }
+
+    private int clampSize(int size) {
+        if (size < MIN_PAGE_SIZE) {
+            return MIN_PAGE_SIZE;
+        }
+        if (size > MAX_PAGE_SIZE) {
+            return MAX_PAGE_SIZE;
+        }
+        return size;
     }
 }

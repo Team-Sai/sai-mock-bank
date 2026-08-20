@@ -1,44 +1,93 @@
-.page--history {
-    padding: 48px 79px 96px;
+:root {
+    --tx2-gray-50: #f9fafb;
+    --tx2-gray-100: #f3f4f6;
+    --tx2-gray-200: #e5e7eb;
+    --tx2-gray-400: #9ca3af;
+    --tx2-gray-500: #6b7280;
+    --tx2-gray-700: #374151;
+    --tx2-gray-900: #111827;
+    --tx2-purple: #9333ea;
+    --tx2-negative: #3a60b3;
+    --tx2-font: 'Pretendard', sans-serif;
 }
 
-.history {
-    max-width: 1000px;
-    margin: 0 auto;
+* {
+    box-sizing: border-box;
 }
 
-.history__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--color-text-primary);
-    padding-bottom: 16px;
-    margin-bottom: 16px;
-}
-
-.history__title {
+body {
     margin: 0;
-    font-size: 24px;
-    font-weight: 700;
+    font-family: var(--tx2-font);
+    background: var(--tx2-gray-50);
+    color: var(--tx2-gray-900);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
-.history__back {
-    font-size: 13px;
+.tx2-main {
+    flex: 1 0 auto;
+}
+
+.tx2-footer {
+    flex-shrink: 0;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ===== Main ===== */
+.tx2-main {
+    max-width: 1408px;
+    margin: 0 auto;
+    padding: 48px 64px 96px;
+}
+
+.tx2-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--tx2-gray-200);
+    padding-bottom: 17px;
+    margin-bottom: 0;
+}
+
+.tx2-title {
+    margin: 0;
+    font-size: 30px;
     font-weight: 500;
-    color: var(--color-accent);
+    color: var(--tx2-gray-900);
 }
 
-.history .transactions__table {
-    max-height: none;
-    overflow: visible;
+.tx2-back {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--tx2-purple);
 }
 
-.history__sentinel {
-    height: 1px;
+.tx2-back svg {
+    width: 11px;
+    height: 9px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
+
+/* ===== Responsive ===== */
 @media (max-width: 900px) {
-    .page--history {
+    .tx2-main {
         padding: 32px 24px 64px;
+    }
+
+    .tx2-nav {
+        display: none;
     }
 }

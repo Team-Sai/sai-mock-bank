@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  공통 헤더 fragment.
+  사용법: <header th:replace="~{fragments/header :: header(activeRoute='home')}"></header>
+  activeRoute 값: 'home' | 'transfer-history' | 'transactions'
+  (해당 라우트와 일치하는 nav 항목에 tx2-nav__link--active 클래스가 붙습니다)
+-->
+<header th:fragment="header(activeRoute)" class="tx2-header">
+    <div class="tx2-header__inner">
+        <a href="/home" class="tx2-brand">
+            <img src="/img/sai-bank-logo.png"
+                 th:src="@{/img/sai-bank-logo.png}"
+                 alt="사이 은행" class="tx2-brand__logo">
+        </a>
+
+        <nav class="tx2-nav" aria-label="주요 메뉴">
+            <a href="/home" class="tx2-nav__link"
+               th:classappend="${activeRoute == 'home'} ? ' tx2-nav__link--active' : ''">계좌</a>
+            <a href="/transfer-history" class="tx2-nav__link"
+               th:classappend="${activeRoute == 'transfer-history'} ? ' tx2-nav__link--active' : ''">이체</a>
+            <a href="/transactions" class="tx2-nav__link"
+               th:classappend="${activeRoute == 'transactions'} ? ' tx2-nav__link--active' : ''">내역</a>
+            <span class="tx2-nav__link tx2-nav__link--disabled" aria-disabled="true" title="사이원장에서 신청해주세요">서비스</span>
+        </nav>
+
+        <div class="tx2-header__tools">
+            <button class="tx2-icon-button notification-button" type="button" aria-label="알림">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span></span>
+            </button>
+            <strong id="header-user-name" class="tx2-header-user-name" hidden></strong>
+            <div class="tx2-icon-button header-profile">
+                <img id="header-profile-image" alt="프로필 이미지" hidden>
+                <svg id="header-profile-placeholder" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"></circle>
+                    <path d="M4 21a8 8 0 0 1 16 0"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+</header>
+</body>
+</html>

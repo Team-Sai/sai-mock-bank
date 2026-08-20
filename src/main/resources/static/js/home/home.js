@@ -30,8 +30,9 @@ async function initHome() {
         const account = await loadPrimaryAccount(accessToken);
         renderBalance(account);
 
+        const accountLabel = { bankName: account.bankName, maskedAccountNumber: account.maskedAccountNumber };
         const transactions = await loadTransactions(accessToken, account.accountId, CONFIG.RECENT_COUNT);
-        renderTransactions(transactions);
+        renderTransactions(transactions, accountLabel);
     } catch (error) {
         console.error("[home] 초기화 실패:", error);
         renderBalanceError();
@@ -69,21 +70,23 @@ function renderBalanceError() {
 }
 
 /** 거래내역 리스트 렌더링 */
-function renderTransactions(transactions) {
+function renderTransactions(transactions, accountLabel) {
     const container = document.getElementById("transactionsBody");
     if (!container) return;
 
     if (transactions.length === 0) {
-        container.innerHTML = `<p class="transactions__state">최근 거래내역이 없습니다.</p>`;
+        container.innerHTML = `<p class="tx2-state">최근 거래내역이 없습니다.</p>`;
         return;
     }
 
-    container.innerHTML = transactions.map((tx, index) => TxUtils.renderTransactionRow(tx, index)).join("");
+    container.innerHTML = transactions
+        .map((tx) => TxUtils.renderTransactionRowV2(tx, { accountLabel }))
+        .join("");
 }
 
 function renderTransactionsError() {
     const container = document.getElementById("transactionsBody");
     if (container) {
-        container.innerHTML = `<p class="transactions__state">거래내역을 불러올 수 없습니다.</p>`;
+        container.innerHTML = `<p class="tx2-state">거래내역을 불러올 수 없습니다.</p>`;
     }
 }

@@ -130,7 +130,7 @@ public class SecurityConfig {
                                 .requestMatchers(
                                         "/css/**",
                                         "/js/**",
-                                        "/images/**",
+                                        "/img/**",
                                         "/favicon.ico",
                                         "/error"
                                 )

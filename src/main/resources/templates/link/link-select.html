@@ -4,29 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>사이 뱅크 | 계좌 연결</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" th:href="@{/css/common/header.css}"
+          href="/css/common/header.css">
+    <link rel="stylesheet" th:href="@{/css/common/footer.css}"
+          href="/css/common/footer.css">
     <link rel="stylesheet"
           th:href="@{/css/link/link-select.css}"
           href="/css/link/link-select.css">
 </head>
 <body>
-<header class="bank-header">
-    <div class="bank-brand">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m3 10 9-6 9 6"></path>
-            <path d="M5 10v8"></path>
-            <path d="M9 10v8"></path>
-            <path d="M15 10v8"></path>
-            <path d="M19 10v8"></path>
-            <path d="M3 18h18"></path>
-            <path d="M2 21h20"></path>
-        </svg>
-        사이 뱅크
-    </div>
-</header>
-
+<header th:replace="~{fragments/header :: header(activeRoute='link-select')}"></header>
 <main class="link-select-main">
     <div class="request-badge">
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -35,30 +23,24 @@
         </svg>
         사이원장에서 계좌 연결을 요청했습니다
     </div>
-
     <h1 class="link-select-title">연결할 계좌를 선택해주세요</h1>
     <p class="link-select-subtitle">보유하신 계좌 중 연결할 계좌를 선택해주세요.</p>
-
     <div id="account-select-error" class="link-select-error" hidden></div>
-
     <div id="account-select-list" class="account-select-list"></div>
-
     <label class="link-select-agree">
         <input type="checkbox" id="link-select-agree-checkbox">
         <span>선택한 계좌의 조회 권한 제공에 동의합니다.</span>
     </label>
-
     <div class="link-select-actions">
         <button type="button" class="link-select-btn link-select-btn-secondary" id="link-select-cancel">
             취소
         </button>
-
         <button type="button" class="link-select-btn link-select-btn-primary" id="link-select-confirm" disabled>
             동의하고 연결
         </button>
     </div>
 </main>
-
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 <script th:src="@{/js/link/link-select.js}" src="/js/link/link-select.js" defer></script>
 </body>
 </html>

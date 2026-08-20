@@ -5,40 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>전체 거래내역 · 사이원장 Mock Bank</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" th:href="@{/css/common/header.css}"
+          href="/css/common/header.css">
+    <link rel="stylesheet" th:href="@{/css/common/footer.css}"
+          href="/css/common/footer.css">
+    <link rel="stylesheet" th:href="@{/css/common/transaction-table.css}"
+          href="/css/common/transaction-table.css">
     <link rel="stylesheet" th:href="@{/css/transaction/transactions.css}"
-          href="/css/transaction/transactions.css">
+          href="/css/transactions/transactions.css">
 </head>
 <body>
-<header class="tx2-header">
-    <div class="tx2-header__inner">
-        <div class="tx2-brand">사이 은행</div>
-
-        <nav class="tx2-nav" aria-label="주요 메뉴">
-            <a href="/home" class="tx2-nav__link">계좌</a>
-            <a href="/transfer-history" class="tx2-nav__link">이체</a>
-            <a href="/transactions" class="tx2-nav__link tx2-nav__link--active">내역</a>
-            <span class="tx2-nav__link tx2-nav__link--disabled" aria-disabled="true" title="사이원장에서 신청해주세요">서비스</span>
-        </nav>
-
-        <div class="tx2-header__tools">
-            <button class="tx2-icon-button notification-button" type="button" aria-label="알림">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
-                <span></span>
-            </button>
-            <strong id="header-user-name" class="tx2-header-user-name" hidden></strong>
-            <div class="tx2-icon-button header-profile">
-                <img id="header-profile-image" alt="프로필 이미지" hidden>
-                <svg id="header-profile-placeholder" viewBox="0 0 24 24" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4"></circle>
-                    <path d="M4 21a8 8 0 0 1 16 0"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-</header>
+<header th:replace="~{fragments/header :: header(activeRoute='transactions')}"></header>
 
 <main class="tx2-main">
     <div class="tx2-section-header">
@@ -71,17 +48,7 @@
     <p id="historyEndState" class="tx2-end-state" hidden>마지막 거래내역입니다.</p>
 </main>
 
-<footer class="tx2-footer">
-    <div class="tx2-footer__inner">
-        <span class="tx2-footer__brand">사이은행</span>
-        <nav class="tx2-footer__nav" aria-label="정책 메뉴">
-            <a href="#">약관</a>
-            <a href="#">개인정보처리방침</a>
-            <a href="#">보안</a>
-            <a href="#">연락처</a>
-        </nav>
-    </div>
-</footer>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <script th:src="@{/js/common/transaction-utils.js}" src="/js/common/transaction-utils.js"></script>
 <script th:src="@{/js/transaction/transactions.js}" src="/js/transaction/transactions.js" defer></script>

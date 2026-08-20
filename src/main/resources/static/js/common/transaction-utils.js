@@ -35,7 +35,7 @@ const TxUtils = {
         return num.toLocaleString("ko-KR");
     },
 
-    /** "2023-10-24T10:15:30" -> { yearMonth: "2023년 10월", day: "24일" } */
+    /** "2023-10-24T10:15:30" -> { yearMonth: "2023년 10월", day: "24일" } (home 화면 2줄 포맷용) */
     formatDate(isoString) {
         if (!isoString) return { yearMonth: "-", day: "-" };
         const date = new Date(isoString);
@@ -45,6 +45,15 @@ const TxUtils = {
             yearMonth: `${date.getFullYear()}년 ${date.getMonth() + 1}월`,
             day: `${date.getDate()}일`,
         };
+    },
+
+    /** "2023-10-24T10:15:30" -> "2023년 10월 24일" (transactions 화면 1줄 포맷용) */
+    formatFullDate(isoString) {
+        if (!isoString) return "-";
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return "-";
+
+        return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
     },
 
     escapeHtml(value) {
@@ -80,6 +89,36 @@ const TxUtils = {
                 <div class="tx-cell tx-cell--date" role="cell">${yearMonth}<br>${day}</div>
                 <div class="tx-cell tx-cell--detail" role="cell">${detail}${accountLabelHtml}</div>
                 <div class="${amountClass}" role="cell">${sign}<br>${TxUtils.formatAmount(tx.amount)}</div>
+            </div>
+        `;
+    },
+
+    /**
+     * 신규(그레이/퍼플) 디자인용 행 렌더러 — /transactions 화면 전용.
+     * options.accountLabel: { bankName, maskedAccountNumber } — "내 계좌" 컬럼용
+     */
+    renderTransactionRowV2(tx, options = {}) {
+        const isDeposit = tx.transactionType === "DEPOSIT";
+        const sign = isDeposit ? "+" : "-";
+        const amountClass = `tx2-cell tx2-cell--amount ${isDeposit ? "tx2-cell--positive" : "tx2-cell--negative"}`;
+
+        const dateText = TxUtils.formatFullDate(tx.transactionAt);
+
+        const detail = tx.maskedCounterpartyAccountNumber
+            ? `<span class="tx2-name">${TxUtils.escapeHtml(tx.counterpartyName)}</span><span class="tx2-sep">|</span>${TxUtils.escapeHtml(tx.maskedCounterpartyAccountNumber)}`
+            : `<span class="tx2-name">${TxUtils.escapeHtml(tx.counterpartyName ?? "-")}</span>`;
+
+        const account = options.accountLabel;
+        const accountCell = account
+            ? `<span class="tx2-bank">${TxUtils.escapeHtml(account.bankName ?? "-")}</span><span class="tx2-sep">|</span>${TxUtils.escapeHtml(account.maskedAccountNumber ?? "-")}`
+            : "-";
+
+        return `
+            <div class="tx2-row" role="row">
+                <div class="tx2-cell tx2-cell--date" role="cell">${dateText}</div>
+                <div class="tx2-cell tx2-cell--detail" role="cell">${detail}</div>
+                <div class="tx2-cell tx2-cell--account" role="cell">${accountCell}</div>
+                <div class="${amountClass}" role="cell">${sign}${TxUtils.formatAmount(tx.amount)}</div>
             </div>
         `;
     },

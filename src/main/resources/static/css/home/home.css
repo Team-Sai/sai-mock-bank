@@ -11,8 +11,18 @@
     --color-row-alt: #f9f9fa;
     --color-footer-bg: #eeeeef;
 
-    --font-sans: 'Noto Sans KR', sans-serif;
+    --font-sans: 'Pretendard', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+
+    /* tx2-table(공통 거래내역 테이블 컴포넌트)이 참조하는 색상 토큰 */
+    --tx2-gray-50: #f9fafb;
+    --tx2-gray-100: #f3f4f6;
+    --tx2-gray-200: #e5e7eb;
+    --tx2-gray-400: #9ca3af;
+    --tx2-gray-500: #6b7280;
+    --tx2-gray-900: #111827;
+    --tx2-purple: #9333ea;
+    --tx2-negative: #3a60b3;
 }
 
 * {
@@ -24,6 +34,9 @@ body {
     font-family: var(--font-sans);
     color: var(--color-text-primary);
     background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 a {
@@ -31,124 +44,13 @@ a {
     color: inherit;
 }
 
-/* ===== Header ===== */
-.site-header {
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.site-header__inner {
-    max-width: 1440px;
-    margin: 0 auto;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 24px;
-}
-
-.brand-mark {
-    font-family: var(--font-sans);
-    font-weight: 700;
-    font-size: 24px;
-    letter-spacing: -0.5px;
-    color: var(--color-accent);
-}
-
-.main-nav {
-    display: flex;
-    align-items: center;
-    gap: 48px;
-    height: 100%;
-}
-
-.main-nav__link {
-    display: flex;
-    align-items: center;
-    height: 100%;
-    padding-bottom: 8px;
-    font-size: 16px;
-    font-weight: 500;
-    letter-spacing: 0.6px;
-    color: var(--color-text-muted);
-    border-bottom: 2px solid transparent;
-}
-
-.main-nav__link.is-active {
-    color: var(--color-accent);
-    border-bottom-color: var(--color-accent);
-}
-
-.main-nav__link.is-disabled {
-    color: var(--color-border);
-    cursor: not-allowed;
-}
-
-.header-tools {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.icon-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-muted);
-}
-
-.icon-button svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.header-user-name {
-    font-size: 14px;
-    color: var(--color-text-primary);
-}
-
-.header-profile {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-text-muted);
-}
-
-.header-profile img {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.header-profile svg {
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
 /* ===== Main ===== */
 .page {
     max-width: 1440px;
     margin: 0 auto;
     padding: 83px 79px 96px;
+    flex: 1 0 auto;
+    width: 100%;
 }
 
 /* Balance card */
@@ -250,137 +152,9 @@ a {
     stroke-linejoin: round;
 }
 
-.transactions__table {
-    width: 100%;
-    background: var(--color-bg);
-    max-height: 405px;
-    overflow: auto;
-}
-
-.tx-row {
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--color-border-light);
-}
-
-.tx-row--head {
-    background: var(--color-table-head-bg);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.tx-row--alt {
-    background: var(--color-row-alt);
-}
-
-.tx-cell {
-    padding: 16px;
-    font-size: 14px;
-    line-height: 20px;
-}
-
-.tx-row--head .tx-cell {
-    padding: 12px 16px 13px;
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: var(--color-text-secondary);
-}
-
-.tx-cell--date {
-    flex: 0 0 160px;
-    color: var(--color-text-secondary);
-}
-
-.tx-cell--detail {
-    flex: 1 1 auto;
-    font-weight: 600;
-    color: var(--color-text-primary);
-}
-
-.tx-cell--amount {
-    flex: 0 0 140px;
-    text-align: right;
-    font-family: var(--font-mono);
-    color: var(--color-text-primary);
-}
-
-.tx-cell--positive {
-    color: var(--color-accent);
-}
-
-.transactions__state {
-    margin: 0;
-    padding: 32px 16px;
-    text-align: center;
-    font-size: 14px;
-    color: var(--color-text-secondary);
-}
-
-/* ===== Footer ===== */
-.site-footer {
-    background: var(--color-footer-bg);
-    border-top: 1px solid var(--color-border);
-}
-
-.site-footer__inner {
-    max-width: 1440px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 32px 24px;
-}
-
-.site-footer__brand {
-    font-family: var(--font-mono);
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.6px;
-    color: var(--color-text-primary);
-}
-
-.site-footer__nav {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.site-footer__nav a {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-}
-
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
-    .main-nav {
-        gap: 24px;
-    }
-
     .page {
         padding: 40px 24px 64px;
-    }
-
-    .tx-cell--detail {
-        padding-left: 8px;
-    }
-}
-
-@media (max-width: 640px) {
-    .main-nav {
-        display: none;
-    }
-
-    .tx-row {
-        flex-wrap: wrap;
-    }
-
-    .tx-cell--detail {
-        flex: 1 1 100%;
-        order: 3;
-        padding-top: 0;
     }
 }

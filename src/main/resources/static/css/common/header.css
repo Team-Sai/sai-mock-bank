@@ -1,0 +1,113 @@
+/* 공통 헤더 (fragments/header.html)
+ * 페이지별 색상 시스템(home.css의 --color-*, transactions.css의 --tx2-*)과는
+ * 독립적으로 동작하도록 값을 직접 명시했습니다.
+ */
+
+.tx2-header {
+    --tx2-header-accent: #6436bf;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tx2-header__inner {
+    max-width: 1408px;
+    margin: 0 auto;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+}
+
+.tx2-brand {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.tx2-brand__logo {
+    height: 36px;
+    width: auto;
+    display: block;
+}
+
+.tx2-nav {
+    display: flex;
+    align-items: stretch;
+    height: 100%;
+}
+
+.tx2-nav__link {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 8px 12px;
+    margin-left: 36px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #374151;
+    border-bottom: 2px solid transparent;
+    text-decoration: none;
+}
+
+.tx2-nav__link:first-child {
+    margin-left: 0;
+}
+
+.tx2-nav__link--active {
+    color: #111827;
+    border-bottom-color: var(--tx2-header-accent);
+    padding-bottom: 6px;
+}
+
+.tx2-nav__link--disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.tx2-header__tools {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.tx2-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #374151;
+}
+
+.tx2-icon-button svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tx2-icon-button img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.tx2-header-user-name {
+    font-size: 14px;
+    color: #111827;
+}
+
+@media (max-width: 900px) {
+    .tx2-nav {
+        display: none;
+    }
+}

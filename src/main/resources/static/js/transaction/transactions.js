@@ -1,15 +1,12 @@
 /**
- * 전체 거래내역 화면 - 내 모든 계좌의 거래내역을 합쳐서 최신순 10건씩 무한 스크롤
+ * 전체 거래내역 화면(신규 그레이/퍼플 디자인) - 내 모든 계좌의 거래내역을 합쳐서 최신순 10건씩 무한 스크롤
  * transaction-utils.js(TxUtils)가 먼저 로드되어 있어야 합니다.
  *
  * 백엔드 의존:
  *  - GET /api/mock-bank/accounts/my
- *      계좌 목록 + 각 계좌 라벨(은행명/별명/마스킹 계좌번호) 구성용
+ *      계좌 목록 + "내 계좌" 컬럼(은행명/마스킹 계좌번호) 구성용
  *  - GET /api/mock-bank/accounts/my/transactions?beforeTransactionId&size
  *      내 소유 전체 계좌를 합쳐 transaction_id 기준 최신순(DESC)으로 반환.
- *      beforeTransactionId 생략 시 최신 size건, 이후에는 직전 응답의 마지막
- *      (가장 오래된) transactionId를 beforeTransactionId로 전달.
- *      (accountId 단일 계좌용 /my/{accountId}/transactions 와는 별개 엔드포인트)
  */
 
 const CONFIG = {
@@ -21,11 +18,11 @@ const CONFIG = {
 
 const state = {
     accessToken: null,
-    accountLabelById: new Map(),
-    beforeTransactionId: null, // 다음 페이지 커서. null이면 첫 페이지
+    accountMetaById: new Map(), // accountId -> { bankName, maskedAccountNumber }
+    beforeTransactionId: null,
     isLoading: false,
     hasMore: true,
-    rowIndex: 0, // 짝/홀 배경 스타일용 누적 인덱스
+    rowIndex: 0,
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -40,7 +37,7 @@ async function initHistory() {
     }
 
     try {
-        await loadAccountLabels(state.accessToken);
+        await loadAccountMeta(state.accessToken);
 
         clearInitialState();
         await loadNextPage();
@@ -51,15 +48,16 @@ async function initHistory() {
     }
 }
 
-/** 계좌 목록을 조회해 accountId -> 표시 라벨 맵 구성 */
-async function loadAccountLabels(accessToken) {
+/** 계좌 목록을 조회해 accountId -> { bankName, maskedAccountNumber } 맵 구성 */
+async function loadAccountMeta(accessToken) {
     const accounts = await TxUtils.fetchWithAuth(CONFIG.ACCOUNTS_ME_URL, accessToken);
     if (!Array.isArray(accounts)) return;
 
     accounts.forEach((account) => {
-        const label = [account.bankName, account.accountName].filter(Boolean).join(" ");
-        const withNumber = account.maskedAccountNumber ? `${label} · ${account.maskedAccountNumber}` : label;
-        state.accountLabelById.set(account.accountId, withNumber);
+        state.accountMetaById.set(account.accountId, {
+            bankName: account.bankName,
+            maskedAccountNumber: account.maskedAccountNumber,
+        });
     });
 }
 
@@ -80,14 +78,12 @@ async function loadNextPage() {
 
         appendTransactions(transactions);
 
-        // 응답이 PAGE_SIZE보다 적게 오면 더 이상 없는 것으로 간주
         if (transactions.length < CONFIG.PAGE_SIZE) {
             state.hasMore = false;
             showEndState();
             return;
         }
 
-        // 다음 커서 = 이번 페이지의 마지막(가장 오래된) transactionId
         state.beforeTransactionId = transactions[transactions.length - 1].transactionId;
     } catch (error) {
         console.error("[transactions] 거래내역 로드 실패:", error);
@@ -135,8 +131,8 @@ function appendTransactions(transactions) {
 
     const html = transactions
         .map((tx) => {
-            const accountLabel = state.accountLabelById.get(tx.accountId);
-            const row = TxUtils.renderTransactionRow(tx, state.rowIndex, { accountLabel });
+            const accountLabel = state.accountMetaById.get(tx.accountId);
+            const row = TxUtils.renderTransactionRowV2(tx, { accountLabel });
             state.rowIndex += 1;
             return row;
         })
@@ -150,7 +146,7 @@ function showEndState() {
     const endState = document.getElementById("historyEndState");
 
     if (state.rowIndex === 0 && container) {
-        container.innerHTML = `<p class="transactions__state">거래내역이 없습니다.</p>`;
+        container.innerHTML = `<p class="tx2-state">거래내역이 없습니다.</p>`;
         return;
     }
 
@@ -160,6 +156,6 @@ function showEndState() {
 function renderError() {
     const container = document.getElementById("transactionsBody");
     if (container && state.rowIndex === 0) {
-        container.innerHTML = `<p class="transactions__state">거래내역을 불러올 수 없습니다.</p>`;
+        container.innerHTML = `<p class="tx2-state">거래내역을 불러올 수 없습니다.</p>`;
     }
 }

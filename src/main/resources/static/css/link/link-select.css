@@ -8,17 +8,16 @@
     --bank-muted: #6b7280;
     --bank-line: #e3e1ef;
 }
-
 * { box-sizing: border-box; }
-
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: "Noto Sans KR", sans-serif;
+    font-family: 'Pretendard', sans-serif;
     color: var(--bank-text);
     background: var(--bank-page);
+    display: flex;
+    flex-direction: column;
 }
-
 button, input { font: inherit; }
 button { cursor: pointer; }
 svg {
@@ -28,27 +27,6 @@ svg {
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-
-.bank-header {
-    height: 60px;
-    padding: 0 32px;
-    display: flex;
-    align-items: center;
-    background: var(--bank-surface);
-    border-bottom: 1px solid var(--bank-line);
-}
-
-.bank-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--bank-primary);
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.bank-brand svg { width: 20px; height: 20px; }
-
 .link-select-main {
     width: min(700px, calc(100% - 32px));
     margin: 0 auto;
@@ -57,8 +35,8 @@ svg {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    flex: 1 0 auto;
 }
-
 .request-badge {
     display: inline-flex;
     align-items: center;
@@ -70,21 +48,17 @@ svg {
     font-size: 12px;
     font-weight: 700;
 }
-
 .request-badge svg { width: 13px; height: 13px; }
-
 .link-select-title {
     margin: 16px 0 6px;
     font-size: 26px;
     letter-spacing: -0.02em;
 }
-
 .link-select-subtitle {
     margin: 0 0 28px;
     color: var(--bank-muted);
     font-size: 14px;
 }
-
 .link-select-error {
     width: 100%;
     margin-bottom: 16px;
@@ -96,7 +70,6 @@ svg {
     font-size: 12px;
     text-align: left;
 }
-
 .account-select-list {
     width: 100%;
     display: flex;
@@ -104,7 +77,6 @@ svg {
     gap: 12px;
     text-align: left;
 }
-
 .account-select-item {
     display: flex;
     align-items: center;
@@ -117,20 +89,16 @@ svg {
     cursor: pointer;
     transition: border-color .15s, background .15s;
 }
-
 .account-select-item:hover { border-color: #c9bdec; }
-
 .account-select-item.selected {
     background: var(--bank-primary-soft);
     border-color: var(--bank-primary);
 }
-
 .account-select-left {
     display: flex;
     align-items: center;
     gap: 12px;
 }
-
 .account-select-icon {
     width: 36px;
     height: 36px;
@@ -142,39 +110,31 @@ svg {
     border-radius: 10px;
     color: var(--bank-primary);
 }
-
 .account-select-icon svg { width: 18px; height: 18px; }
-
 .account-select-bank-name { font-size: 15px; font-weight: 700; }
-
 .account-select-alias {
     margin-top: 1px;
     color: var(--bank-muted);
     font-size: 12px;
 }
-
 .account-select-numbers {
     margin-top: 8px;
     color: var(--bank-muted);
     font-size: 12px;
     letter-spacing: .04em;
 }
-
 .account-select-right {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 6px;
 }
-
 .account-select-balance-label { color: var(--bank-muted); font-size: 11px; }
-
 .account-select-balance {
     font-family: "JetBrains Mono", monospace;
     font-size: 16px;
     font-weight: 700;
 }
-
 .account-select-check {
     width: 20px;
     height: 20px;
@@ -186,15 +146,12 @@ svg {
     color: transparent;
     background: white;
 }
-
 .selected .account-select-check {
     background: var(--bank-primary);
     border-color: var(--bank-primary);
     color: white;
 }
-
 .account-select-check svg { width: 12px; height: 12px; }
-
 .link-select-agree {
     width: 100%;
     margin-top: 24px;
@@ -205,21 +162,18 @@ svg {
     font-size: 13px;
     cursor: pointer;
 }
-
 .link-select-agree input {
     width: 17px;
     height: 17px;
     accent-color: var(--bank-primary);
     cursor: pointer;
 }
-
 .link-select-actions {
     width: 100%;
     margin-top: 16px;
     display: flex;
     gap: 10px;
 }
-
 .link-select-btn {
     flex: 1;
     height: 46px;
@@ -228,18 +182,15 @@ svg {
     font-weight: 700;
     border: 0;
 }
-
 .link-select-btn-secondary {
     color: var(--bank-text);
     background: white;
     border: 1px solid var(--bank-line);
 }
-
 .link-select-btn-primary {
     color: white;
     background: var(--bank-primary);
 }
-
 .link-select-btn-primary:disabled {
     background: #cfc7e8;
     cursor: not-allowed;

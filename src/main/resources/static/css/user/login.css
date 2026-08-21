@@ -21,10 +21,22 @@ body {
 }
 
 body {
-    font-family: "Noto Sans KR", sans-serif;
+    font-family: 'Pretendard', sans-serif;
     color: var(--text);
     background: var(--background);
     -webkit-font-smoothing: antialiased;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-image {
+    height: 28px;
+    width: auto;
+    display: block;
 }
 
 button,

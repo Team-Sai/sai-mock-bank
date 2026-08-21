@@ -119,4 +119,34 @@
         ORDER BY transaction_id ASC
     </select>
 
+    <select id="findRecentByAccountId" resultMap="bankTransactionResultMap">
+        SELECT
+        transaction_id, transaction_key, transaction_type, amount, balance_after,
+        counterparty_name, counterparty_account_number, memo, transaction_at,
+        transfer_id, account_id, created_at, updated_at
+        FROM bank_transaction
+        WHERE account_id = #{accountId}
+        <if test="beforeTransactionId != null">
+            AND transaction_id &lt; #{beforeTransactionId}
+        </if>
+        ORDER BY transaction_id DESC
+        LIMIT #{size}
+    </select>
+
+    <select id="findRecentByAccountIds" resultMap="bankTransactionResultMap">
+        SELECT
+        transaction_id, transaction_key, transaction_type, amount, balance_after,
+        counterparty_name, counterparty_account_number, memo, transaction_at,
+        transfer_id, account_id, created_at, updated_at
+        FROM bank_transaction
+        WHERE account_id IN
+        <foreach item="id" collection="accountIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <if test="beforeTransactionId != null">
+            AND transaction_id &lt; #{beforeTransactionId}
+        </if>
+        ORDER BY transaction_id DESC
+        LIMIT #{size}
+    </select>
 </mapper>

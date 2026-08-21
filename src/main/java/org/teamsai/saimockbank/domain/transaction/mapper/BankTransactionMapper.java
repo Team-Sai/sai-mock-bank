@@ -27,4 +27,16 @@ public interface BankTransactionMapper {
             @Param("accountId") Long accountId,
             @Param("afterTransactionId") Long afterTransactionId
     );
+
+    List<BankTransactionDTO> findRecentByAccountId(
+            @Param("accountId") Long accountId,
+            @Param("beforeTransactionId") Long beforeTransactionId,
+            @Param("size") int size
+    );
+
+    List<BankTransactionDTO> findRecentByAccountIds(
+            @Param("accountIds") List<Long> accountIds,
+            @Param("beforeTransactionId") Long beforeTransactionId,
+            @Param("size") int size
+    );
 }

@@ -95,7 +95,7 @@ public class SecurityConfig {
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
                                         "/api/bank-user/**",
-                                        "/api/mock-bank/accounts/my"
+                                        "/api/mock-bank/accounts/my/**"
                                 )
                                 .authenticated()
 
@@ -122,14 +122,15 @@ public class SecurityConfig {
                                         "/transfer",
                                         "/transfer-history",
                                         "/link/identity-mismatch",
-                                        "/link/invalid"
+                                        "/transactions",
+                                        "/link-invalid"
                                 )
                                 .permitAll()
 
                                 .requestMatchers(
                                         "/css/**",
                                         "/js/**",
-                                        "/images/**",
+                                        "/img/**",
                                         "/favicon.ico",
                                         "/error"
                                 )

@@ -65,8 +65,24 @@
 <div class="card">
     <div class="icon">⏱️</div>
     <h1>연동 요청이 만료되었습니다</h1>
-    <p>계좌 연동 요청이 유효하지 않거나 시간이 지났습니다.<br>사이원장에서 계좌 연동을 다시 시도해주세요.</p>
-    <button type="button" class="btn" onclick="window.close()">창 닫기</button>
+    <button type="button" class="btn" id="close-btn">창 닫기</button>
+    <a href="/home" class="btn" id="home-link" style="display:none; text-decoration:none; text-align:center;">메인으로 이동</a>
 </div>
+<script>
+    (function () {
+        var closeBtn = document.getElementById('close-btn');
+        var homeLink = document.getElementById('home-link');
+        var openedByScript = !!window.opener;
+
+        if (openedByScript) {
+            closeBtn.addEventListener('click', function () {
+                window.close();
+            });
+        } else {
+            closeBtn.style.display = 'none';
+            homeLink.style.display = 'inline-flex';
+        }
+    })();
+</script>
 </body>
 </html>

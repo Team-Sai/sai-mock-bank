@@ -52,6 +52,63 @@ class BankLinkCallbackControllerTest {
     }
 
     @Test
+    void recoverKeyWithoutInternalKeyIsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/link/recover-key").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userToken\":\"token\",\"currentUserKey\":\"new\"}"))
+                .andExpect(status().isUnauthorized());
+        org.mockito.Mockito.verifyNoInteractions(bankLinkService);
+    }
+
+    @Test
+    void recoverKeyWithWrongInternalKeyIsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/link/recover-key").header("X-Internal-Api-Key", "wrong")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userToken\":\"token\",\"currentUserKey\":\"new\"}"))
+                .andExpect(status().isUnauthorized());
+        org.mockito.Mockito.verifyNoInteractions(bankLinkService);
+    }
+
+    @Test
+    void recoverFirstLinkReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/link/recover-key").header("X-Internal-Api-Key", validApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userToken\":\"token\",\"currentUserKey\":\"new\",\"previousUserKey\":null}"))
+                .andExpect(status().isNoContent());
+        verify(bankLinkService).recoverUserKey("token", "new", null);
+    }
+
+    @Test
+    void recoverRelinkReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/link/recover-key").header("X-Internal-Api-Key", validApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userToken\":\"token\",\"currentUserKey\":\"new\",\"previousUserKey\":\"old\"}"))
+                .andExpect(status().isNoContent());
+        verify(bankLinkService).recoverUserKey("token", "new", "old");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "{}", "{\"userToken\":\"token\"}",
+            "{\"userToken\":\" \",\"currentUserKey\":\"new\"}",
+            "{\"userToken\":\"token\",\"currentUserKey\":\" \"}",
+            "{\"userToken\":\"token\",\"currentUserKey\":\"new\",\"previousUserKey\":\" \"}"})
+    void invalidRecoveryIsRejected(String body) throws Exception {
+        mockMvc.perform(post("/api/link/recover-key").header("X-Internal-Api-Key", validApiKey)
+                .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(bankLinkService);
+    }
+
+    @Test
+    void recoveryConflictPreserves409Response() throws Exception {
+        org.mockito.Mockito.doThrow(org.teamsai.saimockbank.domain.identity.exception.IdentityErrorCode
+                .KEY_RECOVERY_CONFLICT.toException()).when(bankLinkService).recoverUserKey("token", "new", null);
+        mockMvc.perform(post("/api/link/recover-key").header("X-Internal-Api-Key", validApiKey)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"userToken\":\"token\",\"currentUserKey\":\"new\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
     void confirmKey_헤더없으면_401() throws Exception {
         mockMvc.perform(post("/api/link/confirm-key")
                         .contentType(MediaType.APPLICATION_JSON)

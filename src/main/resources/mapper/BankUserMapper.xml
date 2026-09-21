@@ -126,14 +126,31 @@
         WHERE user_key_hash = #{hashedKey}
     </update>
 
-    <update id="restoreActiveKey">
+    <resultMap id="keyRecoveryStateMap"
+               type="org.teamsai.saimockbank.domain.user.mapper.UserMapper$KeyRecoveryState">
+        <constructor>
+            <idArg column="bank_user_id" javaType="java.lang.Long"/>
+            <arg column="user_key_hash" javaType="java.lang.String"/>
+            <arg column="pending_user_key" javaType="java.lang.String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findKeyRecoveryStateForUpdate" resultMap="keyRecoveryStateMap">
+        SELECT bank_user_id, user_key_hash, pending_user_key
+        FROM bank_user
+        WHERE user_token = #{userToken}
+        FOR UPDATE
+    </select>
+
+    <update id="recoverKeyState">
         UPDATE bank_user
-        SET user_key_hash       = #{previousHashedKey},
-        key_status          = 'ACTIVE',
+        SET user_key_hash       = #{previousHashedKey,jdbcType=VARCHAR},
+        key_status          = CASE WHEN #{previousHashedKey,jdbcType=VARCHAR} IS NULL
+                                   THEN 'EXPIRED' ELSE 'ACTIVE' END,
         pending_user_key    = NULL,
         pending_issued_at   = NULL,
         pending_expires_at  = NULL
-        WHERE user_key_hash = #{currentHashedKey}
+        WHERE bank_user_id = #{bankUserId}
     </update>
 
 </mapper>

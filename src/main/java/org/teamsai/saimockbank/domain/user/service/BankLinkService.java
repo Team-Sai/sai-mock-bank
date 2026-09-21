@@ -76,6 +76,21 @@ public class BankLinkService {
         }
     }
 
+    /**
+     * 키 연동 실패 시 이전 키 상태로 복구합니다.
+     *
+     * 은행의 confirm 성공 이후에도 사이 백엔드의 로컬 저장이 실패하거나
+     * confirm 응답이 유실될 수 있으므로, 이미 활성화된 신규 키도 복구 대상으로 허용합니다.
+     * 은행의 confirm 완료가 전체 연동 작업의 완료를 의미하지는 않습니다.
+     *
+     * 현재는 활성 키와 pending 키의 일치 여부만 검증하며,
+     * 복구 기한 및 회전 작업 ID 기반 검증은 수행하지 않습니다.
+     * 따라서 키 상태가 조건에 부합하면 오래전에 confirm된 키도 복구될 수 있습니다.
+     *
+     * TODO: 회전 작업 ID 기반 검증과 복구 기한을 도입하고,
+     *       기한 초과 시 백엔드의 정합성 회복 처리도 함께 구현해야 합니다.
+     *       기한만 추가하면 장기 장애 후 필요한 보상 복구까지 차단될 수 있습니다.
+     */
     @Transactional
     public void recoverUserKey(String userToken, String currentRawKey, String previousRawKey) {
         String currentHash = userKeyHasher.hash(currentRawKey);
@@ -86,6 +101,7 @@ public class BankLinkService {
 
         var state = userMapper.findKeyRecoveryStateForUpdate(userToken)
                 .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
+        // confirm 후 보상 복구와 이미 복구된 요청의 재시도를 모두 허용합니다.
         boolean expectedActive = Objects.equals(state.activeKey(), currentHash)
                 || Objects.equals(state.activeKey(), previousHash);
         boolean expectedPending = state.pendingKey() == null

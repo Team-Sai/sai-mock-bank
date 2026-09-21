@@ -96,6 +96,10 @@ public enum IdentityErrorCode
             HttpStatus.CONFLICT,
             "확정할 대기 중인 연동키를 찾을 수 없습니다."
     ),
+    KEY_RECOVERY_CONFLICT(
+            HttpStatus.CONFLICT,
+            "은행 키 상태가 변경되어 연동을 복구할 수 없습니다."
+    ),
     ACTIVE_KEY_NOT_FOUND(
             HttpStatus.CONFLICT,
             "해지할 활성화된 연동키를 찾을 수 없습니다."

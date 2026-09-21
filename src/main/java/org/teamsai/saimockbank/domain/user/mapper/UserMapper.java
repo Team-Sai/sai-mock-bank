@@ -20,8 +20,12 @@ public interface UserMapper {
             @Param("hashedKey") String hashedKey
     );
 
-    int restoreActiveKey(
-            @Param("CurrentHashedKey") String currentHashedKey,
+    record KeyRecoveryState(Long bankUserId, String activeKey, String pendingKey) {}
+
+    Optional<KeyRecoveryState> findKeyRecoveryStateForUpdate(@Param("userToken") String userToken);
+
+    int recoverKeyState(
+            @Param("bankUserId") Long bankUserId,
             @Param("previousHashedKey") String previousHashedKey);
 
     int insert(UserDTO user);

@@ -13,6 +13,7 @@ import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -76,13 +77,24 @@ public class BankLinkService {
     }
 
     @Transactional
-    public void restoreUserKey(String currentRawKey, String previousRawKey) {
-        String currentHashed = userKeyHasher.hash(currentRawKey);
-        String previousHashed = userKeyHasher.hash(previousRawKey);
-        int updatedRow = userMapper.restoreActiveKey(currentHashed, previousHashed);
-        if (updatedRow == 0) {
-            throw IdentityErrorCode.ACTIVE_KEY_NOT_FOUND.toException();
+    public void recoverUserKey(String userToken, String currentRawKey, String previousRawKey) {
+        String currentHash = userKeyHasher.hash(currentRawKey);
+        String previousHash = previousRawKey == null ? null : userKeyHasher.hash(previousRawKey);
+        if (Objects.equals(currentHash, previousHash)) {
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
         }
+
+        var state = userMapper.findKeyRecoveryStateForUpdate(userToken)
+                .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
+        boolean expectedActive = Objects.equals(state.activeKey(), currentHash)
+                || Objects.equals(state.activeKey(), previousHash);
+        boolean expectedPending = state.pendingKey() == null
+                || Objects.equals(state.pendingKey(), currentHash);
+        if (!expectedActive || !expectedPending) {
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        }
+
+        userMapper.recoverKeyState(state.bankUserId(), previousHash);
     }
     
     private String generateUserKey() {

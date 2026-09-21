@@ -2,6 +2,9 @@ package org.teamsai.saimockbank.domain.link.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,15 +34,18 @@ public class BankLinkCallbackController {
         bankLinkService.revokeUserKey(request.userKey());
     }
 
-    @PostMapping("/api/link/restore-key")
+    @PostMapping("/api/link/recover-key")
     @ResponseBody
-    public void restoreUserKey(@Valid @RequestBody RestoreKeyRequest request) {
-        bankLinkService.restoreUserKey(request.currentUserKey(), request.previousUserKey());
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void recoverUserKey(@Valid @RequestBody RecoverKeyRequest request) {
+        bankLinkService.recoverUserKey(request.userToken(), request.currentUserKey(), request.previousUserKey());
     }
 
-    public record RestoreKeyRequest(
+    public record RecoverKeyRequest(
+            @NotBlank(message = "userToken은 필수입니다.") String userToken,
             @NotBlank(message = "currentUserKey는 필수입니다.") String currentUserKey,
-            @NotBlank(message = "previousUserKey는 필수입니다.") String previousUserKey
+            @Pattern(regexp = "(?s).*\\S.*", message = "previousUserKey는 null 또는 공백이 아닌 키여야 합니다.")
+            String previousUserKey
     ) {}
 
     public record ConfirmKeyRequest(

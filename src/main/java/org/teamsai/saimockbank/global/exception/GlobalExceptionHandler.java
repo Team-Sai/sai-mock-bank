@@ -33,7 +33,8 @@ public class GlobalExceptionHandler {
                 .body(
                         ErrorResponse.of(
                                 httpStatus.value(),
-                                exception.getMessage()
+                                exception.getMessage(),
+                                exception.getErrorCode().toString()
                         )
                 );
     }

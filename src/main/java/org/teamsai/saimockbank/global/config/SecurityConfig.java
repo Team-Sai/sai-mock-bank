@@ -5,6 +5,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -58,7 +59,8 @@ public class SecurityConfig {
             HttpSecurity http,
             InternalApiKeyFilter internalApiKeyFilter
     ) throws Exception {
-        http.securityMatcher("/api/link/confirm-key", "/api/link/revoke-key", "/api/link/recover-key")
+        http.securityMatcher("/api/link/confirm-key", "/api/link/revoke-key", "/api/link/recover-key",
+                        "/api/mock-bank/link")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -92,11 +94,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize ->
                         authorize
                                 .requestMatchers(
+                                        HttpMethod.POST,
+                                        "/api/mock-bank/accounts"
+                                )
+                                .authenticated()
+                                .requestMatchers(
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
                                         "/api/bank-user/**",
-                                        "/api/mock-bank/accounts/my/**",
-                                        "/api/mock-bank/accounts"
+                                        "/api/mock-bank/accounts/my/**"
                                 )
                                 .authenticated()
 

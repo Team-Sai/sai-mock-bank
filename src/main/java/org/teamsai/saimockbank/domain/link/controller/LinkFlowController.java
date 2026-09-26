@@ -117,14 +117,18 @@ public class LinkFlowController {
         validateExpectedIdentity(session, userDetails);
         validateAccountIds(userDetails, session, request.accountIds());
 
+        String state = (String) session.getAttribute(SESSION_STATE);
+        if (state == null || state.isBlank()) {
+            throw UserErrorCode.INVALID_LINK_STATE.toException();
+        }
         MockBankLinkResponse linkResponse = bankLinkService.issueUserKey(
                 userDetails.getName(),
-                userDetails.getUserToken()
+                userDetails.getUserToken(),
+                rotationOperationId(state)
         );
         String userKey = linkResponse.userKey();
 
         String returnUrl = (String) session.getAttribute(SESSION_RETURN_URL);
-        String state = (String) session.getAttribute(SESSION_STATE);
 
         String accountIdsParam = request.accountIds().stream()
                 .map(String::valueOf)
@@ -167,6 +171,15 @@ public class LinkFlowController {
             log.warn("[LinkFlowController] 연동 불가능한 계좌 ID 요청 - userId: {}, requestedIds: {}",
                     userDetails.getUserId(), requestedAccountIds);
             throw AccountErrorCode.INVALID_ACCOUNT_SELECTION.toException();
+        }
+    }
+
+    private static String rotationOperationId(String state) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(state.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 

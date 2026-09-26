@@ -10,9 +10,7 @@ import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.exception.UserErrorCode;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Objects;
 
 @Slf4j
@@ -22,7 +20,6 @@ public class BankLinkService {
 
     private final UserMapper userMapper;
     private final UserKeyHasher userKeyHasher;
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final long PENDING_TTL_MINUTES = 5;
 
     /**
@@ -35,28 +32,41 @@ public class BankLinkService {
      * 이는 콜백 유실 시에도 서비스가 끊기지 않도록 하기 위한 의도된 설계입니다.
      */
     @Transactional
-    public MockBankLinkResponse issueUserKey(String name, String userToken) {
+    public MockBankLinkResponse issueUserKey(String name, String userToken, String operationId) {
+        validateOperationId(operationId);
         UserDTO user = userMapper.findByNameAndUserToken(name, userToken)
                 .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
+        user = userMapper.findByIdForUpdate(user.getBankUserId())
+                .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
 
-        String rawKey = generateUserKey();
+        String rawKey = userKeyHasher.deriveUserKey(user.getBankUserId(), operationId);
         String hashedKey = userKeyHasher.hash(rawKey);
-        LocalDateTime issuedAt = LocalDateTime.now();
+        var existing = userMapper.findKeyOperationForUpdate(user.getBankUserId(), operationId);
+        if (existing.isPresent()) {
+            var receipt = existing.get();
+            if (receipt.recovered() || receipt.issuedAt() == null || !hashedKey.equals(receipt.keyHash())) {
+                throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+            }
+            return new MockBankLinkResponse(rawKey, receipt.issuedAt());
+        }
+        LocalDateTime issuedAt = LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
         LocalDateTime expiresAt = issuedAt.plusMinutes(PENDING_TTL_MINUTES);
 
         int updatedRow = userMapper.savePendingUserKey(
-                user.getBankUserId(), hashedKey, issuedAt, expiresAt
+                user.getBankUserId(), hashedKey, issuedAt, expiresAt, operationId
         );
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS.toException();
         }
+        userMapper.insertKeyOperation(user.getBankUserId(), operationId, hashedKey, user.getUserKeyHash(), issuedAt);
         return new MockBankLinkResponse(rawKey, issuedAt);
     }
 
     @Transactional
-    public void confirmUserKey(String rawUserKey) {
+    public void confirmUserKey(String rawUserKey, String operationId) {
+        validateOperationId(operationId);
         String hashedKey = userKeyHasher.hash(rawUserKey);
-        int updatedRow = userMapper.promotePendingToActive(hashedKey);
+        int updatedRow = userMapper.promotePendingToActive(hashedKey, operationId);
         if (updatedRow == 0) {
             throw IdentityErrorCode.PENDING_KEY_NOT_FOUND.toException();
         }
@@ -84,7 +94,8 @@ public class BankLinkService {
      * Expired/legacy active keys require reconciliation, never blind rollback.
      */
     @Transactional
-    public void recoverUserKey(String userToken, String currentRawKey, String previousRawKey) {
+    public void recoverUserKey(String userToken, String currentRawKey, String previousRawKey, String operationId) {
+        validateOperationId(operationId);
         String currentHash = userKeyHasher.hash(currentRawKey);
         String previousHash = previousRawKey == null ? null : userKeyHasher.hash(previousRawKey);
         if (Objects.equals(currentHash, previousHash)) {
@@ -93,6 +104,19 @@ public class BankLinkService {
 
         var state = userMapper.findKeyRecoveryStateForUpdate(userToken)
                 .orElseThrow(UserErrorCode.USER_NOT_FOUND::toException);
+        var receipt = userMapper.findKeyOperationForUpdate(state.bankUserId(), operationId);
+        if (receipt.isPresent()) {
+            if (!currentHash.equals(receipt.get().keyHash())
+                    || !Objects.equals(previousHash, receipt.get().previousKeyHash())) {
+                throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+            }
+            // A completed A remains successful even if B is now pending or active.
+            if (receipt.get().recovered()) return;
+        }
+        // Also bind read-only replays to the exact issuance; keys alone are insufficient.
+        if (!operationId.equals(state.operationId()) || !currentHash.equals(state.rotationKeyHash())) {
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        }
         // confirm 후 보상 복구와 이미 복구된 요청의 재시도를 모두 허용합니다.
         boolean expectedActive = Objects.equals(state.activeKey(), currentHash)
                 || Objects.equals(state.activeKey(), previousHash);
@@ -103,7 +127,8 @@ public class BankLinkService {
         }
 
         if (Objects.equals(state.activeKey(), previousHash) && state.pendingKey() == null) {
-            return; // A replay must not rewrite key status or timestamps.
+            userMapper.saveRecoveryReceipt(state.bankUserId(), operationId, currentHash, previousHash);
+            return; // Never rewrite the user's key status or timestamps.
         }
         if (Objects.equals(state.activeKey(), currentHash)
                 && (!Objects.equals(state.recoveryPreviousKey(), previousHash)
@@ -112,14 +137,20 @@ public class BankLinkService {
         }
         // Check the deadline in SQL after acquiring the row lock, using the same
         // DB clock as confirmation (independent of application timezone/skew).
-        if (userMapper.recoverKeyState(state.bankUserId(), previousHash) != 1) {
+        if (userMapper.recoverKeyState(state.bankUserId(), previousHash, operationId) != 1) {
+            if (Objects.equals(state.activeKey(), currentHash)
+                    && userMapper.isRecoveryExpired(state.bankUserId())) {
+                throw IdentityErrorCode.KEY_RECOVERY_EXPIRED.toException();
+            }
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        }
+        userMapper.saveRecoveryReceipt(state.bankUserId(), operationId, currentHash, previousHash);
+    }
+
+    private static void validateOperationId(String operationId) {
+        if (operationId == null || !operationId.matches("[A-Za-z0-9_-]{1,64}")) {
             throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
         }
     }
-    
-    private String generateUserKey() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return "mb_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
+
 }

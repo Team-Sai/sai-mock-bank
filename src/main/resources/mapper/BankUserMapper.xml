@@ -18,7 +18,7 @@
     
     </resultMap>
 
-    <select id="findByNameAndUserToken" resultType="org.teamsai.saimockbank.domain.user.dto.UserDTO">
+    <select id="findByNameAndUserToken" resultMap="userResultMap">
     SELECT bank_user_id, name, user_key_hash, issued_at, created_at, updated_at, birth_date
     FROM bank_user
     WHERE name = #{name} AND user_token = #{userToken}
@@ -57,7 +57,7 @@
     </select>
 
     <select id="findByIdForUpdate" resultMap="userResultMap">
-        SELECT bank_user_id, name, user_token FROM bank_user
+        SELECT bank_user_id, name, user_token, user_key_hash FROM bank_user
         WHERE bank_user_id = #{bankUserId} FOR UPDATE
     </select>
 
@@ -90,6 +90,8 @@
     <update id="savePendingUserKey">
         UPDATE bank_user
         SET pending_user_key   = #{pendingUserKey},
+        rotation_operation_id = #{operationId},
+        rotation_key_hash = #{pendingUserKey},
         key_status         = 'PENDING',
         pending_issued_at  = #{pendingIssuedAt},
         pending_expires_at = #{pendingExpiresAt}
@@ -108,6 +110,7 @@
         pending_issued_at   = NULL,
         pending_expires_at  = NULL
         WHERE pending_user_key = #{hashedKey}
+        AND rotation_operation_id = #{operationId}
         AND key_status = 'PENDING'
         AND pending_expires_at &gt; NOW()
     </update>
@@ -126,6 +129,10 @@
     <update id="revokeUserKey">
         UPDATE bank_user
         SET key_status          = 'EXPIRED',
+        rotation_operation_id = NULL,
+        rotation_key_hash = NULL,
+        recovery_previous_key = NULL,
+        recovery_expires_at = NULL,
         user_key_hash       = NULL,
         pending_user_key    = NULL,
         pending_issued_at   = NULL,
@@ -141,11 +148,14 @@
             <arg column="pending_user_key" javaType="java.lang.String"/>
             <arg column="recovery_previous_key" javaType="java.lang.String"/>
             <arg column="recovery_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="rotation_operation_id" javaType="java.lang.String"/>
+            <arg column="rotation_key_hash" javaType="java.lang.String"/>
         </constructor>
     </resultMap>
 
     <select id="findKeyRecoveryStateForUpdate" resultMap="keyRecoveryStateMap">
-        SELECT bank_user_id, user_key_hash, pending_user_key, recovery_previous_key, recovery_expires_at
+        SELECT bank_user_id, user_key_hash, pending_user_key, recovery_previous_key, recovery_expires_at,
+               rotation_operation_id, rotation_key_hash
         FROM bank_user
         WHERE user_token = #{userToken}
         FOR UPDATE
@@ -162,9 +172,40 @@
         pending_issued_at   = NULL,
         pending_expires_at  = NULL
         WHERE bank_user_id = #{bankUserId}
+        AND rotation_operation_id = #{operationId}
         AND ((user_key_hash &lt;=&gt; #{previousHashedKey,jdbcType=VARCHAR})
              OR (recovery_expires_at &gt; NOW(6)
                  AND (recovery_previous_key &lt;=&gt; #{previousHashedKey,jdbcType=VARCHAR})))
     </update>
+
+    <select id="isRecoveryExpired" resultType="boolean">
+        SELECT COALESCE(recovery_expires_at &lt;= NOW(6), FALSE)
+        FROM bank_user WHERE bank_user_id = #{bankUserId}
+    </select>
+
+    <resultMap id="keyOperationMap" type="org.teamsai.saimockbank.domain.user.mapper.UserMapper$KeyOperation">
+        <constructor>
+            <arg column="key_hash" javaType="java.lang.String"/>
+            <arg column="previous_key_hash" javaType="java.lang.String"/>
+            <arg column="issued_at" javaType="java.time.LocalDateTime"/>
+            <arg column="recovered" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findKeyOperationForUpdate" resultMap="keyOperationMap">
+        SELECT key_hash, previous_key_hash, issued_at, recovered FROM bank_key_operation
+        WHERE bank_user_id = #{bankUserId} AND operation_id = #{operationId} FOR UPDATE
+    </select>
+
+    <insert id="insertKeyOperation">
+        INSERT INTO bank_key_operation(bank_user_id, operation_id, key_hash, previous_key_hash, issued_at)
+        VALUES (#{bankUserId}, #{operationId}, #{keyHash}, #{previousKeyHash,jdbcType=VARCHAR}, #{issuedAt})
+    </insert>
+
+    <insert id="saveRecoveryReceipt">
+        INSERT INTO bank_key_operation(bank_user_id, operation_id, key_hash, previous_key_hash, recovered)
+        VALUES (#{bankUserId}, #{operationId}, #{keyHash}, #{previousKeyHash,jdbcType=VARCHAR}, TRUE)
+        ON DUPLICATE KEY UPDATE recovered = TRUE
+    </insert>
 
 </mapper>

@@ -96,6 +96,10 @@ public enum IdentityErrorCode
             HttpStatus.CONFLICT,
             "확정할 대기 중인 연동키를 찾을 수 없습니다."
     ),
+    KEY_RECOVERY_EXPIRED(
+            HttpStatus.CONFLICT,
+            "연동키 복구 기한이 만료되어 상태 확인이 필요합니다."
+    ),
     KEY_RECOVERY_CONFLICT(
             HttpStatus.CONFLICT,
             "은행 키 상태가 변경되어 연동을 복구할 수 없습니다."

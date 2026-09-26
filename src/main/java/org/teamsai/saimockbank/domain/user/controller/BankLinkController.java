@@ -28,7 +28,7 @@ public class BankLinkController {
     @PostMapping("/link")
     public ResponseEntity<MockBankLinkResponse> link(@Valid @RequestBody MockBankLinkRequest request) {
         MockBankLinkResponse response = bankLinkService.issueUserKey(
-                request.name(), request.userToken()
+                request.name(), request.userToken(), request.operationId()
         );
         return ResponseEntity.ok(response);
     }

@@ -9,7 +9,10 @@
                type="org.teamsai.saimockbank.domain.account.dto.BankAccountDTO">
         <id property="accountId" column="account_id"/>
         <result property="bankUserId" column="bank_user_id"/>
+        <result property="creationRequestId" column="creation_request_id"/>
+        <result property="creationRequestHash" column="creation_request_hash"/>
         <result property="bankCode" column="bank_code"/>
+        <result property="bankName" column="bank_name"/>
         <result property="accountNumber" column="account_number"/>
         <result property="accountName" column="account_name"/>
         <result property="accountHolderName" column="account_holder_name"/>
@@ -27,26 +30,35 @@
         INSERT INTO bank_account (
         bank_user_id,
         bank_code,
+        bank_name,
         account_number,
         account_name,
         account_holder_name,
         balance,
-        status
+        status,
+        creation_request_id,
+        creation_request_hash
         ) VALUES (
         #{bankUserId},
         #{bankCode},
+        #{bankName,jdbcType=VARCHAR},
         #{accountNumber},
         #{accountName},
         #{accountHolderName},
         #{balance},
-        #{status}
+        #{status},
+        #{creationRequestId,jdbcType=VARCHAR},
+        #{creationRequestHash,jdbcType=VARCHAR}
         )
     </insert>
 
     <sql id="accountColumns">
+        creation_request_id,
+        creation_request_hash,
         account_id,
         bank_user_id,
         bank_code,
+        bank_name,
         account_number,
         account_name,
         account_holder_name,
@@ -57,7 +69,7 @@
     </sql>
 
     <select id="findAllByUserKey" resultMap="bankAccountResultMap">
-        SELECT a.account_id, a.bank_user_id, a.bank_code, a.account_number,
+        SELECT a.account_id, a.bank_user_id, a.bank_code, a.bank_name, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at
         FROM bank_account a
@@ -67,7 +79,7 @@
     </select>
 
     <select id="findByUserKey" parameterType="string" resultMap="bankAccountResultMap">
-        SELECT a.account_id, a.bank_user_id, a.bank_code, a.account_number,
+        SELECT a.account_id, a.bank_user_id, a.bank_code, a.bank_name, a.account_number,
         a.account_name, a.account_holder_name, a.balance, a.status,
         a.created_at, a.updated_at
         FROM bank_account a
@@ -101,6 +113,16 @@
         <include refid="accountColumns"/>
         FROM bank_account
         WHERE account_id = #{accountId}
+        FOR UPDATE
+    </select>
+
+    <select id="findByCreationRequestForUpdate"
+            resultMap="bankAccountResultMap">
+        SELECT
+        <include refid="accountColumns"/>
+        FROM bank_account
+        WHERE bank_user_id = #{bankUserId}
+        AND creation_request_id = #{creationRequestId}
         FOR UPDATE
     </select>
 

@@ -48,6 +48,8 @@ class BankLinkServiceTest {
         ReflectionTestUtils.setField(user, "bankUserId", userId);
         ReflectionTestUtils.setField(user, "name", NAME);
         ReflectionTestUtils.setField(user, "userKeyHash", userKeyHash);
+        given(userMapper.findByIdForUpdate(userId)).willReturn(Optional.of(user));
+        given(userKeyHasher.deriveUserKey(userId, "op")).willReturn("mb_derived-" + userId);
         return user;
     }
 
@@ -58,11 +60,9 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(identity));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
-        )).willReturn(1);
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), eq("op"))).willReturn(1);
 
-        MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
+        MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN, "op");
 
         assertThat(response.userKey()).isNotNull().startsWith("mb_");
         assertThat(response.issuedAt()).isNotNull();
@@ -74,12 +74,7 @@ class BankLinkServiceTest {
         ArgumentCaptor<String> pendingKeyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<LocalDateTime> issuedAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> expiresAtCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(userMapper).savePendingUserKey(
-                eq(BANK_USER_ID),
-                pendingKeyCaptor.capture(),
-                issuedAtCaptor.capture(),
-                expiresAtCaptor.capture()
-        );
+        verify(userMapper).savePendingUserKey(eq(BANK_USER_ID), pendingKeyCaptor.capture(), issuedAtCaptor.capture(), expiresAtCaptor.capture(), eq("op"));
         assertThat(pendingKeyCaptor.getValue()).isEqualTo(HASHED_VALUE);
         assertThat(issuedAtCaptor.getValue()).isEqualTo(response.issuedAt());
         assertThat(expiresAtCaptor.getValue()).isAfter(issuedAtCaptor.getValue());
@@ -97,12 +92,10 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(name2, userToken2))
                 .willReturn(Optional.of(identity2));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.savePendingUserKey(
-                anyLong(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
-        )).willReturn(1);
+        given(userMapper.savePendingUserKey(anyLong(), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), eq("op"))).willReturn(1);
 
-        MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN);
-        MockBankLinkResponse second = bankLinkService.issueUserKey(name2, userToken2);
+        MockBankLinkResponse first = bankLinkService.issueUserKey(NAME, USER_TOKEN, "op");
+        MockBankLinkResponse second = bankLinkService.issueUserKey(name2, userToken2, "op");
 
         assertThat(first.userKey()).isNotEqualTo(second.userKey());
     }
@@ -113,13 +106,13 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
+        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN, "op"))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
                 .isEqualTo(UserErrorCode.USER_NOT_FOUND);
 
         verify(userKeyHasher, never()).hash(anyString());
-        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any());
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), eq("op"));
     }
 
     @Test
@@ -129,17 +122,13 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(alreadyLinkedUser));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
-        )).willReturn(1);
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), eq("op"))).willReturn(1);
 
-        MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN);
+        MockBankLinkResponse response = bankLinkService.issueUserKey(NAME, USER_TOKEN, "op");
 
         assertThat(response.userKey()).isNotNull().startsWith("mb_");
         verify(userKeyHasher).hash(anyString());
-        verify(userMapper).savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
-        );
+        verify(userMapper).savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), eq("op"));
     }
 
     @Test
@@ -149,11 +138,9 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN))
                 .willReturn(Optional.of(user));
         given(userKeyHasher.hash(anyString())).willReturn(HASHED_VALUE);
-        given(userMapper.savePendingUserKey(
-                eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class)
-        )).willReturn(0);
+        given(userMapper.savePendingUserKey(eq(BANK_USER_ID), anyString(), any(LocalDateTime.class), any(LocalDateTime.class), eq("op"))).willReturn(0);
 
-        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN))
+        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN, "op"))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
                 .isEqualTo(IdentityErrorCode.PENDING_KEY_ALREADY_EXISTS);
@@ -163,20 +150,20 @@ class BankLinkServiceTest {
     @DisplayName("유효한 PENDING의 rawKey로 confirm하면 ACTIVE로 전환된다")
     void confirmsUserKeySuccessfully() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(1);
+        given(userMapper.promotePendingToActive(HASHED_VALUE, "op")).willReturn(1);
 
-        bankLinkService.confirmUserKey("raw-key");
+        bankLinkService.confirmUserKey("raw-key", "op");
 
-        verify(userMapper).promotePendingToActive(HASHED_VALUE);
+        verify(userMapper).promotePendingToActive(HASHED_VALUE, "op");
     }
 
     @Test
     @DisplayName("대응하는 PENDING이 없으면 PENDING_KEY_NOT_FOUND 예외가 발생한다")
     void throwsWhenPendingKeyNotFoundOnConfirm() {
         given(userKeyHasher.hash("raw-key")).willReturn(HASHED_VALUE);
-        given(userMapper.promotePendingToActive(HASHED_VALUE)).willReturn(0);
+        given(userMapper.promotePendingToActive(HASHED_VALUE, "op")).willReturn(0);
 
-        assertThatThrownBy(() -> bankLinkService.confirmUserKey("raw-key"))
+        assertThatThrownBy(() -> bankLinkService.confirmUserKey("raw-key", "op"))
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
                 .isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
@@ -203,5 +190,34 @@ class BankLinkServiceTest {
                 .isInstanceOf(DomainException.class)
                 .extracting("errorCode")
                 .isEqualTo(IdentityErrorCode.ACTIVE_KEY_NOT_FOUND);
+    }
+
+    @Test
+    void repeatedIssuanceReturnsOriginalKeyAndTimestampWithoutRenewingPending() {
+        var user = createIdentity(BANK_USER_ID, null);
+        given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN)).willReturn(Optional.of(user));
+        given(userKeyHasher.hash("mb_derived-1")).willReturn(HASHED_VALUE);
+        var originalTime = LocalDateTime.of(2026, 1, 1, 0, 0);
+        given(userMapper.findKeyOperationForUpdate(BANK_USER_ID, "op"))
+                .willReturn(Optional.of(new UserMapper.KeyOperation(HASHED_VALUE, null, originalTime, false)));
+
+        var result = bankLinkService.issueUserKey(NAME, USER_TOKEN, "op");
+
+        assertThat(result.userKey()).isEqualTo("mb_derived-1");
+        assertThat(result.issuedAt()).isEqualTo(originalTime);
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), any());
+        verify(userMapper, never()).insertKeyOperation(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void recoveredOperationCannotIssueAnotherKey() {
+        var user = createIdentity(BANK_USER_ID, null);
+        given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN)).willReturn(Optional.of(user));
+        given(userKeyHasher.hash("mb_derived-1")).willReturn(HASHED_VALUE);
+        given(userMapper.findKeyOperationForUpdate(BANK_USER_ID, "op"))
+                .willReturn(Optional.of(new UserMapper.KeyOperation(HASHED_VALUE, null, LocalDateTime.now(), true)));
+        assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN, "op"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), any());
     }
 }

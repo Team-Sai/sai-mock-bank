@@ -11,6 +11,9 @@ import org.teamsai.saimockbank.global.exception.DomainException;
 public enum AccountErrorCode
         implements BaseErrorCode<DomainException> {
 
+    INVALID_ACCOUNT_CREATION(HttpStatus.BAD_REQUEST, "계좌 생성 조건이 올바르지 않습니다."),
+    ACCOUNT_CREATION_CONFLICT(HttpStatus.CONFLICT, "같은 요청 키로 다른 조건의 계좌를 생성할 수 없습니다."),
+
     INVALID_ACCOUNT_REQUEST(
             HttpStatus.BAD_REQUEST,
             "계좌 조회 요청값이 올바르지 않습니다."

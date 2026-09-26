@@ -22,3 +22,7 @@ ALTER TABLE bank_user
     ADD COLUMN IF NOT EXISTS pending_issued_at   DATETIME     NULL;
 ALTER TABLE bank_user
     ADD COLUMN IF NOT EXISTS pending_expires_at  DATETIME     NULL;
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS recovery_previous_key VARCHAR(255) NULL;
+ALTER TABLE bank_user
+    ADD COLUMN IF NOT EXISTS recovery_expires_at DATETIME(6) NULL;

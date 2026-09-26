@@ -86,6 +86,8 @@ class BankKeyRecoveryIntegrationTest {
     private void assertRecovered(String previous) {
         var row = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
         assertThat(row.get("user_key_hash")).isEqualTo(hash(previous));
+        assertThat(row.get("recovery_previous_key")).isNull();
+        assertThat(row.get("recovery_expires_at")).isNull();
         assertThat(row.get("pending_user_key")).isNull();
         assertThat(row.get("pending_issued_at")).isNull();
         assertThat(row.get("pending_expires_at")).isNull();
@@ -93,12 +95,17 @@ class BankKeyRecoveryIntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource(value = {"NULL,new,NULL", "new,NULL,NULL", "NULL,NULL,NULL",
-            "old,new,old", "new,NULL,old", "old,NULL,old"}, nullValues = "NULL")
+    @CsvSource(value = {"NULL,new,NULL",
+            "old,new,old", "old,NULL,old"}, nullValues = "NULL")
     void recoversAndRepeatedRequestIsSafe(String active, String pending, String previous) {
         state(active, pending);
+        if (pending == null) {
+            jdbc.update("UPDATE bank_user SET pending_issued_at=NULL, pending_expires_at=NULL WHERE user_token=?", token);
+        }
         service.recoverUserKey(token, "new", previous);
+        var recovered = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
         service.recoverUserKey(token, "new", previous);
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token)).isEqualTo(recovered);
         assertRecovered(previous);
     }
 
@@ -127,6 +134,75 @@ class BankKeyRecoveryIntegrationTest {
         assertRecovered("old");
     }
 
+    @Test void expiredConfirmationCannotBeRolledBack() {
+        state("old", "new");
+        service.confirmUserKey("new");
+        jdbc.update("UPDATE bank_user SET recovery_expires_at=NOW(6) WHERE user_token=?", token);
+        var before = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
+        assertThatThrownBy(() -> service.recoverUserKey(token, "new", "old"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token)).isEqualTo(before);
+    }
+
+    @Test void sqlDeadlineGuardRejectsExpiredGrantWithoutChangingState() {
+        state("old", "new");
+        service.confirmUserKey("new");
+        jdbc.update("UPDATE bank_user SET recovery_expires_at=NOW(6) WHERE user_token=?", token);
+        var before = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
+        var tx = new TransactionTemplate(transactionManager);
+        tx.executeWithoutResult(status -> {
+            var locked = mapper.findKeyRecoveryStateForUpdate(token).orElseThrow();
+            assertThat(mapper.recoverKeyState(locked.bankUserId(), hash("old"))).isZero();
+        });
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token)).isEqualTo(before);
+    }
+
+    @Test void expiredPendingCanStillBeSafelyCancelled() {
+        state("old", "new");
+        jdbc.update("UPDATE bank_user SET pending_expires_at=NOW() WHERE user_token=?", token);
+        service.recoverUserKey(token, "new", "old");
+        assertRecovered("old");
+    }
+    @Test void legacyConfirmedKeyWithoutGrantCannotBeRolledBack() {
+        state("new", null);
+        assertThatThrownBy(() -> service.recoverUserKey(token, "new", "old"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+    }
+
+    @Test void confirmationRecordsActualPredecessorAndDoesNotRenewOnReplay() {
+        state("old", "new");
+        service.confirmUserKey("new");
+        var before = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
+        assertThat(before.get("recovery_previous_key")).isEqualTo(hash("old"));
+        assertThat(before.get("recovery_expires_at")).isNotNull();
+        assertThatThrownBy(() -> service.confirmUserKey("new"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
+        assertThatThrownBy(() -> service.recoverUserKey(token, "new", "different"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token)).isEqualTo(before);
+    }
+
+    @Test void firstConfirmedKeyCanBeRecoveredAndReplayedWithoutWrites() {
+        state(null, "new");
+        service.confirmUserKey("new");
+        service.recoverUserKey(token, "new", null);
+        assertRecovered(null);
+        var before = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
+        service.recoverUserKey(token, "new", null);
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token)).isEqualTo(before);
+    }
+
+    @Test void replayCannotUndoSubsequentRotation() {
+        state("old", "new");
+        service.confirmUserKey("new");
+        service.recoverUserKey(token, "new", "old");
+        state("old", "next");
+        service.confirmUserKey("next");
+        assertThatThrownBy(() -> service.recoverUserKey(token, "new", "old"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        assertThat(jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token).get("user_key_hash"))
+                .isEqualTo(hash("next"));
+    }
     @Test void concurrentConfirmAndRecoveryAlwaysEndWithPreviousKey() throws Exception {
         state("old", "new");
         var pool = Executors.newFixedThreadPool(2);

@@ -15,3 +15,21 @@ CREATE TABLE IF NOT EXISTS bank_account (
                                 CONSTRAINT fk_bank_account_identity FOREIGN KEY (bank_user_id) REFERENCES bank_user (bank_user_id),
                                 CONSTRAINT chk_bank_account_balance CHECK ((balance >= 0))
 ) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ALTER TABLE bank_account
+    ADD COLUMN IF NOT EXISTS creation_request_id VARCHAR(36)
+        CHARACTER SET ascii COLLATE ascii_bin NULL,
+    ADD UNIQUE KEY IF NOT EXISTS uk_account_creation_request (
+        bank_user_id,
+        creation_request_id
+    );
+ALTER TABLE bank_account
+    ADD COLUMN IF NOT EXISTS creation_request_hash CHAR(64)
+        CHARACTER SET ascii COLLATE ascii_bin NULL;
+
+-- The previous creation API accepted no conditions: all requests meant this default.
+UPDATE bank_account
+SET creation_request_hash = SHA2(CONCAT('v1', CHAR(10), '088', CHAR(10), '입출금통장'), 256)
+WHERE creation_request_id IS NOT NULL AND creation_request_hash IS NULL;
+
+ALTER TABLE bank_account
+    ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) NULL;

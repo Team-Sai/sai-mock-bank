@@ -77,19 +77,11 @@ public class BankLinkService {
     }
 
     /**
-     * 키 연동 실패 시 이전 키 상태로 복구합니다.
-     *
-     * 은행의 confirm 성공 이후에도 사이 백엔드의 로컬 저장이 실패하거나
-     * confirm 응답이 유실될 수 있으므로, 이미 활성화된 신규 키도 복구 대상으로 허용합니다.
-     * 은행의 confirm 완료가 전체 연동 작업의 완료를 의미하지는 않습니다.
-     *
-     * 현재는 활성 키와 pending 키의 일치 여부만 검증하며,
-     * 복구 기한 및 회전 작업 ID 기반 검증은 수행하지 않습니다.
-     * 따라서 키 상태가 조건에 부합하면 오래전에 confirm된 키도 복구될 수 있습니다.
-     *
-     * TODO: 회전 작업 ID 기반 검증과 복구 기한을 도입하고,
-     *       기한 초과 시 백엔드의 정합성 회복 처리도 함께 구현해야 합니다.
-     *       기한만 추가하면 장기 장애 후 필요한 보상 복구까지 차단될 수 있습니다.
+     * Pending cancellation is safe while the previous key remains active.
+     * A confirmed key may be restored only to the bank-recorded predecessor,
+     * within five minutes of confirmation. The grant is consumed on recovery.
+     * An already restored state is a read-only success, even after expiry.
+     * Expired/legacy active keys require reconciliation, never blind rollback.
      */
     @Transactional
     public void recoverUserKey(String userToken, String currentRawKey, String previousRawKey) {
@@ -110,7 +102,19 @@ public class BankLinkService {
             throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
         }
 
-        userMapper.recoverKeyState(state.bankUserId(), previousHash);
+        if (Objects.equals(state.activeKey(), previousHash) && state.pendingKey() == null) {
+            return; // A replay must not rewrite key status or timestamps.
+        }
+        if (Objects.equals(state.activeKey(), currentHash)
+                && (!Objects.equals(state.recoveryPreviousKey(), previousHash)
+                    || state.recoveryExpiresAt() == null)) {
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        }
+        // Check the deadline in SQL after acquiring the row lock, using the same
+        // DB clock as confirmation (independent of application timezone/skew).
+        if (userMapper.recoverKeyState(state.bankUserId(), previousHash) != 1) {
+            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        }
     }
     
     private String generateUserKey() {

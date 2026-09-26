@@ -95,7 +95,8 @@ public class SecurityConfig {
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
                                         "/api/bank-user/**",
-                                        "/api/mock-bank/accounts/my/**"
+                                        "/api/mock-bank/accounts/my/**",
+                                        "/api/mock-bank/accounts"
                                 )
                                 .authenticated()
 

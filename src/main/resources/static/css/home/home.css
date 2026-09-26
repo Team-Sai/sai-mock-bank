@@ -86,12 +86,16 @@ a {
 }
 
 .balance-card__footer {
+    display: flex;
+    gap: 12px;
     margin-top: 24px;
     padding: 16px 24px 24px;
     border-top: 1px dashed var(--color-border);
 }
 
 .balance-card__cta {
+    font-family: inherit;
+    line-height: 1.5;
     display: block;
     width: 100%;
     padding: 13px 0;
@@ -158,3 +162,19 @@ a {
         padding: 40px 24px 64px;
     }
 }
+.balance-card__cta:disabled { opacity: .6; cursor: default; }
+#submitCreateAccount[aria-busy="true"] { cursor: wait; }
+.balance-card__cta:focus-visible { outline: 3px solid #a78bdb; outline-offset: 3px; }
+.account-creation-status { text-align: center; color: var(--color-accent); overflow-wrap: anywhere; }
+.account-creation-status:empty { display: none; }
+.account-dialog { width: min(440px, calc(100% - 32px)); padding: 28px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-primary); }
+.account-dialog::backdrop { background: rgb(0 0 0 / 35%); }
+.account-dialog h2 { margin-top: 0; }
+.account-dialog label { display: block; margin: 16px 0 6px; }
+.account-dialog select, .account-dialog input { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--color-border); border-radius: 2px; }
+.account-dialog__actions { display: flex; gap: 12px; margin-top: 24px; }
+.account-dialog__actions button { flex: 1; font-family: inherit; }
+#creationMessage { font-size: 14px; overflow-wrap: anywhere; }
+
+.account-dialog [hidden] { display: none !important; }
+#creationCompleteMessage { line-height: 1.7; overflow-wrap: anywhere; margin-bottom: 24px; }

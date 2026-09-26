@@ -148,8 +148,9 @@ public class BankLinkService {
     }
 
     private static void validateOperationId(String operationId) {
-        if (operationId == null || !operationId.matches("[A-Za-z0-9_-]{1,64}")) {
-            throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+        if (operationId == null
+                || !operationId.matches("[A-Za-z0-9_-]{1,64}")) {
+            throw IdentityErrorCode.INVALID_OPERATION_ID.toException();
         }
     }
 

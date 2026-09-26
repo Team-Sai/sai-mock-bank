@@ -50,17 +50,20 @@ public record CreateAccountRequest(String bankCode, String accountName, String b
         return text.isBlank() || text.length() > 100 || text.codePoints().anyMatch(Character::isISOControl);
     }
 
-    // Persist the original conditions independently of later account name/balance changes.
+    // 계좌명이나 잔액이 변경되어도 최초 생성 요청 조건을 비교하기 위해 저장합니다.
     public String fingerprint() {
         try {
             var canonical = normalized();
-            // Keep the old hash for zero-balance requests pending from the previous version.
-            String value = !"CUSTOM".equals(canonical.bankCode()) && canonical.initialBalance().signum() == 0
-                    ? "v1\n" + canonical.bankCode() + "\n" + canonical.accountName()
-                    : "v2\n" + canonical.bankCode() + "\n" + canonical.accountName() + "\n"
-                      + canonical.bankName() + "\n" + canonical.initialBalance().toPlainString();
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8)));
+            String value = "v2\n"
+                    + canonical.bankCode() + "\n"
+                    + canonical.accountName() + "\n"
+                    + canonical.bankName() + "\n"
+                    + canonical.initialBalance().toPlainString();
+
+            return HexFormat.of().formatHex(
+                    MessageDigest.getInstance("SHA-256")
+                            .digest(value.getBytes(StandardCharsets.UTF_8))
+            );
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }

@@ -11,6 +11,10 @@ import org.teamsai.saimockbank.global.exception.DomainException;
 public enum IdentityErrorCode
         implements BaseErrorCode<DomainException> {
 
+    INVALID_OPERATION_ID(
+            HttpStatus.BAD_REQUEST,
+            "연동 작업 식별값이 올바르지 않습니다."
+    ),
     UNAUTHENTICATED_USER(
             HttpStatus.UNAUTHORIZED,
             "로그인이 필요하거나 토큰이 유효하지 않습니다."

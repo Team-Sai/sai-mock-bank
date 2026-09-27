@@ -47,6 +47,19 @@ public class BankLinkService {
             if (receipt.recovered() || receipt.issuedAt() == null || !hashedKey.equals(receipt.keyHash())) {
                 throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
             }
+            var state = userMapper.findKeyIssuanceState(user.getBankUserId())
+                    .orElseThrow(IdentityErrorCode.KEY_RECOVERY_CONFLICT::toException);
+            if (!operationId.equals(state.operationId()) || !hashedKey.equals(state.rotationKeyHash())) {
+                throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+            }
+            if (!hashedKey.equals(state.activeKeyHash())) {
+                if (!"PENDING".equals(state.keyStatus()) || !hashedKey.equals(state.pendingKeyHash())) {
+                    throw IdentityErrorCode.KEY_RECOVERY_CONFLICT.toException();
+                }
+                if (state.pendingExpired()) {
+                    throw IdentityErrorCode.KEY_ISSUANCE_EXPIRED.toException();
+                }
+            }
             return new MockBankLinkResponse(rawKey, receipt.issuedAt());
         }
         LocalDateTime issuedAt = LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);

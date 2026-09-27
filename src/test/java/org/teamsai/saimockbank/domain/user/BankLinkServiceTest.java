@@ -198,6 +198,9 @@ class BankLinkServiceTest {
         given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN)).willReturn(Optional.of(user));
         given(userKeyHasher.hash("mb_derived-1")).willReturn(HASHED_VALUE);
         var originalTime = LocalDateTime.of(2026, 1, 1, 0, 0);
+        given(userMapper.findKeyIssuanceState(BANK_USER_ID)).willReturn(Optional.of(
+                new org.teamsai.saimockbank.domain.user.dto.KeyIssuanceState(
+                        null, HASHED_VALUE, "op", HASHED_VALUE, "PENDING", false)));
         given(userMapper.findKeyOperationForUpdate(BANK_USER_ID, "op"))
                 .willReturn(Optional.of(new UserMapper.KeyOperation(HASHED_VALUE, null, originalTime, false)));
 
@@ -219,5 +222,31 @@ class BankLinkServiceTest {
         assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN, "op"))
                 .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
         verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), any());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"PENDING,op,true", "ACTIVE,op,false", "PENDING,new-op,false"})
+    void replayChecksCurrentState(String status, String currentOperation, boolean expired) {
+        var user = createIdentity(BANK_USER_ID, null);
+        given(userMapper.findByNameAndUserToken(NAME, USER_TOKEN)).willReturn(Optional.of(user));
+        given(userKeyHasher.hash("mb_derived-1")).willReturn(HASHED_VALUE);
+        var issuedAt = LocalDateTime.now().minusMinutes(10);
+        given(userMapper.findKeyOperationForUpdate(BANK_USER_ID, "op")).willReturn(Optional.of(
+                new UserMapper.KeyOperation(HASHED_VALUE, null, issuedAt, false)));
+        given(userMapper.findKeyIssuanceState(BANK_USER_ID)).willReturn(Optional.of(
+                new org.teamsai.saimockbank.domain.user.dto.KeyIssuanceState(
+                        status.equals("ACTIVE") ? HASHED_VALUE : null,
+                        status.equals("PENDING") ? HASHED_VALUE : null,
+                        currentOperation, HASHED_VALUE, status, expired)));
+
+        if (status.equals("ACTIVE")) {
+            assertThat(bankLinkService.issueUserKey(NAME, USER_TOKEN, "op").issuedAt()).isEqualTo(issuedAt);
+        } else {
+            assertThatThrownBy(() -> bankLinkService.issueUserKey(NAME, USER_TOKEN, "op"))
+                    .extracting("errorCode").isEqualTo(expired
+                            ? IdentityErrorCode.KEY_ISSUANCE_EXPIRED : IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        }
+        verify(userMapper, never()).savePendingUserKey(any(), any(), any(), any(), any());
+        verify(userMapper, never()).insertKeyOperation(any(), any(), any(), any(), any());
     }
 }

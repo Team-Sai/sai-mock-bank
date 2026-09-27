@@ -11,6 +11,10 @@ import org.teamsai.saimockbank.global.exception.DomainException;
 public enum IdentityErrorCode
         implements BaseErrorCode<DomainException> {
 
+    KEY_ISSUANCE_EXPIRED(
+            HttpStatus.CONFLICT,
+            "연동키 발급 요청이 만료되었습니다. 새 요청으로 다시 발급해주세요."
+    ),
     INVALID_OPERATION_ID(
             HttpStatus.BAD_REQUEST,
             "연동 작업 식별값이 올바르지 않습니다."

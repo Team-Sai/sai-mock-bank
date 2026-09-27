@@ -2,7 +2,9 @@ package org.teamsai.saimockbank.domain.user;
 
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mariadb.MariaDBContainer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -29,18 +31,22 @@ import java.util.UUID;
 import java.util.concurrent.*;
 import static org.assertj.core.api.Assertions.*;
 
-@EnabledIfEnvironmentVariable(named = "SAI_BANK_DB_TEST", matches = "true")
+@Testcontainers
 @SpringJUnitConfig(BankKeyRecoveryIntegrationTest.Config.class)
 @TestPropertySource(properties = "mock-bank.key-hash-secret=recovery-integration-test-only")
 class BankKeyRecoveryIntegrationTest {
+    @Container
+    static final MariaDBContainer database = new MariaDBContainer("mariadb:11.4.5")
+            .withDatabaseName("sai_mock_bank_test");
+
     @Configuration
     @EnableTransactionManagement
     @MapperScan(basePackageClasses = UserMapper.class)
     @Import({BankLinkService.class, UserKeyHasher.class})
     static class Config {
         @Bean DataSource dataSource() {
-            return new DriverManagerDataSource(System.getenv("SAI_BANK_TEST_DB_URL"),
-                    System.getenv("SAI_BANK_TEST_DB_USER"), System.getenv("SAI_BANK_TEST_DB_PASSWORD"));
+            return new DriverManagerDataSource(database.getJdbcUrl(),
+                    database.getUsername(), database.getPassword());
         }
         @Bean SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
             var bean = new SqlSessionFactoryBean();
@@ -74,6 +80,33 @@ class BankKeyRecoveryIntegrationTest {
     @AfterEach void cleanup() { jdbc.update("DELETE FROM bank_user WHERE user_token=?", token); }
 
     private String hash(String key) { return key == null ? null : hasher.hash(key); }
+
+    @Test
+    void expiredIssuanceCannotReplayButNewOperationCanConfirm() {
+        var first = service.issueUserKey("Recovery Test", token, "expired-operation");
+        jdbc.update("UPDATE bank_user SET pending_expires_at=DATE_SUB(NOW(6), INTERVAL 1 SECOND) WHERE user_token=?", token);
+        assertThatThrownBy(() -> service.issueUserKey("Recovery Test", token, "expired-operation"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_ISSUANCE_EXPIRED);
+        assertThatThrownBy(() -> service.confirmUserKey(first.userKey(), "expired-operation"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.PENDING_KEY_NOT_FOUND);
+
+        var replacement = service.issueUserKey("Recovery Test", token, "replacement-operation");
+        assertThatThrownBy(() -> service.issueUserKey("Recovery Test", token, "expired-operation"))
+                .extracting("errorCode").isEqualTo(IdentityErrorCode.KEY_RECOVERY_CONFLICT);
+        service.confirmUserKey(replacement.userKey(), "replacement-operation");
+        assertThat(jdbc.queryForObject("SELECT user_key_hash FROM bank_user WHERE user_token=?", String.class, token))
+                .isEqualTo(hash(replacement.userKey()));
+    }
+
+    @Test
+    void confirmedIssuanceReplayDoesNotUsePendingTtl() {
+        var issued = service.issueUserKey("Recovery Test", token, "confirmed-operation");
+        service.confirmUserKey(issued.userKey(), "confirmed-operation");
+        jdbc.update("UPDATE bank_key_operation SET issued_at=DATE_SUB(NOW(6), INTERVAL 10 MINUTE) WHERE operation_id=? AND bank_user_id=(SELECT bank_user_id FROM bank_user WHERE user_token=?)",
+                "confirmed-operation", token);
+        assertThat(service.issueUserKey("Recovery Test", token, "confirmed-operation").userKey())
+                .isEqualTo(issued.userKey());
+    }
 
     private void state(String active, String pending) {
         jdbc.update("""
@@ -235,7 +268,7 @@ class BankKeyRecoveryIntegrationTest {
 
     @Test void issuanceReplayDoesNotRenewDeadlineOrReplaceKey() {
         var first = service.issueUserKey("Recovery Test", token, "issue-op");
-        jdbc.update("UPDATE bank_user SET pending_expires_at=NOW() WHERE user_token=?", token);
+        jdbc.update("UPDATE bank_user SET pending_expires_at=DATE_ADD(NOW(6), INTERVAL 1 MINUTE) WHERE user_token=?", token);
         var before = jdbc.queryForMap("SELECT * FROM bank_user WHERE user_token=?", token);
         var retry = service.issueUserKey("Recovery Test", token, "issue-op");
         assertThat(retry).isEqualTo(first);

@@ -2,6 +2,7 @@ package org.teamsai.saimockbank.domain.user.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.teamsai.saimockbank.domain.user.dto.KeyIssuanceState;
 import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 
 import java.time.LocalDateTime;
@@ -9,6 +10,9 @@ import java.util.Optional;
 
 @Mapper
 public interface UserMapper {
+    Optional<KeyIssuanceState> findKeyIssuanceState(
+            @Param("bankUserId") Long bankUserId);
+
     int savePendingUserKey(
             @Param("bankUserId") Long bankUserId,
             @Param("pendingUserKey") String pendingUserKey,

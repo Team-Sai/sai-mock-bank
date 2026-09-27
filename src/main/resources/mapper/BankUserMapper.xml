@@ -96,7 +96,7 @@
         pending_issued_at  = #{pendingIssuedAt},
         pending_expires_at = #{pendingExpiresAt}
         WHERE bank_user_id = #{bankUserId}
-        AND (key_status IS NULL OR key_status != 'PENDING' OR pending_expires_at &lt; NOW())
+        AND (key_status IS NULL OR key_status != 'PENDING' OR pending_expires_at &lt;= NOW(6))
     </update>
 
     <update id="promotePendingToActive">
@@ -112,7 +112,7 @@
         WHERE pending_user_key = #{hashedKey}
         AND rotation_operation_id = #{operationId}
         AND key_status = 'PENDING'
-        AND pending_expires_at &gt; NOW()
+        AND pending_expires_at > NOW(6)
     </update>
 
     <update id="markPendingExpired">
@@ -208,4 +208,21 @@
         ON DUPLICATE KEY UPDATE recovered = TRUE
     </insert>
 
+    <resultMap id="keyIssuanceStateMap" type="org.teamsai.saimockbank.domain.user.dto.KeyIssuanceState">
+        <constructor>
+            <arg column="user_key_hash" javaType="java.lang.String"/>
+            <arg column="pending_user_key" javaType="java.lang.String"/>
+            <arg column="rotation_operation_id" javaType="java.lang.String"/>
+            <arg column="rotation_key_hash" javaType="java.lang.String"/>
+            <arg column="key_status" javaType="java.lang.String"/>
+            <arg column="pending_expired" javaType="_boolean"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findKeyIssuanceState" resultMap="keyIssuanceStateMap">
+        SELECT user_key_hash, pending_user_key, rotation_operation_id, rotation_key_hash,
+               key_status, COALESCE(pending_expires_at &lt;= NOW(6), FALSE) AS pending_expired
+        FROM bank_user WHERE bank_user_id = #{bankUserId}
+        FOR UPDATE
+    </select>
 </mapper>

@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.account.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +12,10 @@ import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
 import org.teamsai.saimockbank.global.security.CustomUserDetails;
 
+import org.teamsai.saimockbank.domain.account.dto.CreateAccountRequest;
+
 import java.util.List;
+import java.util.UUID;
 
 @Tag(
         name = "계좌 API",
@@ -58,5 +62,19 @@ public class BankAccountController {
         );
     }
 
-    
+    @Operation(summary = "계좌 생성")
+    @PostMapping
+    public ResponseEntity<AccountDetailResponse> postAccount(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @RequestBody(required = false) CreateAccountRequest request
+    ) {
+        AccountDetailResponse response = bankAccountService.postAccount(
+                userDetails.getUserId(),
+                idempotencyKey,
+                request
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }

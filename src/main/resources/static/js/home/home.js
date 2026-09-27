@@ -28,6 +28,11 @@ async function initHome() {
 
     try {
         const account = await loadPrimaryAccount(accessToken);
+        if (!account) {
+            document.getElementById("balanceAmount").textContent = "0원";
+            document.getElementById("transactionsBody").innerHTML = '<p class="tx2-state">계좌를 생성하면 거래내역을 확인할 수 있습니다.</p>';
+            return;
+        }
         renderBalance(account);
 
         const accountLabel = { bankName: account.bankName, maskedAccountNumber: account.maskedAccountNumber };
@@ -43,10 +48,8 @@ async function initHome() {
 /** 계좌 목록 조회 후 대표 계좌(첫 번째) 반환 */
 async function loadPrimaryAccount(accessToken) {
     const accounts = await TxUtils.fetchWithAuth(CONFIG.ACCOUNTS_ME_URL, accessToken);
-    if (!Array.isArray(accounts) || accounts.length === 0) {
-        throw new Error("연동된 계좌가 없습니다.");
-    }
-    return accounts[0];
+    if (!Array.isArray(accounts)) throw new Error("계좌 목록 응답이 올바르지 않습니다.");
+    return accounts[0] ?? null;
 }
 
 /** 특정 계좌의 최신 거래내역 size건 조회 */

@@ -11,6 +11,14 @@ import org.teamsai.saimockbank.global.exception.DomainException;
 public enum IdentityErrorCode
         implements BaseErrorCode<DomainException> {
 
+    KEY_ISSUANCE_EXPIRED(
+            HttpStatus.CONFLICT,
+            "연동키 발급 요청이 만료되었습니다. 새 요청으로 다시 발급해주세요."
+    ),
+    INVALID_OPERATION_ID(
+            HttpStatus.BAD_REQUEST,
+            "연동 작업 식별값이 올바르지 않습니다."
+    ),
     UNAUTHENTICATED_USER(
             HttpStatus.UNAUTHORIZED,
             "로그인이 필요하거나 토큰이 유효하지 않습니다."
@@ -95,6 +103,10 @@ public enum IdentityErrorCode
     PENDING_KEY_NOT_FOUND(
             HttpStatus.CONFLICT,
             "확정할 대기 중인 연동키를 찾을 수 없습니다."
+    ),
+    KEY_RECOVERY_EXPIRED(
+            HttpStatus.CONFLICT,
+            "연동키 복구 기한이 만료되어 상태 확인이 필요합니다."
     ),
     KEY_RECOVERY_CONFLICT(
             HttpStatus.CONFLICT,

@@ -15,8 +15,11 @@ import java.time.LocalDateTime;
 public class BankAccountDTO{
     private Long accountId;
     private Long bankUserId;
+    private String creationRequestId;
+    private String creationRequestHash;
     private String userKey;
     private String bankCode;
+    private String bankName;
     private String accountNumber;
     private String accountName;
     private String accountHolderName;

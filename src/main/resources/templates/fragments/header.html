@@ -27,6 +27,8 @@
         </nav>
 
         <div class="tx2-header__tools">
+            <button th:if="${activeRoute == 'home'}" type="button"
+                    class="tx2-header__create-account" id="createAccountButton">계좌 생성</button>
             <button class="tx2-icon-button notification-button" type="button" aria-label="알림">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>

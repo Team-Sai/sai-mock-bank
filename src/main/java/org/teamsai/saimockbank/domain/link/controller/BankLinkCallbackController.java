@@ -25,12 +25,12 @@ public class BankLinkCallbackController {
     @PostMapping("/api/link/confirm-key")
     @ResponseBody
     public void confirmUserKey(@Valid @RequestBody ConfirmKeyRequest request) {
-        bankLinkService.confirmUserKey(request.userKey());
+        bankLinkService.confirmUserKey(request.userKey(), request.operationId());
     }
 
     @PostMapping("/api/link/revoke-key")
     @ResponseBody
-    public void revokeUserKey(@Valid @RequestBody ConfirmKeyRequest request) {
+    public void revokeUserKey(@Valid @RequestBody RevokeKeyRequest request) {
         bankLinkService.revokeUserKey(request.userKey());
     }
 
@@ -38,17 +38,23 @@ public class BankLinkCallbackController {
     @ResponseBody
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void recoverUserKey(@Valid @RequestBody RecoverKeyRequest request) {
-        bankLinkService.recoverUserKey(request.userToken(), request.currentUserKey(), request.previousUserKey());
+        bankLinkService.recoverUserKey(request.userToken(), request.currentUserKey(), request.previousUserKey(), request.operationId());
     }
 
     public record RecoverKeyRequest(
             @NotBlank(message = "userToken은 필수입니다.") String userToken,
             @NotBlank(message = "currentUserKey는 필수입니다.") String currentUserKey,
             @Pattern(regexp = "(?s).*\\S.*", message = "previousUserKey는 null 또는 공백이 아닌 키여야 합니다.")
-            String previousUserKey
+            String previousUserKey,
+            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String operationId
     ) {}
 
     public record ConfirmKeyRequest(
+            @NotBlank(message = "userKey는 필수입니다.") String userKey,
+            @NotBlank @Pattern(regexp = "[A-Za-z0-9_-]{1,64}") String operationId
+    ) {}
+
+    public record RevokeKeyRequest(
             @NotBlank(message = "userKey는 필수입니다.") String userKey
     ) {}
 }

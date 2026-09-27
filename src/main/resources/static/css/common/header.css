@@ -119,3 +119,24 @@
         display: none;
     }
 }
+.tx2-header__create-account {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border: 1px solid var(--tx2-header-accent);
+    border-radius: 2px;
+    background: var(--tx2-header-accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.tx2-header__create-account:hover { opacity: .9; }
+.tx2-header__create-account:focus-visible { outline: 3px solid #a78bdb; outline-offset: 3px; }
+@media (max-width: 520px) {
+    .tx2-header__inner { padding: 0 16px; }
+    .tx2-header__tools { gap: 12px; }
+    .tx2-header__create-account { padding: 8px 12px; font-size: 14px; }
+}

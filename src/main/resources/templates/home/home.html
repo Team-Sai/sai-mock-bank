@@ -32,6 +32,38 @@
         </div>
     </section>
 
+    <p id="accountCreationStatus" class="account-creation-status" role="status" aria-live="polite"></p>
+    <dialog id="createAccountDialog" class="account-dialog" aria-labelledby="createAccountTitle">
+        <h2 id="createAccountTitle">계좌 생성</h2>
+        <form id="createAccountForm">
+            <p>은행과 초기 금액을 입력해 본인 명의의 계좌를 생성하세요.</p>
+            <label for="creationBankCode">은행</label>
+            <select id="creationBankCode" name="bankCode">
+                <option value="088">신한은행</option>
+                <option value="004">국민은행</option>
+                <option value="020">우리은행</option>
+                <option value="CUSTOM">직접 입력</option>
+            </select>
+            <div id="customBankFields" hidden>
+                <label for="creationBankName">은행명 직접 입력</label>
+                <input id="creationBankName" name="bankName" maxlength="100" placeholder="은행명을 입력하세요" />
+            </div>
+            <label for="creationAccountName">계좌명</label>
+            <input id="creationAccountName" name="accountName" value="입출금통장" maxlength="100" required />
+            <label for="creationInitialBalance">초기 금액 (원)</label>
+            <input id="creationInitialBalance" name="initialBalance" type="text" inputmode="decimal" pattern="[0-9]{1,17}(\.[0-9]{1,2})?" maxlength="20" placeholder="예: 100000" required />
+            <p id="creationMessage" role="status" aria-live="polite"></p>
+            <div class="account-dialog__actions">
+                <button type="button" id="closeCreationDialog">닫기</button>
+                <button type="submit" id="submitCreateAccount" class="balance-card__cta">생성하기</button>
+            </div>
+        </form>
+        <section id="creationComplete" hidden>
+            <p id="creationCompleteMessage"></p>
+            <button type="button" id="closeCreationComplete" class="balance-card__cta">닫기</button>
+        </section>
+    </dialog>
+
     <section class="transactions">
         <div class="transactions__header">
             <h3 class="transactions__title">최근 거래 내역</h3>
@@ -63,6 +95,7 @@
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 
 <script th:src="@{/js/common/transaction-utils.js}" src="/js/common/transaction-utils.js"></script>
+<script th:src="@{/js/home/account-create.js}" src="/js/home/account-create.js" defer></script>
 <script th:src="@{/js/home/home.js}" src="/js/home/home.js" defer></script>
 </body>
 </html>

@@ -25,7 +25,7 @@ public record AccountDetailResponse(
                 account.getAccountId(),
                 account.getBankUserId(),
                 account.getBankCode(),
-                getBankNameByCode(account.getBankCode()),
+                account.getBankName() == null ? getBankNameByCode(account.getBankCode()) : account.getBankName(),
                 account.getAccountName(),
                 account.getAccountHolderName(),
                 AccountNumberMasker.mask(account.getAccountNumber()),

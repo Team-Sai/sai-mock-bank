@@ -26,6 +26,11 @@ public interface BankAccountMapper {
             @Param("accountId") Long accountId
     );
 
+    Optional<BankAccountDTO> findByCreationRequestForUpdate(
+            @Param("bankUserId") Long bankUserId,
+            @Param("creationRequestId") String creationRequestId
+    );
+
     Optional<BankAccountDTO> findByAccountNumber(
             @Param("accountNumber") String accountNumber
     );

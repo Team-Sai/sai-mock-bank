@@ -19,9 +19,9 @@ public record AccountListResponse(
         return new AccountListResponse(
                 account.getAccountId(),
                 account.getBankCode(),
-                getBankNameByCode(account.getBankCode()),
-                account.getAccountHolderName(),
+                account.getBankName() == null ? getBankNameByCode(account.getBankCode()) : account.getBankName(),
                 account.getAccountName(),
+                account.getAccountHolderName(),
                 AccountNumberMasker.mask(
                         account.getAccountNumber()
                 ),

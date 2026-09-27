@@ -10,7 +10,7 @@ public record AccountLookupResponse(
     public static AccountLookupResponse from(BankAccountDTO account) {
         return new AccountLookupResponse(
                 account.getBankCode(),
-                getBankNameByCode(account.getBankCode()),
+                account.getBankName() == null ? getBankNameByCode(account.getBankCode()) : account.getBankName(),
                 account.getAccountHolderName()
         );
     }

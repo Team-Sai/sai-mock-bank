@@ -1,7 +1,6 @@
 name: Mock Bank CI
 
 on:
-  push:
   pull_request:
 
 permissions:

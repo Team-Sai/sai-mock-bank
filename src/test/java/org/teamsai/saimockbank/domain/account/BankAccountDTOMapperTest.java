@@ -20,8 +20,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 @Transactional
+@org.junit.jupiter.api.Tag("integration")
 public class BankAccountDTOMapperTest {
 
     @Autowired

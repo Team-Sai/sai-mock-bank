@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.*;
 @Testcontainers
 @SpringJUnitConfig(BankKeyRecoveryIntegrationTest.Config.class)
 @TestPropertySource(properties = "mock-bank.key-hash-secret=recovery-integration-test-only")
+@org.junit.jupiter.api.Tag("integration")
 class BankKeyRecoveryIntegrationTest {
     @Container
     static final MariaDBContainer database = new MariaDBContainer("mariadb:11.4.5")

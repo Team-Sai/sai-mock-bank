@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: sai-mock-bank
+
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:db/bank_user.sql
+        - classpath:db/identity_verification.sql
+        - classpath:db/bank_account.sql
+        - classpath:db/bank_key_operation.sql
+        - classpath:db/bank_transfer.sql
+        - classpath:db/bank_transaction.sql
+      encoding: UTF-8
+
+server:
+  port: 8081
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: org.teamsai.saimockbank.domain
+  configuration:
+    map-underscore-to-camel-case: true
+
+jwt:
+  access-token-expiration-ms: 3600000
+
+portone:
+  identity:
+    base-url: https://api.portone.io
+    valid-minutes: 10

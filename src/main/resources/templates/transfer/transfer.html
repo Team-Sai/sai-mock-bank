@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>이체 · 사이뱅크</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" />
+    <link rel="stylesheet" th:href="@{/css/common/header.css}"
+          href="/css/common/header.css">
+    <link rel="stylesheet" th:href="@{/css/common/footer.css}"
+          href="/css/common/footer.css">
+    <link rel="stylesheet" th:href="@{/css/transfer/transfer.css}"
+          href="/css/transfer/transfer.css">
+</head>
+<body>
+<header th:replace="~{fragments/header :: header(activeRoute='transfer')}"></header>
+<div class="page">
+    <div class="section-header">
+        <h1 class="page-title">계좌 이체</h1>
+        <a href="/home" class="back-link">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 12H5"></path>
+                <path d="m12 19-7-7 7-7"></path>
+            </svg>
+            메인으로
+        </a>
+    </div>
+    <p class="page-desc">받는 분 계좌로 원하는 금액을 송금합니다.</p>
+
+    <main class="single">
+        <section class="panel" aria-labelledby="transfer-form-title">
+            <div class="panel-head">
+                <h2 id="transfer-form-title">이체 실행</h2>
+            </div>
+            <form id="transfer-form" class="form" novalidate>
+                <input type="hidden" id="requestKey" name="requestKey" />
+                <div class="field-row">
+                    <div class="field">
+                        <label for="fromAccountId">출금 계좌</label>
+                        <select
+                                id="fromAccountId"
+                                name="fromAccountId"
+                                class="mono"
+                                required
+                                disabled
+                        >
+                            <option value="">계좌 불러오는 중…</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="toAccountNumber">받는 분 계좌번호</label>
+                        <input
+                                type="text"
+                                id="toAccountNumber"
+                                name="toAccountNumber"
+                                class="mono"
+                                placeholder="110-123-456789"
+                                autocomplete="off"
+                                required
+                        />
+                        <p class="field-hint" id="toAccountPreview"></p>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="amount">이체 금액</label>
+                    <div class="amount-input">
+                        <input
+                                type="text"
+                                inputmode="numeric"
+                                id="amount"
+                                name="amount"
+                                class="mono"
+                                placeholder="0"
+                                autocomplete="off"
+                                required
+                        />
+                        <span class="unit">원</span>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="senderMemo">보내는 분 메모 <span class="optional">선택</span></label>
+                    <input
+                            type="text"
+                            id="senderMemo"
+                            name="senderMemo"
+                            placeholder="예: 8월 정산금"
+                            autocomplete="off"
+                            maxlength="50"
+                    />
+                </div>
+                <div class="field">
+                    <label for="receiverMemo">받는 분 메모 <span class="optional">선택</span></label>
+                    <input
+                            type="text"
+                            id="receiverMemo"
+                            name="receiverMemo"
+                            placeholder="예: 사이원장 정산"
+                            autocomplete="off"
+                            maxlength="50"
+                    />
+                </div>
+                <div id="form-error" class="form-error" role="alert" hidden></div>
+                <div id="form-success" class="form-success" hidden>
+                    <p id="form-success-text"></p>
+                    <a id="form-success-link" href="#" class="form-success-link">상세 내역 보기 →</a>
+                </div>
+                <button type="submit" id="submit-btn" class="btn-primary">
+                    <span class="btn-label">이체하기</span>
+                </button>
+            </form>
+        </section>
+    </main>
+</div>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+<script th:src="@{/js/transfer/transfer.js}" src="/js/transfer/transfer.js" defer></script>
+</body>
+</html>

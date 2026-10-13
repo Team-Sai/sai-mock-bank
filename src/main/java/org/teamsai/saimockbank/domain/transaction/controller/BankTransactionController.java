@@ -3,9 +3,11 @@ package org.teamsai.saimockbank.domain.transaction.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionResponse;
 import org.teamsai.saimockbank.domain.transaction.service.BankTransactionService;
+import org.teamsai.saimockbank.global.security.CustomUserDetails;
 
 import java.util.List;
 
@@ -24,14 +26,34 @@ public class BankTransactionController {
     @GetMapping("/{accountId}/transactions")
     public List<TransactionResponse> getTransactions(
             @PathVariable Long accountId,
-            @RequestParam String userKey,
-            @RequestParam(required = false, defaultValue = "0")
-            Long afterTransactionId
+            @RequestHeader("X-User-Key") String userKey,
+            @RequestParam(required = false, defaultValue = "0") Long afterTransactionId
     ) {
-        return bankTransactionService.getTransactions(
-                accountId,
-                userKey,
-                afterTransactionId
+        return bankTransactionService.getTransactions(accountId, userKey, afterTransactionId);
+    }
+
+    @Operation(summary = "내 계좌 거래내역 조회 - 최신순 페이지네이션 (로그인 기반)")
+    @GetMapping("/my/{accountId}/transactions")
+    public List<TransactionResponse> getMyTransactions(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long accountId,
+            @RequestParam(required = false) Long beforeTransactionId,
+            @RequestParam(required = false, defaultValue = "10") int size
+    ) {
+        return bankTransactionService.getMyTransactions(
+                userDetails.getUserId(), accountId, beforeTransactionId, size
+        );
+    }
+
+    @Operation(summary = "내 전체 계좌 거래내역 조회 - 최신순 페이지네이션 (로그인 기반)")
+    @GetMapping("/my/transactions")
+    public List<TransactionResponse> getMyAllTransactions(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Long beforeTransactionId,
+            @RequestParam(required = false, defaultValue = "10") int size
+    ) {
+        return bankTransactionService.getMyAllTransactions(
+                userDetails.getUserId(), beforeTransactionId, size
         );
     }
 }

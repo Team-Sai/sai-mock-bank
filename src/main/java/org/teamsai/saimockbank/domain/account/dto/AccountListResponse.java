@@ -1,8 +1,9 @@
 package org.teamsai.saimockbank.domain.account.dto;
-
 import org.teamsai.saimockbank.global.util.AccountNumberMasker;
 
 import java.math.BigDecimal;
+
+import static org.teamsai.saimockbank.domain.account.dto.BankCode.getBankNameByCode;
 
 public record AccountListResponse(
         Long accountId,
@@ -11,24 +12,21 @@ public record AccountListResponse(
         String accountName,
         String accountHolderName,
         String maskedAccountNumber,
-        AccountStatus status,
-        BigDecimal balance
+        BigDecimal balance,
+        AccountStatus status
 ) {
     public static AccountListResponse from(BankAccountDTO account) {
         return new AccountListResponse(
                 account.getAccountId(),
                 account.getBankCode(),
-                resolveBankName(account.getBankCode()),
+                account.getBankName() == null ? getBankNameByCode(account.getBankCode()) : account.getBankName(),
                 account.getAccountName(),
                 account.getAccountHolderName(),
                 AccountNumberMasker.mask(
                         account.getAccountNumber()
                 ),
-                account.getStatus(),
-                account.getBalance()
+                account.getBalance(),
+                account.getStatus()
         );
-    }
-    private static String resolveBankName(String bankCode) {
-        return BankCode.getBankNameByCode(bankCode);
     }
 }

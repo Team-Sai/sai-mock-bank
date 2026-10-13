@@ -1,0 +1,41 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3307/sai_mock_bank_test
+    username: root
+    password: test-only
+    driver-class-name: org.mariadb.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:db/bank_user.sql
+        - classpath:db/bank_key_operation.sql
+        - classpath:db/identity_verification.sql
+        - classpath:db/bank_account.sql
+        - classpath:db/bank_transfer.sql
+        - classpath:db/bank_transaction.sql
+      encoding: UTF-8
+mock-bank:
+  key-hash-secret: test-only-mock-bank-key-hash-secret
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: org.teamsai.saimockbank.domain
+  configuration:
+    map-underscore-to-camel-case: true
+jwt:
+  secret: dGVzdC1vbmx5LWp3dC1zaWduaW5nLXNlY3JldC0zMi1ieXRlcw==
+  access-token-expiration-ms: 1800000
+link-identity:
+  hash-secret: test-only-link-identity-hash-secret
+link-state:
+  secret: dGVzdC1vbmx5LWxpbmstc3RhdGUtc2VjcmV0LTMyLWJ5dGVz
+  allowed-return-urls: http://localhost:8080/accounts/link/callback
+link-callback:
+  api-key: test-only-link-callback-key
+portone:
+  identity:
+    base-url: http://localhost
+    store-id: test-store
+    channel-key: test-channel
+    api-secret: test-only-portone-secret
+    valid-minutes: 10

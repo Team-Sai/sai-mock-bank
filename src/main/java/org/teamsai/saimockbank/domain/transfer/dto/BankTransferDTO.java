@@ -3,6 +3,7 @@ package org.teamsai.saimockbank.domain.transfer.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,7 +48,7 @@ public class BankTransferDTO{
         this.failureReason = failureReason;
         this.completedAt = completedAt;
         this.createdAt = createdAt;
-        this.updatedAt =updatedAt;
+        this.updatedAt = updatedAt;
     }
 
 }

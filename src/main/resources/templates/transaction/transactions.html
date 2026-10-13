@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>전체 거래내역 · 사이뱅크</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link rel="stylesheet" th:href="@{/css/common/header.css}"
+          href="/css/common/header.css">
+    <link rel="stylesheet" th:href="@{/css/common/footer.css}"
+          href="/css/common/footer.css">
+    <link rel="stylesheet" th:href="@{/css/common/transaction-table.css}"
+          href="/css/common/transaction-table.css">
+    <link rel="stylesheet" th:href="@{/css/transaction/transactions.css}"
+          href="/css/transaction/transactions.css">
+</head>
+<body>
+<header th:replace="~{fragments/header :: header(activeRoute='transactions')}"></header>
+
+<main class="tx2-main">
+    <div class="tx2-section-header">
+        <h1 class="tx2-title">전체 거래내역</h1>
+        <a href="/home" class="tx2-back">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 12H5"></path>
+                <path d="m12 19-7-7 7-7"></path>
+            </svg>
+            메인으로
+        </a>
+    </div>
+
+    <div class="tx2-table" role="table">
+        <div class="tx2-row tx2-row--head" role="row">
+            <div class="tx2-cell tx2-cell--date" role="columnheader">날짜</div>
+            <div class="tx2-cell tx2-cell--detail" role="columnheader">거래 상세 (수취인 | 계좌번호)</div>
+            <div class="tx2-cell tx2-cell--account" role="columnheader">내 계좌(은행명, 계좌번호)</div>
+            <div class="tx2-cell tx2-cell--amount" role="columnheader">금액</div>
+        </div>
+
+        <!-- JS(transactions.js)가 fetch 결과로 이 안에 tx2-row를 동적으로 렌더링합니다 -->
+        <div id="transactionsBody" class="tx2-body">
+            <p class="tx2-state" id="transactionsState">불러오는 중…</p>
+        </div>
+    </div>
+
+    <!-- 무한 스크롤 트리거: 뷰포트에 걸리면 다음 10건 로드 -->
+    <div id="scrollSentinel" class="tx2-sentinel" aria-hidden="true"></div>
+    <p id="historyEndState" class="tx2-end-state" hidden>마지막 거래내역입니다.</p>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+
+<script th:src="@{/js/common/transaction-utils.js}" src="/js/common/transaction-utils.js"></script>
+<script th:src="@{/js/transaction/transactions.js}" src="/js/transaction/transactions.js" defer></script>
+</body>
+</html>

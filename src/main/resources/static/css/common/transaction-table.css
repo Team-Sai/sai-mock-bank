@@ -1,0 +1,145 @@
+/* 거래내역 테이블 공통 컴포넌트 (tx2-table / tx2-row / tx2-cell)
+ * home.html(최근 거래내역), transactions.html(전체 거래내역)에서 공유합니다.
+ * 색상 값은 페이지별 :root 변수(--tx2-gray-*, --tx2-purple, --tx2-negative)에 의존합니다.
+ */
+
+.tx2-table {
+    margin-top: 24px;
+    background: #ffffff;
+    border: none;
+    border-radius: 0;
+}
+
+.tx2-row {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr) 260px 120px;
+    align-items: stretch;
+    column-gap: 0;
+    padding: 0 24px;
+}
+
+.tx2-row--head {
+    background: var(--tx2-gray-100);
+    border-bottom: 1px solid var(--tx2-gray-200);
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.tx2-row:not(.tx2-row--head) {
+    border-bottom: 1px solid var(--tx2-gray-100);
+    min-height: 97px;
+}
+
+.tx2-body .tx2-row:last-child {
+    border-bottom: none;
+}
+
+.tx2-cell {
+    font-family: inherit;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border-left: none;
+}
+
+.tx2-row--head .tx2-cell {
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--tx2-gray-500);
+    text-transform: none;
+    letter-spacing: normal;
+    border-left: none;
+    opacity: 1;
+}
+
+.tx2-cell--date {
+    color: var(--tx2-gray-500);
+    padding-right: 40px;
+    white-space: nowrap;
+}
+
+.tx2-cell--detail {
+    color: var(--tx2-gray-900);
+    font-size: 16px;
+    padding-right: 40px;
+}
+
+.tx2-cell--detail .tx2-name {
+    font-weight: 500;
+}
+
+.tx2-cell--detail .tx2-sep,
+.tx2-cell--account .tx2-sep {
+    color: var(--tx2-gray-400);
+    margin: 0 4px;
+}
+
+.tx2-cell--account {
+    font-size: 16px;
+    color: var(--tx2-gray-900);
+}
+
+.tx2-cell--account .tx2-bank {
+    color: var(--tx2-gray-900);
+}
+
+.tx2-cell--amount {
+    justify-content: flex-end;
+    text-align: right;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.tx2-cell--amount.tx2-cell--positive {
+    color: var(--tx2-purple);
+}
+
+.tx2-cell--amount.tx2-cell--negative {
+    color: var(--tx2-negative);
+}
+
+.tx2-row--head .tx2-cell--amount {
+    justify-content: flex-end;
+    text-align: right;
+    font-family: inherit;
+    color: var(--tx2-gray-500);
+    font-weight: 500;
+    font-size: 14px;
+    opacity: 1;
+}
+
+.tx2-state {
+    margin: 0;
+    padding: 48px 24px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--tx2-gray-500);
+}
+
+.tx2-sentinel {
+    height: 1px;
+}
+
+.tx2-end-state {
+    margin: 0;
+    padding: 64px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--tx2-gray-500);
+}
+
+@media (max-width: 900px) {
+    .tx2-row {
+        grid-template-columns: 130px minmax(0, 1fr) 90px;
+        row-gap: 4px;
+    }
+
+    .tx2-cell--account {
+        grid-column: 2 / span 2;
+        font-size: 13px;
+        color: var(--tx2-gray-500);
+    }
+}

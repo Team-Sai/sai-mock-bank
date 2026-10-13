@@ -1,0 +1,36 @@
+.tx2-footer {
+    background: #f3f4f6;
+    border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.tx2-footer__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 33px 32px 32px;
+}
+
+.tx2-footer__brand {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.tx2-footer__nav {
+    display: flex;
+    align-items: center;
+}
+
+.tx2-footer__nav a {
+    margin-left: 24px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.tx2-footer__nav a:first-child {
+    margin-left: 0;
+}

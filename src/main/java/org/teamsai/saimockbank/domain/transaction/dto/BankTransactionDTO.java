@@ -3,7 +3,6 @@ package org.teamsai.saimockbank.domain.transaction.dto;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -19,11 +18,10 @@ public class BankTransactionDTO{
     private String counterpartyAccountNumber;
     private String memo;
     private LocalDateTime transactionAt;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     private Long transferId;
     private Long accountId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     @Builder
     private BankTransactionDTO(
@@ -51,7 +49,7 @@ public class BankTransactionDTO{
         this.transferId = transferId;
         this.accountId = accountId;
         this.createdAt = createdAt;
-        this.updatedAt =updatedAt;
+        this.updatedAt = updatedAt;
     }
 
 }

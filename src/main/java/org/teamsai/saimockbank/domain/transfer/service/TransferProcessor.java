@@ -3,11 +3,8 @@ package org.teamsai.saimockbank.domain.transfer.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
-import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.account.util.AccountOwnershipValidator;
-import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
 import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -28,32 +25,30 @@ public class TransferProcessor {
     private final BankAccountMapper bankAccountMapper;
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
-    private final AccountOwnershipValidator accountOwnershipValidator;
 
-    public BankTransferDTO process(TransferRequest request){
-        Long fromId = request.fromAccountId();
-        Long toId = request.toAccountId();
+    public BankTransferDTO process(TransferRequest request, Long loginUserId, Long toAccountId) {
+        Long fromAccountId = request.fromAccountId();
 
-        AccountWithOwnerDTO fromAccount;
+        BankAccountDTO fromAccount;
         BankAccountDTO toAccount;
 
-        if (fromId < toId) {
-            fromAccount = findAccountForUpdateWithOwner(fromId);
-            toAccount = findAccountForUpdate(toId);
+        if (fromAccountId < toAccountId) {
+            fromAccount = findAccountForUpdate(fromAccountId);
+            toAccount = findAccountForUpdate(toAccountId);
         } else {
-            toAccount = findAccountForUpdate(toId);
-            fromAccount = findAccountForUpdateWithOwner(fromId);
+            toAccount = findAccountForUpdate(toAccountId);
+            fromAccount = findAccountForUpdate(fromAccountId);
         }
 
-        validateAccounts(fromAccount,toAccount,request);
+        validateAccounts(fromAccount, toAccount, request, loginUserId);
 
         BigDecimal fromBalanceAfter = fromAccount.getBalance().subtract(request.amount());
         BigDecimal toBalanceAfter = toAccount.getBalance().add(request.amount());
 
-        updateBalances(request);
+        updateBalances(fromAccount.getAccountId(), toAccount.getAccountId(), request.amount());
 
         LocalDateTime completedAt = LocalDateTime.now();
-        BankTransferDTO transfer = saveTransfer(request,completedAt);
+        BankTransferDTO transfer = saveTransfer(request, fromAccount, toAccount, completedAt);
 
         saveTransactions(
                 request,
@@ -66,84 +61,60 @@ public class TransferProcessor {
         );
 
         return transfer;
-
-
-
-    }
-
-    private AccountWithOwnerDTO findAccountForUpdateWithOwner(Long accountId) {
-        return bankAccountMapper
-                .findByIdForUpdateWithOwner(accountId)
-                .orElseThrow(
-                        TransferErrorCode.ACCOUNT_NOT_FOUND
-                                ::toException
-                );
     }
 
     private BankAccountDTO findAccountForUpdate(Long accountId) {
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
-                .orElseThrow(
-                        TransferErrorCode.ACCOUNT_NOT_FOUND
-                                ::toException
-                );
+                .orElseThrow(TransferErrorCode.ACCOUNT_NOT_FOUND::toException);
     }
 
     private void validateAccounts(
-            AccountWithOwnerDTO fromAccount,
+            BankAccountDTO fromAccount,
             BankAccountDTO toAccount,
-            TransferRequest request
+            TransferRequest request,
+            Long loginUserId
     ) {
-        accountOwnershipValidator.verify(
-                fromAccount.getOwnerUserKeyHash(),
-                request.fromUserKey(),
-                TransferErrorCode.ACCOUNT_ACCESS_DENIED::toException
-        );
+        if (!fromAccount.getBankUserId().equals(loginUserId)) {
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+        }
+
+        if (fromAccount.getAccountId().equals(toAccount.getAccountId())) {
+            throw TransferErrorCode.SAME_ACCOUNT_TRANSFER.toException();
+        }
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE
                 || toAccount.getStatus() != AccountStatus.ACTIVE) {
-
-            throw TransferErrorCode.ACCOUNT_UNAVAILABLE
-                    .toException();
+            throw TransferErrorCode.ACCOUNT_UNAVAILABLE.toException();
         }
 
-        if (fromAccount.getBalance()
-                .compareTo(request.amount()) < 0) {
-
-            throw TransferErrorCode.INSUFFICIENT_BALANCE
-                    .toException();
+        if (fromAccount.getBalance().compareTo(request.amount()) < 0) {
+            throw TransferErrorCode.INSUFFICIENT_BALANCE.toException();
         }
     }
 
-    private void updateBalances(TransferRequest request) {
-        int decreased = bankAccountMapper.decreaseBalance(
-                request.fromAccountId(),
-                request.amount()
-        );
-
+    private void updateBalances(Long fromAccountId, Long toAccountId, BigDecimal amount) {
+        int decreased = bankAccountMapper.decreaseBalance(fromAccountId, amount);
         if (decreased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED
-                    .toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
         }
 
-        int increased = bankAccountMapper.increaseBalance(
-                request.toAccountId(),
-                request.amount()
-        );
-
+        int increased = bankAccountMapper.increaseBalance(toAccountId, amount);
         if (increased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED
-                    .toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
         }
     }
+
     private BankTransferDTO saveTransfer(
             TransferRequest request,
+            BankAccountDTO fromAccount,
+            BankAccountDTO toAccount,
             LocalDateTime completedAt
     ) {
         BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey(request.requestKey())
-                .fromAccountId(request.fromAccountId())
-                .toAccountId(request.toAccountId())
+                .fromAccountId(fromAccount.getAccountId())
+                .toAccountId(toAccount.getAccountId())
                 .amount(request.amount())
                 .senderMemo(request.senderMemo())
                 .receiverMemo(request.receiverMemo())
@@ -152,61 +123,40 @@ public class TransferProcessor {
                 .completedAt(completedAt)
                 .build();
 
-        int inserted =
-                bankTransferMapper.insert(transfer);
-
+        int inserted = bankTransferMapper.insert(transfer);
         if (inserted != 1) {
-            throw TransferErrorCode.TRANSFER_SAVE_FAILED
-                    .toException();
+            throw TransferErrorCode.TRANSFER_SAVE_FAILED.toException();
         }
-
         return transfer;
     }
+
     private void saveTransactions(
             TransferRequest request,
-            AccountWithOwnerDTO  fromAccount,
+            BankAccountDTO fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal fromBalanceAfter,
             BigDecimal toBalanceAfter,
             LocalDateTime transactionAt
     ) {
-        BankTransactionDTO withdrawal =
-                createWithdrawTransaction(
-                        request,
-                        fromAccount,
-                        toAccount,
-                        transferId,
-                        fromBalanceAfter,
-                        transactionAt
-                );
+        BankTransactionDTO withdrawal = createWithdrawTransaction(
+                request, fromAccount, toAccount, transferId, fromBalanceAfter, transactionAt
+        );
+        BankTransactionDTO deposit = createDepositTransaction(
+                request, fromAccount, toAccount, transferId, toBalanceAfter, transactionAt
+        );
 
-        BankTransactionDTO deposit =
-                createDepositTransaction(
-                        request,
-                        fromAccount,
-                        toAccount,
-                        transferId,
-                        toBalanceAfter,
-                        transactionAt
-                );
+        int withdrawalInserted = bankTransactionMapper.insert(withdrawal);
+        int depositInserted = bankTransactionMapper.insert(deposit);
 
-        int withdrawalInserted =
-                bankTransactionMapper.insert(withdrawal);
-
-        int depositInserted =
-                bankTransactionMapper.insert(deposit);
-
-        if (withdrawalInserted != 1
-                || depositInserted != 1) {
-
-            throw TransferErrorCode.TRANSACTION_SAVE_FAILED
-                    .toException();
+        if (withdrawalInserted != 1 || depositInserted != 1) {
+            throw TransferErrorCode.TRANSACTION_SAVE_FAILED.toException();
         }
     }
+
     private BankTransactionDTO createWithdrawTransaction(
             TransferRequest request,
-            AccountWithOwnerDTO fromAccount,
+            BankAccountDTO fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,
@@ -218,9 +168,7 @@ public class TransferProcessor {
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
                 .counterpartyName(toAccount.getAccountHolderName())
-                .counterpartyAccountNumber(
-                        toAccount.getAccountNumber()
-                )
+                .counterpartyAccountNumber(toAccount.getAccountNumber())
                 .memo(request.senderMemo())
                 .transactionAt(transactionAt)
                 .transferId(transferId)
@@ -230,7 +178,7 @@ public class TransferProcessor {
 
     private BankTransactionDTO createDepositTransaction(
             TransferRequest request,
-            AccountWithOwnerDTO  fromAccount,
+            BankAccountDTO fromAccount,
             BankAccountDTO toAccount,
             Long transferId,
             BigDecimal balanceAfter,
@@ -242,9 +190,7 @@ public class TransferProcessor {
                 .amount(request.amount())
                 .balanceAfter(balanceAfter)
                 .counterpartyName(fromAccount.getAccountHolderName())
-                .counterpartyAccountNumber(
-                        fromAccount.getAccountNumber()
-                )
+                .counterpartyAccountNumber(fromAccount.getAccountNumber())
                 .memo(request.receiverMemo())
                 .transactionAt(transactionAt)
                 .transferId(transferId)

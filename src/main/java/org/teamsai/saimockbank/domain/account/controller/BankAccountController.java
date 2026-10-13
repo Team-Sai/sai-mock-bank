@@ -3,13 +3,19 @@ package org.teamsai.saimockbank.domain.account.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
 import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
+import org.teamsai.saimockbank.global.security.CustomUserDetails;
+
+import org.teamsai.saimockbank.domain.account.dto.CreateAccountRequest;
 
 import java.util.List;
+import java.util.UUID;
 
 @Tag(
         name = "계좌 API",
@@ -25,7 +31,7 @@ public class BankAccountController {
     @Operation(summary = "사용자 보유 계좌 목록 조회")
     @GetMapping
     public ResponseEntity<List<AccountListResponse>> getAccounts(
-            @RequestParam("userKey") String userKey
+            @RequestHeader("X-User-Key") String userKey
     ) {
 
         List<AccountListResponse> accounts = bankAccountService.getAccounts(userKey);
@@ -34,11 +40,21 @@ public class BankAccountController {
         return ResponseEntity.ok(accounts);
     }
 
+    @Operation(summary = "내 계좌 목록 조회 (로그인 기반)")
+    @GetMapping("/my")
+    public ResponseEntity<List<AccountListResponse>> getMyAccounts(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        List<AccountListResponse> accounts = bankAccountService.getMyAccounts(userDetails.getUserId());
+
+        return ResponseEntity.ok(accounts);
+    }
+
     @Operation(summary = "계좌 상세 조회")
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountDetailResponse> getAccount(
             @PathVariable Long accountId,
-            @RequestParam("userKey") String userKey
+            @RequestHeader("X-User-Key") String userKey
     ) {
 
         return ResponseEntity.ok(
@@ -46,5 +62,19 @@ public class BankAccountController {
         );
     }
 
-    
+    @Operation(summary = "계좌 생성")
+    @PostMapping
+    public ResponseEntity<AccountDetailResponse> postAccount(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @RequestBody(required = false) CreateAccountRequest request
+    ) {
+        AccountDetailResponse response = bankAccountService.postAccount(
+                userDetails.getUserId(),
+                idempotencyKey,
+                request
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  공통 푸터 fragment.
+  사용법: <footer th:replace="~{fragments/footer :: footer}"></footer>
+-->
+<footer th:fragment="footer" class="tx2-footer">
+    <div class="tx2-footer__inner">
+        <span class="tx2-footer__brand">사이은행</span>
+        <nav class="tx2-footer__nav" aria-label="정책 메뉴">
+            <a href="#">약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="#">보안</a>
+            <a href="#">연락처</a>
+        </nav>
+    </div>
+</footer>
+</body>
+</html>

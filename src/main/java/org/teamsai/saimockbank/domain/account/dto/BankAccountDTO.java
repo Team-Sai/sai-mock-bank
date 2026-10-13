@@ -1,18 +1,25 @@
 package org.teamsai.saimockbank.domain.account.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class BankAccountDTO{
     private Long accountId;
-    private Long bankIdentityId;
+    private Long bankUserId;
+    private String creationRequestId;
+    private String creationRequestHash;
+    private String userKey;
     private String bankCode;
+    private String bankName;
     private String accountNumber;
     private String accountName;
     private String accountHolderName;
@@ -20,4 +27,5 @@ public class BankAccountDTO{
     private AccountStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
 }

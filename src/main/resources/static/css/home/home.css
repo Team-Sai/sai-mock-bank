@@ -1,0 +1,180 @@
+:root {
+    --color-bg: #f9f9fa;
+    --color-surface: #ffffff;
+    --color-border: #cbc3d6;
+    --color-border-light: #e2e2e3;
+    --color-text-primary: #1a1c1d;
+    --color-text-secondary: #5f5e60;
+    --color-text-muted: #4a4453;
+    --color-accent: #6436bf;
+    --color-table-head-bg: #f3f3f4;
+    --color-row-alt: #f9f9fa;
+    --color-footer-bg: #eeeeef;
+
+    --font-sans: 'Pretendard', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* tx2-table(공통 거래내역 테이블 컴포넌트)이 참조하는 색상 토큰 */
+    --tx2-gray-50: #f9fafb;
+    --tx2-gray-100: #f3f4f6;
+    --tx2-gray-200: #e5e7eb;
+    --tx2-gray-400: #9ca3af;
+    --tx2-gray-500: #6b7280;
+    --tx2-gray-900: #111827;
+    --tx2-purple: #9333ea;
+    --tx2-negative: #3a60b3;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ===== Main ===== */
+.page {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 83px 79px 96px;
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+/* Balance card */
+.balance-card {
+    width: 100%;
+    max-width: 554px;
+    margin: 0 auto 96px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+}
+
+.balance-card__body {
+    padding: 32px 24px 0;
+    text-align: center;
+}
+
+.balance-card__label {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+
+.balance-card__amount {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: -1.2px;
+    color: var(--color-text-primary);
+}
+
+.balance-card__footer {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 16px 24px 24px;
+    border-top: 1px dashed var(--color-border);
+}
+
+.balance-card__cta {
+    font-family: inherit;
+    line-height: 1.5;
+    display: block;
+    width: 100%;
+    padding: 13px 0;
+    background: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    border-radius: 2px;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+}
+
+.balance-card__cta:hover {
+    opacity: 0.9;
+}
+
+/* Transactions */
+.transactions {
+    width: 100%;
+}
+
+.transactions__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-text-primary);
+    margin-bottom: 16px;
+}
+
+.transactions__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.transactions__more {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+.transactions__more svg {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+    .page {
+        padding: 40px 24px 64px;
+    }
+}
+.balance-card__cta:disabled { opacity: .6; cursor: default; }
+#submitCreateAccount[aria-busy="true"] { cursor: wait; }
+.balance-card__cta:focus-visible { outline: 3px solid #a78bdb; outline-offset: 3px; }
+.account-creation-status { text-align: center; color: var(--color-accent); overflow-wrap: anywhere; }
+.account-creation-status:empty { display: none; }
+.account-dialog { width: min(440px, calc(100% - 32px)); padding: 28px; border: 1px solid var(--color-border); border-radius: 8px; color: var(--color-text-primary); }
+.account-dialog::backdrop { background: rgb(0 0 0 / 35%); }
+.account-dialog h2 { margin-top: 0; }
+.account-dialog label { display: block; margin: 16px 0 6px; }
+.account-dialog select, .account-dialog input { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--color-border); border-radius: 2px; }
+.account-dialog__actions { display: flex; gap: 12px; margin-top: 24px; }
+.account-dialog__actions button { flex: 1; font-family: inherit; }
+#creationMessage { font-size: 14px; overflow-wrap: anywhere; }
+
+.account-dialog [hidden] { display: none !important; }
+#creationCompleteMessage { line-height: 1.7; overflow-wrap: anywhere; margin-bottom: 24px; }

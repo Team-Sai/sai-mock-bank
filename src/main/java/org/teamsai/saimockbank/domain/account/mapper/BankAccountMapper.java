@@ -3,7 +3,6 @@ package org.teamsai.saimockbank.domain.account.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.teamsai.saimockbank.domain.account.dto.AccountWithOwnerDTO;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 
 import java.math.BigDecimal;
@@ -12,7 +11,8 @@ import java.util.Optional;
 
 @Mapper
 public interface BankAccountMapper {
-    int insert(BankAccountDTO bankAccountDTO);
+
+    int insert(BankAccountDTO account);
 
     List<BankAccountDTO> findAllByUserKey(
             @Param("userKey") String userKey
@@ -26,13 +26,22 @@ public interface BankAccountMapper {
             @Param("accountId") Long accountId
     );
 
-    List<BankAccountDTO> findByUserKey(
-            @Param("userKey") String userKey
+    Optional<BankAccountDTO> findByCreationRequestForUpdate(
+            @Param("bankUserId") Long bankUserId,
+            @Param("creationRequestId") String creationRequestId
     );
-    
-    Optional<AccountWithOwnerDTO> findByIdWithOwner(@Param("accountId") Long accountId);
 
-    Optional<AccountWithOwnerDTO> findByIdForUpdateWithOwner(@Param("accountId") Long accountId);
+    Optional<BankAccountDTO> findByAccountNumber(
+            @Param("accountNumber") String accountNumber
+    );
+
+    List<BankAccountDTO> findAllByBankUserId(
+            @Param("bankUserId") Long bankUserId
+    );
+
+    Optional<String> findOwnerUserKeyHashByAccountId(
+            @Param("accountId") Long accountId
+    );
 
     int increaseBalance(
             @Param("accountId") Long accountId,

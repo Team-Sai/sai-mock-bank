@@ -2,7 +2,7 @@ package org.teamsai.saimockbank.domain.account.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.teamsai.saimockbank.domain.identity.service.UserKeyHasher;
+import org.teamsai.saimockbank.domain.user.service.UserKeyHasher;
 import org.teamsai.saimockbank.global.exception.DomainException;
 
 import java.util.function.Supplier;

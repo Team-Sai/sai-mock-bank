@@ -1,10 +1,13 @@
+
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.fds.dto.FdsTransferCompletedEvent;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferResponse;
 import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
@@ -20,70 +23,141 @@ public class BankTransferService {
     private final BankTransferMapper bankTransferMapper;
     private final BankAccountMapper bankAccountMapper;
     private final TransferProcessor transferProcessor;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public TransferResponse transfer(Long loginUserId, TransferRequest request) {
+    public TransferResponse transfer(
+            Long loginUserId,
+            TransferRequest request
+    ) {
         validateRequest(request);
 
-       Long toAccountId = resolveToAccountId(request.toAccountNumber());
+        Long toAccountId =
+                resolveToAccountId(request.toAccountNumber());
 
-        BankTransferDTO existTransfer = bankTransferMapper.findByRequestKey(request.requestKey()).orElse(null);
+        BankTransferDTO existTransfer =
+                bankTransferMapper
+                        .findByRequestKey(request.requestKey())
+                        .orElse(null);
+
         if (existTransfer != null) {
             validateParticipant(loginUserId, existTransfer);
-            validateDuplicateRequest(existTransfer, request, toAccountId);
+
+            validateDuplicateRequest(
+                    existTransfer,
+                    request,
+                    toAccountId
+            );
+
             return toResponse(existTransfer);
         }
 
-        BankTransferDTO transfer = transferProcessor.process(request, loginUserId, toAccountId);
+        BankTransferDTO transfer =
+                transferProcessor.process(
+                        request,
+                        loginUserId,
+                        toAccountId
+                );
+
+        eventPublisher.publishEvent(
+                new FdsTransferCompletedEvent(
+                        transfer.getTransferId(),
+                        transfer.getFromAccountId(),
+                        transfer.getToAccountId(),
+                        transfer.getAmount(),
+                        transfer.getCompletedAt()
+                )
+        );
 
         return toResponse(transfer);
     }
 
     @Transactional(readOnly = true)
-    public TransferResponse getTransfer(Long loginUserId, Long transferId) {
+    public TransferResponse getTransfer(
+            Long loginUserId,
+            Long transferId
+    ) {
         if (transferId == null || transferId <= 0) {
-            throw TransferErrorCode.INVALID_TRANSFER_REQUEST.toException();
+            throw TransferErrorCode.INVALID_TRANSFER_REQUEST
+                    .toException();
         }
 
-        BankTransferDTO transfer = bankTransferMapper.findById(transferId)
-                .orElseThrow(TransferErrorCode.TRANSFER_NOT_FOUND::toException);
+        BankTransferDTO transfer =
+                bankTransferMapper.findById(transferId)
+                        .orElseThrow(
+                                TransferErrorCode.TRANSFER_NOT_FOUND::toException
+                        );
 
         validateParticipant(loginUserId, transfer);
 
         return toResponse(transfer);
     }
 
-    private void validateParticipant(Long loginUserId, BankTransferDTO transfer) {
+    private void validateParticipant(
+            Long loginUserId,
+            BankTransferDTO transfer
+    ) {
         boolean isParticipant =
-                bankAccountMapper.findById(transfer.getFromAccountId())
-                        .map(account -> account.getBankUserId().equals(loginUserId))
+                bankAccountMapper
+                        .findById(transfer.getFromAccountId())
+                        .map(account ->
+                                account.getBankUserId().equals(loginUserId)
+                        )
                         .orElse(false)
-                        || bankAccountMapper.findById(transfer.getToAccountId())
-                        .map(account -> account.getBankUserId().equals(loginUserId))
+
+                        || bankAccountMapper
+                        .findById(transfer.getToAccountId())
+                        .map(account ->
+                                account.getBankUserId().equals(loginUserId)
+                        )
                         .orElse(false);
 
         if (!isParticipant) {
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                    .toException();
         }
     }
 
-    private TransferResponse toResponse(BankTransferDTO transfer) {
-        BankAccountDTO fromAccount = bankAccountMapper.findById(transfer.getFromAccountId()).orElse(null);
-        BankAccountDTO toAccount = bankAccountMapper.findById(transfer.getToAccountId()).orElse(null);
+    private TransferResponse toResponse(
+            BankTransferDTO transfer
+    ) {
+        BankAccountDTO fromAccount =
+                bankAccountMapper
+                        .findById(transfer.getFromAccountId())
+                        .orElse(null);
+
+        BankAccountDTO toAccount =
+                bankAccountMapper
+                        .findById(transfer.getToAccountId())
+                        .orElse(null);
 
         if (fromAccount == null || toAccount == null) {
             return TransferResponse.from(transfer);
         }
-        return TransferResponse.from(transfer, fromAccount, toAccount);
+
+        return TransferResponse.from(
+                transfer,
+                fromAccount,
+                toAccount
+        );
     }
 
-    private Long resolveToAccountId(String toAccountNumber) {
-        BankAccountDTO toAccount = bankAccountMapper.findByAccountNumber(toAccountNumber)
-                .orElseThrow(TransferErrorCode.ACCOUNT_NOT_FOUND::toException);
+    private Long resolveToAccountId(
+            String toAccountNumber
+    ) {
+        BankAccountDTO toAccount =
+                bankAccountMapper
+                        .findByAccountNumber(toAccountNumber)
+                        .orElseThrow(
+                                TransferErrorCode.ACCOUNT_NOT_FOUND::toException
+                        );
+
         return toAccount.getAccountId();
     }
 
-    private void validateRequest(TransferRequest request) {
+    private void validateRequest(
+            TransferRequest request
+    ) {
         if (request == null
                 || isBlank(request.requestKey())
                 || request.fromAccountId() == null
@@ -103,9 +177,14 @@ public class BankTransferService {
             Long toAccountId
     ) {
         boolean sameTransfer =
-                existingTransfer.getFromAccountId().equals(request.fromAccountId())
-                        && existingTransfer.getToAccountId().equals(toAccountId)
-                        && existingTransfer.getAmount().compareTo(request.amount()) == 0;
+                existingTransfer.getFromAccountId()
+                        .equals(request.fromAccountId())
+
+                        && existingTransfer.getToAccountId()
+                        .equals(toAccountId)
+
+                        && existingTransfer.getAmount()
+                        .compareTo(request.amount()) == 0;
 
         if (!sameTransfer) {
             throw TransferErrorCode.DUPLICATE_REQUEST_KEY

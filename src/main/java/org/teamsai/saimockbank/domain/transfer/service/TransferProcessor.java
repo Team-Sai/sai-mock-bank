@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
@@ -5,10 +6,6 @@ import org.springframework.stereotype.Component;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
-import org.teamsai.saimockbank.domain.fds.dto.response.FdsEvaluationResponse;
-import org.teamsai.saimockbank.domain.fds.service.FdsContextService;
-import org.teamsai.saimockbank.domain.fds.service.FdsService;
 import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -30,10 +27,6 @@ public class TransferProcessor {
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
 
-    // FDS 신규 의존성
-    private final FdsContextService fdsContextService;
-    private final FdsService fdsService;
-
     public BankTransferDTO process(
             TransferRequest request,
             Long loginUserId,
@@ -53,7 +46,7 @@ public class TransferProcessor {
             fromAccount = findAccountForUpdate(fromAccountId);
         }
 
-        // 2. 기존 계좌·잔액 검증
+        // 2. 기존 계좌 및 잔액 검증
         validateAccounts(
                 fromAccount,
                 toAccount,
@@ -61,36 +54,21 @@ public class TransferProcessor {
                 loginUserId
         );
 
-        // 3. FDS 평가 컨텍스트 생성
-        LocalDateTime requestedAt = LocalDateTime.now();
-
-        FdsContext fdsContext = fdsContextService.create(
-                fromAccountId,
-                toAccountId,
-                request.amount(),
-                requestedAt
-        );
-
-        // 4. FDS 규칙 평가 및 이력 저장
-        // 현재는 MONITOR 모드이므로 거래 차단 없음
-        FdsEvaluationResponse fdsResult =
-                fdsService.evaluate(null, fdsContext);
-
-        // 5. 기존 잔액 계산
+        // 3. 이체 후 잔액 계산
         BigDecimal fromBalanceAfter =
                 fromAccount.getBalance().subtract(request.amount());
 
         BigDecimal toBalanceAfter =
                 toAccount.getBalance().add(request.amount());
 
-        // 6. 기존 잔액 변경
+        // 4. 기존 잔액 변경
         updateBalances(
                 fromAccount.getAccountId(),
                 toAccount.getAccountId(),
                 request.amount()
         );
 
-        // 7. 기존 이체 내역 저장
+        // 5. 기존 이체 내역 저장
         LocalDateTime completedAt = LocalDateTime.now();
 
         BankTransferDTO transfer = saveTransfer(
@@ -100,7 +78,7 @@ public class TransferProcessor {
                 completedAt
         );
 
-        // 8. 기존 입출금 거래내역 저장
+        // 6. 기존 입출금 거래내역 저장
         saveTransactions(
                 request,
                 fromAccount,
@@ -111,17 +89,12 @@ public class TransferProcessor {
                 completedAt
         );
 
-        // 9. FDS 평가 결과에 실제 이체 ID 연결
-        fdsService.linkTransaction(
-                fdsResult.id(),
-                transfer.getTransferId()
-        );
-
         return transfer;
     }
 
-    private BankAccountDTO findAccountForUpdate(Long accountId) {
-
+    private BankAccountDTO findAccountForUpdate(
+            Long accountId
+    ) {
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
                 .orElseThrow(
@@ -135,22 +108,26 @@ public class TransferProcessor {
             TransferRequest request,
             Long loginUserId
     ) {
-
         if (!fromAccount.getBankUserId().equals(loginUserId)) {
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                    .toException();
         }
 
         if (fromAccount.getAccountId().equals(toAccount.getAccountId())) {
-            throw TransferErrorCode.SAME_ACCOUNT_TRANSFER.toException();
+            throw TransferErrorCode.SAME_ACCOUNT_TRANSFER
+                    .toException();
         }
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE
                 || toAccount.getStatus() != AccountStatus.ACTIVE) {
-            throw TransferErrorCode.ACCOUNT_UNAVAILABLE.toException();
+
+            throw TransferErrorCode.ACCOUNT_UNAVAILABLE
+                    .toException();
         }
 
         if (fromAccount.getBalance().compareTo(request.amount()) < 0) {
-            throw TransferErrorCode.INSUFFICIENT_BALANCE.toException();
+            throw TransferErrorCode.INSUFFICIENT_BALANCE
+                    .toException();
         }
     }
 
@@ -159,19 +136,26 @@ public class TransferProcessor {
             Long toAccountId,
             BigDecimal amount
     ) {
-
         int decreased =
-                bankAccountMapper.decreaseBalance(fromAccountId, amount);
+                bankAccountMapper.decreaseBalance(
+                        fromAccountId,
+                        amount
+                );
 
         if (decreased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED
+                    .toException();
         }
 
         int increased =
-                bankAccountMapper.increaseBalance(toAccountId, amount);
+                bankAccountMapper.increaseBalance(
+                        toAccountId,
+                        amount
+                );
 
         if (increased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED
+                    .toException();
         }
     }
 
@@ -181,7 +165,6 @@ public class TransferProcessor {
             BankAccountDTO toAccount,
             LocalDateTime completedAt
     ) {
-
         BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey(request.requestKey())
                 .fromAccountId(fromAccount.getAccountId())
@@ -197,7 +180,8 @@ public class TransferProcessor {
         int inserted = bankTransferMapper.insert(transfer);
 
         if (inserted != 1) {
-            throw TransferErrorCode.TRANSFER_SAVE_FAILED.toException();
+            throw TransferErrorCode.TRANSFER_SAVE_FAILED
+                    .toException();
         }
 
         return transfer;
@@ -212,7 +196,6 @@ public class TransferProcessor {
             BigDecimal toBalanceAfter,
             LocalDateTime transactionAt
     ) {
-
         BankTransactionDTO withdrawal =
                 createWithdrawTransaction(
                         request,
@@ -240,7 +223,8 @@ public class TransferProcessor {
                 bankTransactionMapper.insert(deposit);
 
         if (withdrawalInserted != 1 || depositInserted != 1) {
-            throw TransferErrorCode.TRANSACTION_SAVE_FAILED.toException();
+            throw TransferErrorCode.TRANSACTION_SAVE_FAILED
+                    .toException();
         }
     }
 
@@ -252,7 +236,6 @@ public class TransferProcessor {
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
-
         return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.WITHDRAW)
@@ -275,7 +258,6 @@ public class TransferProcessor {
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
-
         return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.DEPOSIT)

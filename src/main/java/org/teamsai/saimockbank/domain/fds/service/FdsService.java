@@ -1,12 +1,15 @@
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
 import org.teamsai.saimockbank.domain.fds.dto.FdsRuleResult;
 import org.teamsai.saimockbank.domain.fds.dto.response.FdsEvaluationResponse;
 import org.teamsai.saimockbank.domain.fds.entity.FdsEvaluation;
+import org.teamsai.saimockbank.domain.fds.exception.FdsErrorCode;
 import org.teamsai.saimockbank.domain.fds.repository.FdsEvaluationRepository;
 import org.teamsai.saimockbank.domain.fds.type.FdsAction;
 import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
@@ -29,30 +32,18 @@ public class FdsService {
             FdsContext context
     ) {
 
-        // 1. 개별 규칙 평가
         List<FdsRuleResult> results =
                 fdsRuleService.evaluate(context);
 
-        // 2. 거래 맥락을 포함한 최종 위험 점수 계산
         int riskScore =
-                fdsRiskCalculator.calculateScore(
-                        results,
-                        context
-                );
+                fdsRiskCalculator.calculateScore(results, context);
 
-        // 3. 위험 등급 산정
         FdsRiskLevel riskLevel =
-                fdsRiskCalculator.determineRiskLevel(
-                        riskScore
-                );
+                fdsRiskCalculator.determineRiskLevel(riskScore);
 
-        // 4. 후속 조치 결정
         FdsAction action =
-                fdsRiskCalculator.determineAction(
-                        riskLevel
-                );
+                fdsRiskCalculator.determineAction(riskLevel);
 
-        // 5. 탐지된 규칙 추출
         List<FdsRuleResult> matchedResults =
                 results.stream()
                         .filter(FdsRuleResult::matched)
@@ -68,7 +59,6 @@ public class FdsService {
                         .map(FdsRuleResult::reason)
                         .collect(Collectors.joining("\n"));
 
-        // HIGH 복합 판단 근거 추가
         if (riskLevel == FdsRiskLevel.HIGH) {
 
             String highReason =
@@ -82,7 +72,6 @@ public class FdsService {
                     : reasons + "\n" + highReason;
         }
 
-        // 6. 평가 Entity 생성
         FdsEvaluation evaluation = new FdsEvaluation(
                 transactionId,
                 context.senderAccountId(),
@@ -96,73 +85,47 @@ public class FdsService {
                 context.requestedAt()
         );
 
-        // 7. 평가 결과 저장
-        FdsEvaluation saved =
-                evaluationRepository.save(evaluation);
-
-        return FdsEvaluationResponse.from(saved);
-    }
-
-
-    @Transactional
-    public void linkTransaction(
-            Long evaluationId,
-            Long transferId
-    ) {
-
-        FdsEvaluation evaluation =
-                evaluationRepository.findById(evaluationId)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "FDS 평가 이력을 찾을 수 없습니다. id="
-                                                + evaluationId
-                                )
-                        );
-
-        evaluation.linkTransaction(transferId);
-
-        evaluationRepository.save(evaluation);
+        return FdsEvaluationResponse.from(
+                evaluationRepository.save(evaluation)
+        );
     }
 
 
     @Transactional(readOnly = true)
-    public List<FdsEvaluationResponse> getEvaluations() {
-
+    public Page<FdsEvaluationResponse> getEvaluations(
+            int page,
+            int size
+    ) {
         return evaluationRepository
-                .findAllByOrderByEvaluatedAtDesc()
-                .stream()
-                .map(FdsEvaluationResponse::from)
-                .toList();
+                .findAllByOrderByEvaluatedAtDesc(
+                        PageRequest.of(page, size)
+                )
+                .map(FdsEvaluationResponse::from);
     }
-
 
     @Transactional(readOnly = true)
     public FdsEvaluationResponse getEvaluation(Long id) {
 
         FdsEvaluation evaluation =
                 evaluationRepository.findById(id)
-                        .orElseThrow(() ->
-                                new IllegalArgumentException(
-                                        "FDS 평가 이력을 찾을 수 없습니다. id="
-                                                + id
-                                )
+                        .orElseThrow(
+                                FdsErrorCode.EVALUATION_NOT_FOUND::toException
                         );
 
         return FdsEvaluationResponse.from(evaluation);
     }
 
-
     @Transactional(readOnly = true)
-    public List<FdsEvaluationResponse> getEvaluationsByTransaction(
-            Long transactionId
+    public Page<FdsEvaluationResponse> getEvaluationsByTransaction(
+            Long transactionId,
+            int page,
+            int size
     ) {
-
         return evaluationRepository
                 .findByTransactionIdOrderByEvaluatedAtDesc(
-                        transactionId
+                        transactionId,
+                        PageRequest.of(page, size)
                 )
-                .stream()
-                .map(FdsEvaluationResponse::from)
-                .toList();
+                .map(FdsEvaluationResponse::from);
     }
 }

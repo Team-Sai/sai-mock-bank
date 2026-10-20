@@ -5,6 +5,10 @@ import org.springframework.stereotype.Component;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
+import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
+import org.teamsai.saimockbank.domain.fds.dto.response.FdsEvaluationResponse;
+import org.teamsai.saimockbank.domain.fds.service.FdsContextService;
+import org.teamsai.saimockbank.domain.fds.service.FdsService;
 import org.teamsai.saimockbank.domain.transaction.dto.BankTransactionDTO;
 import org.teamsai.saimockbank.domain.transaction.dto.TransactionType;
 import org.teamsai.saimockbank.domain.transaction.mapper.BankTransactionMapper;
@@ -26,12 +30,21 @@ public class TransferProcessor {
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
 
-    public BankTransferDTO process(TransferRequest request, Long loginUserId, Long toAccountId) {
+    // FDS 신규 의존성
+    private final FdsContextService fdsContextService;
+    private final FdsService fdsService;
+
+    public BankTransferDTO process(
+            TransferRequest request,
+            Long loginUserId,
+            Long toAccountId
+    ) {
         Long fromAccountId = request.fromAccountId();
 
         BankAccountDTO fromAccount;
         BankAccountDTO toAccount;
 
+        // 1. 계좌 ID 순서대로 잠금
         if (fromAccountId < toAccountId) {
             fromAccount = findAccountForUpdate(fromAccountId);
             toAccount = findAccountForUpdate(toAccountId);
@@ -40,16 +53,54 @@ public class TransferProcessor {
             fromAccount = findAccountForUpdate(fromAccountId);
         }
 
-        validateAccounts(fromAccount, toAccount, request, loginUserId);
+        // 2. 기존 계좌·잔액 검증
+        validateAccounts(
+                fromAccount,
+                toAccount,
+                request,
+                loginUserId
+        );
 
-        BigDecimal fromBalanceAfter = fromAccount.getBalance().subtract(request.amount());
-        BigDecimal toBalanceAfter = toAccount.getBalance().add(request.amount());
+        // 3. FDS 평가 컨텍스트 생성
+        LocalDateTime requestedAt = LocalDateTime.now();
 
-        updateBalances(fromAccount.getAccountId(), toAccount.getAccountId(), request.amount());
+        FdsContext fdsContext = fdsContextService.create(
+                fromAccountId,
+                toAccountId,
+                request.amount(),
+                requestedAt
+        );
 
+        // 4. FDS 규칙 평가 및 이력 저장
+        // 현재는 MONITOR 모드이므로 거래 차단 없음
+        FdsEvaluationResponse fdsResult =
+                fdsService.evaluate(null, fdsContext);
+
+        // 5. 기존 잔액 계산
+        BigDecimal fromBalanceAfter =
+                fromAccount.getBalance().subtract(request.amount());
+
+        BigDecimal toBalanceAfter =
+                toAccount.getBalance().add(request.amount());
+
+        // 6. 기존 잔액 변경
+        updateBalances(
+                fromAccount.getAccountId(),
+                toAccount.getAccountId(),
+                request.amount()
+        );
+
+        // 7. 기존 이체 내역 저장
         LocalDateTime completedAt = LocalDateTime.now();
-        BankTransferDTO transfer = saveTransfer(request, fromAccount, toAccount, completedAt);
 
+        BankTransferDTO transfer = saveTransfer(
+                request,
+                fromAccount,
+                toAccount,
+                completedAt
+        );
+
+        // 8. 기존 입출금 거래내역 저장
         saveTransactions(
                 request,
                 fromAccount,
@@ -60,13 +111,22 @@ public class TransferProcessor {
                 completedAt
         );
 
+        // 9. FDS 평가 결과에 실제 이체 ID 연결
+        fdsService.linkTransaction(
+                fdsResult.id(),
+                transfer.getTransferId()
+        );
+
         return transfer;
     }
 
     private BankAccountDTO findAccountForUpdate(Long accountId) {
+
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
-                .orElseThrow(TransferErrorCode.ACCOUNT_NOT_FOUND::toException);
+                .orElseThrow(
+                        TransferErrorCode.ACCOUNT_NOT_FOUND::toException
+                );
     }
 
     private void validateAccounts(
@@ -75,6 +135,7 @@ public class TransferProcessor {
             TransferRequest request,
             Long loginUserId
     ) {
+
         if (!fromAccount.getBankUserId().equals(loginUserId)) {
             throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
         }
@@ -93,13 +154,22 @@ public class TransferProcessor {
         }
     }
 
-    private void updateBalances(Long fromAccountId, Long toAccountId, BigDecimal amount) {
-        int decreased = bankAccountMapper.decreaseBalance(fromAccountId, amount);
+    private void updateBalances(
+            Long fromAccountId,
+            Long toAccountId,
+            BigDecimal amount
+    ) {
+
+        int decreased =
+                bankAccountMapper.decreaseBalance(fromAccountId, amount);
+
         if (decreased != 1) {
             throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
         }
 
-        int increased = bankAccountMapper.increaseBalance(toAccountId, amount);
+        int increased =
+                bankAccountMapper.increaseBalance(toAccountId, amount);
+
         if (increased != 1) {
             throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
         }
@@ -111,6 +181,7 @@ public class TransferProcessor {
             BankAccountDTO toAccount,
             LocalDateTime completedAt
     ) {
+
         BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey(request.requestKey())
                 .fromAccountId(fromAccount.getAccountId())
@@ -124,9 +195,11 @@ public class TransferProcessor {
                 .build();
 
         int inserted = bankTransferMapper.insert(transfer);
+
         if (inserted != 1) {
             throw TransferErrorCode.TRANSFER_SAVE_FAILED.toException();
         }
+
         return transfer;
     }
 
@@ -139,15 +212,32 @@ public class TransferProcessor {
             BigDecimal toBalanceAfter,
             LocalDateTime transactionAt
     ) {
-        BankTransactionDTO withdrawal = createWithdrawTransaction(
-                request, fromAccount, toAccount, transferId, fromBalanceAfter, transactionAt
-        );
-        BankTransactionDTO deposit = createDepositTransaction(
-                request, fromAccount, toAccount, transferId, toBalanceAfter, transactionAt
-        );
 
-        int withdrawalInserted = bankTransactionMapper.insert(withdrawal);
-        int depositInserted = bankTransactionMapper.insert(deposit);
+        BankTransactionDTO withdrawal =
+                createWithdrawTransaction(
+                        request,
+                        fromAccount,
+                        toAccount,
+                        transferId,
+                        fromBalanceAfter,
+                        transactionAt
+                );
+
+        BankTransactionDTO deposit =
+                createDepositTransaction(
+                        request,
+                        fromAccount,
+                        toAccount,
+                        transferId,
+                        toBalanceAfter,
+                        transactionAt
+                );
+
+        int withdrawalInserted =
+                bankTransactionMapper.insert(withdrawal);
+
+        int depositInserted =
+                bankTransactionMapper.insert(deposit);
 
         if (withdrawalInserted != 1 || depositInserted != 1) {
             throw TransferErrorCode.TRANSACTION_SAVE_FAILED.toException();
@@ -162,6 +252,7 @@ public class TransferProcessor {
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
+
         return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.WITHDRAW)
@@ -184,6 +275,7 @@ public class TransferProcessor {
             BigDecimal balanceAfter,
             LocalDateTime transactionAt
     ) {
+
         return BankTransactionDTO.builder()
                 .transactionKey(createTransactionKey())
                 .transactionType(TransactionType.DEPOSIT)

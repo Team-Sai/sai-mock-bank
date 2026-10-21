@@ -1,15 +1,20 @@
+
 package org.teamsai.saimockbank.domain.transfer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
+import org.teamsai.saimockbank.domain.fds.dto.FdsTransferCompletedEvent;
 import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
+import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
@@ -36,6 +41,9 @@ class BankTransferDTOServiceTest {
     @Mock
     private TransferProcessor transferProcessor;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private BankTransferService bankTransferService;
 
@@ -46,8 +54,13 @@ class BankTransferDTOServiceTest {
     void 계좌_이체를_실행한다() {
         TransferRequest request = createRequest("TRANSFER-001");
 
-        BankAccountDTO fromAccount = createAccount(1L, LOGIN_USER_ID, "110-111-111111");
-        BankAccountDTO toAccount = createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+        BankAccountDTO fromAccount =
+                createAccount(1L, LOGIN_USER_ID, "110-111-111111");
+
+        BankAccountDTO toAccount =
+                createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+
+        LocalDateTime completedAt = LocalDateTime.now();
 
         BankTransferDTO transfer = BankTransferDTO.builder()
                 .requestKey("TRANSFER-001")
@@ -55,8 +68,14 @@ class BankTransferDTOServiceTest {
                 .toAccountId(2L)
                 .amount(new BigDecimal("10000"))
                 .status(TransferStatus.SUCCESS)
-                .completedAt(LocalDateTime.now())
+                .completedAt(completedAt)
                 .build();
+
+        ReflectionTestUtils.setField(
+                transfer,
+                "transferId",
+                10L
+        );
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
@@ -67,17 +86,45 @@ class BankTransferDTOServiceTest {
         when(transferProcessor.process(request, LOGIN_USER_ID, 2L))
                 .thenReturn(transfer);
 
-        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
-        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
+        when(bankAccountMapper.findById(1L))
+                .thenReturn(Optional.of(fromAccount));
+
+        when(bankAccountMapper.findById(2L))
+                .thenReturn(Optional.of(toAccount));
 
         var result = bankTransferService.transfer(LOGIN_USER_ID, request);
 
         assertThat(result.status())
                 .isEqualTo(TransferStatus.SUCCESS);
+
         assertThat(result.amount())
                 .isEqualByComparingTo("10000");
 
-        verify(transferProcessor).process(request, LOGIN_USER_ID, 2L);
+        verify(transferProcessor)
+                .process(request, LOGIN_USER_ID, 2L);
+
+        ArgumentCaptor<FdsTransferCompletedEvent> eventCaptor =
+                ArgumentCaptor.forClass(FdsTransferCompletedEvent.class);
+
+        verify(eventPublisher)
+                .publishEvent(eventCaptor.capture());
+
+        FdsTransferCompletedEvent event = eventCaptor.getValue();
+
+        assertThat(event.transferId())
+                .isEqualTo(10L);
+
+        assertThat(event.senderAccountId())
+                .isEqualTo(1L);
+
+        assertThat(event.receiverAccountId())
+                .isEqualTo(2L);
+
+        assertThat(event.amount())
+                .isEqualByComparingTo("10000");
+
+        assertThat(event.completedAt())
+                .isEqualTo(completedAt);
     }
 
     @Test
@@ -92,6 +139,8 @@ class BankTransferDTOServiceTest {
                 .hasMessage(
                         TransferErrorCode.TRANSFER_NOT_FOUND.getMessage()
                 );
+
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -105,12 +154,20 @@ class BankTransferDTOServiceTest {
                 .completedAt(LocalDateTime.now())
                 .build();
 
-        BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
-        BankAccountDTO toAccount = createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
+        BankAccountDTO fromAccount =
+                createAccount(1L, 300L, "110-111-111111");
 
-        when(bankTransferMapper.findById(1L)).thenReturn(Optional.of(transfer));
-        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
-        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
+        BankAccountDTO toAccount =
+                createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
+
+        when(bankTransferMapper.findById(1L))
+                .thenReturn(Optional.of(transfer));
+
+        when(bankAccountMapper.findById(1L))
+                .thenReturn(Optional.of(fromAccount));
+
+        when(bankAccountMapper.findById(2L))
+                .thenReturn(Optional.of(toAccount));
 
         assertThatThrownBy(() ->
                 bankTransferService.getTransfer(LOGIN_USER_ID, 1L)
@@ -119,6 +176,8 @@ class BankTransferDTOServiceTest {
                 .hasMessage(
                         TransferErrorCode.ACCOUNT_ACCESS_DENIED.getMessage()
                 );
+
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -136,14 +195,18 @@ class BankTransferDTOServiceTest {
                         TransferErrorCode.ACCOUNT_NOT_FOUND.getMessage()
                 );
 
-        verifyNoInteractions(transferProcessor);
+        verifyNoInteractions(
+                transferProcessor,
+                eventPublisher
+        );
     }
 
     @Test
     void 다른_사용자가_동일한_requestKey로_요청하면_소유권_예외가_발생한다() {
         TransferRequest request = createRequest("TRANSFER-005");
 
-        BankAccountDTO toAccount = createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+        BankAccountDTO toAccount =
+                createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
 
         BankTransferDTO existingTransfer = BankTransferDTO.builder()
                 .requestKey("TRANSFER-005")
@@ -154,15 +217,23 @@ class BankTransferDTOServiceTest {
                 .completedAt(LocalDateTime.now())
                 .build();
 
-BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
-        BankAccountDTO toAccountForOwnerCheck = createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
+        BankAccountDTO fromAccount =
+                createAccount(1L, 300L, "110-111-111111");
+
+        BankAccountDTO toAccountForOwnerCheck =
+                createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
+
         when(bankTransferMapper.findByRequestKey("TRANSFER-005"))
                 .thenReturn(Optional.of(existingTransfer));
-        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
-        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccountForOwnerCheck));
+
+        when(bankAccountMapper.findById(1L))
+                .thenReturn(Optional.of(fromAccount));
+
+        when(bankAccountMapper.findById(2L))
+                .thenReturn(Optional.of(toAccountForOwnerCheck));
 
         assertThatThrownBy(() ->
                 bankTransferService.transfer(LOGIN_USER_ID, request)
@@ -172,14 +243,18 @@ BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
                         TransferErrorCode.ACCOUNT_ACCESS_DENIED.getMessage()
                 );
 
-        verifyNoInteractions(transferProcessor);
+        verifyNoInteractions(
+                transferProcessor,
+                eventPublisher
+        );
     }
 
     @Test
     void 본인이_참여한_이체는_동일한_requestKey로_재요청해도_정상_응답된다() {
         TransferRequest request = createRequest("TRANSFER-006");
 
-        BankAccountDTO toAccount = createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+        BankAccountDTO toAccount =
+                createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
 
         BankTransferDTO existingTransfer = BankTransferDTO.builder()
                 .requestKey("TRANSFER-006")
@@ -190,21 +265,33 @@ BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
                 .completedAt(LocalDateTime.now())
                 .build();
 
-        BankAccountDTO fromAccount = createAccount(1L, LOGIN_USER_ID, "110-111-111111");
+        BankAccountDTO fromAccount =
+                createAccount(1L, LOGIN_USER_ID, "110-111-111111");
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
+
         when(bankTransferMapper.findByRequestKey("TRANSFER-006"))
                 .thenReturn(Optional.of(existingTransfer));
-        when(bankAccountMapper.findById(1L)).thenReturn(Optional.of(fromAccount));
-        when(bankAccountMapper.findById(2L)).thenReturn(Optional.of(toAccount));
+
+        when(bankAccountMapper.findById(1L))
+                .thenReturn(Optional.of(fromAccount));
+
+        when(bankAccountMapper.findById(2L))
+                .thenReturn(Optional.of(toAccount));
 
         var result = bankTransferService.transfer(LOGIN_USER_ID, request);
 
-        assertThat(result.status()).isEqualTo(TransferStatus.SUCCESS);
-        assertThat(result.amount()).isEqualByComparingTo("10000");
+        assertThat(result.status())
+                .isEqualTo(TransferStatus.SUCCESS);
 
-        verifyNoInteractions(transferProcessor); // 신규 처리 없이 기존 이체 결과를 그대로 반환
+        assertThat(result.amount())
+                .isEqualByComparingTo("10000");
+
+        verifyNoInteractions(
+                transferProcessor,
+                eventPublisher
+        );
     }
 
     private TransferRequest createRequest(String requestKey) {
@@ -218,7 +305,11 @@ BankAccountDTO fromAccount = createAccount(1L, 300L, "110-111-111111");
         );
     }
 
-    private BankAccountDTO createAccount(Long accountId, Long bankUserId, String accountNumber) {
+    private BankAccountDTO createAccount(
+            Long accountId,
+            Long bankUserId,
+            String accountNumber
+    ) {
         return BankAccountDTO.builder()
                 .accountId(accountId)
                 .bankUserId(bankUserId)

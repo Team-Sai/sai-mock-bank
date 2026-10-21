@@ -1,12 +1,14 @@
+
 package org.teamsai.saimockbank.global.security;
 
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 @Getter
 public class CustomUserDetails implements UserDetails {
@@ -14,12 +16,16 @@ public class CustomUserDetails implements UserDetails {
     private final String userToken;
     private final String userKey;
     private final Long userId;
+    private final String role;
 
     public CustomUserDetails(UserDTO user) {
         this.name = user.getName();
         this.userToken = user.getUserToken();
         this.userKey = user.getUserKeyHash();
         this.userId = user.getBankUserId();
+        this.role = "ADMIN".equals(user.getRole())
+                ? "ADMIN"
+                : "USER";
     }
 
     @Override
@@ -34,18 +40,28 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList();
+        return List.of(
+                new SimpleGrantedAuthority("ROLE_" + role)
+        );
     }
 
     @Override
-    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() {
+        return true;
+    }
 }

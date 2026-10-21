@@ -15,6 +15,7 @@ spring:
         - classpath:db/bank_key_operation.sql
         - classpath:db/bank_transfer.sql
         - classpath:db/bank_transaction.sql
+        - classpath:db/fds_evaluation.sql
       encoding: UTF-8
 
 server:

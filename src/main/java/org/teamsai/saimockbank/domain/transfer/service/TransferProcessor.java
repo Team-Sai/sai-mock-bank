@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
@@ -26,12 +27,17 @@ public class TransferProcessor {
     private final BankTransferMapper bankTransferMapper;
     private final BankTransactionMapper bankTransactionMapper;
 
-    public BankTransferDTO process(TransferRequest request, Long loginUserId, Long toAccountId) {
+    public BankTransferDTO process(
+            TransferRequest request,
+            Long loginUserId,
+            Long toAccountId
+    ) {
         Long fromAccountId = request.fromAccountId();
 
         BankAccountDTO fromAccount;
         BankAccountDTO toAccount;
 
+        // 1. 계좌 ID 순서대로 잠금
         if (fromAccountId < toAccountId) {
             fromAccount = findAccountForUpdate(fromAccountId);
             toAccount = findAccountForUpdate(toAccountId);
@@ -40,16 +46,39 @@ public class TransferProcessor {
             fromAccount = findAccountForUpdate(fromAccountId);
         }
 
-        validateAccounts(fromAccount, toAccount, request, loginUserId);
+        // 2. 기존 계좌 및 잔액 검증
+        validateAccounts(
+                fromAccount,
+                toAccount,
+                request,
+                loginUserId
+        );
 
-        BigDecimal fromBalanceAfter = fromAccount.getBalance().subtract(request.amount());
-        BigDecimal toBalanceAfter = toAccount.getBalance().add(request.amount());
+        // 3. 이체 후 잔액 계산
+        BigDecimal fromBalanceAfter =
+                fromAccount.getBalance().subtract(request.amount());
 
-        updateBalances(fromAccount.getAccountId(), toAccount.getAccountId(), request.amount());
+        BigDecimal toBalanceAfter =
+                toAccount.getBalance().add(request.amount());
 
+        // 4. 기존 잔액 변경
+        updateBalances(
+                fromAccount.getAccountId(),
+                toAccount.getAccountId(),
+                request.amount()
+        );
+
+        // 5. 기존 이체 내역 저장
         LocalDateTime completedAt = LocalDateTime.now();
-        BankTransferDTO transfer = saveTransfer(request, fromAccount, toAccount, completedAt);
 
+        BankTransferDTO transfer = saveTransfer(
+                request,
+                fromAccount,
+                toAccount,
+                completedAt
+        );
+
+        // 6. 기존 입출금 거래내역 저장
         saveTransactions(
                 request,
                 fromAccount,
@@ -63,10 +92,14 @@ public class TransferProcessor {
         return transfer;
     }
 
-    private BankAccountDTO findAccountForUpdate(Long accountId) {
+    private BankAccountDTO findAccountForUpdate(
+            Long accountId
+    ) {
         return bankAccountMapper
                 .findByIdForUpdate(accountId)
-                .orElseThrow(TransferErrorCode.ACCOUNT_NOT_FOUND::toException);
+                .orElseThrow(
+                        TransferErrorCode.ACCOUNT_NOT_FOUND::toException
+                );
     }
 
     private void validateAccounts(
@@ -76,32 +109,53 @@ public class TransferProcessor {
             Long loginUserId
     ) {
         if (!fromAccount.getBankUserId().equals(loginUserId)) {
-            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED.toException();
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                    .toException();
         }
 
         if (fromAccount.getAccountId().equals(toAccount.getAccountId())) {
-            throw TransferErrorCode.SAME_ACCOUNT_TRANSFER.toException();
+            throw TransferErrorCode.SAME_ACCOUNT_TRANSFER
+                    .toException();
         }
 
         if (fromAccount.getStatus() != AccountStatus.ACTIVE
                 || toAccount.getStatus() != AccountStatus.ACTIVE) {
-            throw TransferErrorCode.ACCOUNT_UNAVAILABLE.toException();
+
+            throw TransferErrorCode.ACCOUNT_UNAVAILABLE
+                    .toException();
         }
 
         if (fromAccount.getBalance().compareTo(request.amount()) < 0) {
-            throw TransferErrorCode.INSUFFICIENT_BALANCE.toException();
+            throw TransferErrorCode.INSUFFICIENT_BALANCE
+                    .toException();
         }
     }
 
-    private void updateBalances(Long fromAccountId, Long toAccountId, BigDecimal amount) {
-        int decreased = bankAccountMapper.decreaseBalance(fromAccountId, amount);
+    private void updateBalances(
+            Long fromAccountId,
+            Long toAccountId,
+            BigDecimal amount
+    ) {
+        int decreased =
+                bankAccountMapper.decreaseBalance(
+                        fromAccountId,
+                        amount
+                );
+
         if (decreased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED
+                    .toException();
         }
 
-        int increased = bankAccountMapper.increaseBalance(toAccountId, amount);
+        int increased =
+                bankAccountMapper.increaseBalance(
+                        toAccountId,
+                        amount
+                );
+
         if (increased != 1) {
-            throw TransferErrorCode.BALANCE_UPDATE_FAILED.toException();
+            throw TransferErrorCode.BALANCE_UPDATE_FAILED
+                    .toException();
         }
     }
 
@@ -124,9 +178,12 @@ public class TransferProcessor {
                 .build();
 
         int inserted = bankTransferMapper.insert(transfer);
+
         if (inserted != 1) {
-            throw TransferErrorCode.TRANSFER_SAVE_FAILED.toException();
+            throw TransferErrorCode.TRANSFER_SAVE_FAILED
+                    .toException();
         }
+
         return transfer;
     }
 
@@ -139,18 +196,35 @@ public class TransferProcessor {
             BigDecimal toBalanceAfter,
             LocalDateTime transactionAt
     ) {
-        BankTransactionDTO withdrawal = createWithdrawTransaction(
-                request, fromAccount, toAccount, transferId, fromBalanceAfter, transactionAt
-        );
-        BankTransactionDTO deposit = createDepositTransaction(
-                request, fromAccount, toAccount, transferId, toBalanceAfter, transactionAt
-        );
+        BankTransactionDTO withdrawal =
+                createWithdrawTransaction(
+                        request,
+                        fromAccount,
+                        toAccount,
+                        transferId,
+                        fromBalanceAfter,
+                        transactionAt
+                );
 
-        int withdrawalInserted = bankTransactionMapper.insert(withdrawal);
-        int depositInserted = bankTransactionMapper.insert(deposit);
+        BankTransactionDTO deposit =
+                createDepositTransaction(
+                        request,
+                        fromAccount,
+                        toAccount,
+                        transferId,
+                        toBalanceAfter,
+                        transactionAt
+                );
+
+        int withdrawalInserted =
+                bankTransactionMapper.insert(withdrawal);
+
+        int depositInserted =
+                bankTransactionMapper.insert(deposit);
 
         if (withdrawalInserted != 1 || depositInserted != 1) {
-            throw TransferErrorCode.TRANSACTION_SAVE_FAILED.toException();
+            throw TransferErrorCode.TRANSACTION_SAVE_FAILED
+                    .toException();
         }
     }
 

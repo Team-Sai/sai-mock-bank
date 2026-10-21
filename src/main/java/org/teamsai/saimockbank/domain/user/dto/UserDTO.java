@@ -24,4 +24,6 @@ public class UserDTO {
     private LocalDateTime updatedAt;
     private String userToken;
     private String userKeyHash;
+    @Builder.Default
+    private String role = "USER";
 }

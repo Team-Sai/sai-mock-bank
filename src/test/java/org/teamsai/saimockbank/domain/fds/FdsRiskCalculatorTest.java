@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.fds;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -35,18 +36,14 @@ class FdsRiskCalculatorTest {
                 2L,
                 BigDecimal.valueOf(600_000),
                 LocalDateTime.of(2026, 10, 20, 14, 0),
-
                 3,
                 3,
                 1,
-
                 0,
                 0,
-
                 BigDecimal.valueOf(2_000_000),
                 BigDecimal.valueOf(1_800_000),
                 3,
-
                 newRecipients,
                 recentCount,
                 previousCount
@@ -67,7 +64,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("탐지된 규칙이 없으면 LOW")
     void noMatchedRules() {
-
         List<FdsRuleResult> results = List.of(
                 FdsRuleResult.notMatched(FdsRuleType.R01),
                 FdsRuleResult.notMatched(FdsRuleType.R02),
@@ -84,17 +80,22 @@ class FdsRiskCalculatorTest {
                 FdsRiskLevel.LOW,
                 calculator.determineRiskLevel(score)
         );
+        assertEquals(
+                FdsAction.ALLOW,
+                calculator.determineAction(FdsRiskLevel.LOW)
+        );
     }
 
     @Test
     @DisplayName("R01 단독 탐지는 MEDIUM 40점")
     void r01Medium() {
-
         int score = calculator.calculateScore(
-                List.of(FdsRuleResult.matched(
-                        FdsRuleType.R01,
-                        "소액 반복"
-                )),
+                List.of(
+                        FdsRuleResult.matched(
+                                FdsRuleType.R01,
+                                "소액 반복"
+                        )
+                ),
                 context(0, 1, 0)
         );
 
@@ -103,12 +104,15 @@ class FdsRiskCalculatorTest {
                 FdsRiskLevel.MEDIUM,
                 calculator.determineRiskLevel(score)
         );
+        assertEquals(
+                FdsAction.MONITOR,
+                calculator.determineAction(FdsRiskLevel.MEDIUM)
+        );
     }
 
     @Test
     @DisplayName("R02 단독 탐지는 MEDIUM 50점")
     void r02Medium() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(0, 3, 0)
@@ -119,17 +123,22 @@ class FdsRiskCalculatorTest {
                 FdsRiskLevel.MEDIUM,
                 calculator.determineRiskLevel(score)
         );
+        assertEquals(
+                FdsAction.MONITOR,
+                calculator.determineAction(FdsRiskLevel.MEDIUM)
+        );
     }
 
     @Test
     @DisplayName("R03 단독 탐지는 MEDIUM 30점")
     void r03Medium() {
-
         int score = calculator.calculateScore(
-                List.of(FdsRuleResult.matched(
-                        FdsRuleType.R03,
-                        "동일 계좌 반복"
-                )),
+                List.of(
+                        FdsRuleResult.matched(
+                                FdsRuleType.R03,
+                                "동일 계좌 반복"
+                        )
+                ),
                 context(0, 1, 0)
         );
 
@@ -143,14 +152,15 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("R01 R03 동시 탐지는 중복 점수 제외")
     void samePolicy() {
-
         int score = calculator.calculateScore(
                 List.of(
                         FdsRuleResult.matched(
-                                FdsRuleType.R01, "R01"
+                                FdsRuleType.R01,
+                                "R01"
                         ),
                         FdsRuleResult.matched(
-                                FdsRuleType.R03, "R03"
+                                FdsRuleType.R03,
+                                "R03"
                         )
                 ),
                 context(0, 1, 0)
@@ -160,9 +170,8 @@ class FdsRiskCalculatorTest {
     }
 
     @Test
-    @DisplayName("R02와 신규 수취계좌 및 빈도 급증이 결합되면 HIGH")
+    @DisplayName("복합 위험 징후 충족 시 HIGH 90점 및 HOLD")
     void highCombinedRisk() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(3, 6, 4)
@@ -173,9 +182,8 @@ class FdsRiskCalculatorTest {
                 FdsRiskLevel.HIGH,
                 calculator.determineRiskLevel(score)
         );
-
         assertEquals(
-                FdsAction.MONITOR,
+                FdsAction.HOLD,
                 calculator.determineAction(FdsRiskLevel.HIGH)
         );
     }
@@ -183,7 +191,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("신규 수취계좌가 2개면 HIGH가 아님")
     void insufficientNewRecipients() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(2, 6, 4)
@@ -195,7 +202,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("최근 거래 빈도가 충분하지 않으면 HIGH가 아님")
     void insufficientRecentFrequency() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(3, 5, 4)
@@ -207,7 +213,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("직전 거래 이력이 없으면 HIGH가 아님")
     void insufficientHistory() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(3, 6, 0)
@@ -219,7 +224,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("과거 거래량이 최근 거래량보다 많으면 HIGH가 아님")
     void noFrequencySpike() {
-
         int score = calculator.calculateScore(
                 r02Results(),
                 context(3, 6, 12)
@@ -231,7 +235,6 @@ class FdsRiskCalculatorTest {
     @Test
     @DisplayName("복합 징후가 있어도 R02 미탐지면 HIGH가 아님")
     void noFundDistribution() {
-
         int score = calculator.calculateScore(
                 List.of(
                         FdsRuleResult.notMatched(FdsRuleType.R02)

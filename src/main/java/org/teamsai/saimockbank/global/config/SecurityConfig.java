@@ -27,10 +27,10 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<InternalApiKeyFilter> internalApiKeyFilterRegistration(
-            InternalApiKeyFilter internalApiKeyFilter
+            InternalApiKeyFilter filter
     ) {
         FilterRegistrationBean<InternalApiKeyFilter> registration =
-                new FilterRegistrationBean<>(internalApiKeyFilter);
+                new FilterRegistrationBean<>(filter);
 
         registration.setEnabled(false);
         return registration;
@@ -38,10 +38,10 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter filter
     ) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration =
-                new FilterRegistrationBean<>(jwtAuthenticationFilter);
+                new FilterRegistrationBean<>(filter);
 
         registration.setEnabled(false);
         return registration;
@@ -53,7 +53,6 @@ public class SecurityConfig {
             HttpSecurity http,
             InternalApiKeyFilter internalApiKeyFilter
     ) throws Exception {
-
         http
                 .securityMatcher(
                         "/api/link/confirm-key",
@@ -83,24 +82,24 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
-
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(
                                 jwtAuthenticationEntryPoint
                         )
                 )
-                .authorizeHttpRequests(authorize ->
-                        authorize
+                .authorizeHttpRequests(auth ->
+                        auth
                                 .requestMatchers(
+                                        "/api/fds/admin/**",
                                         "/api/fds/evaluations",
                                         "/api/fds/evaluations/**"
                                 )

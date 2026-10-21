@@ -1,4 +1,3 @@
-
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ public class FdsMonitoringService {
     ) {
         FdsContext context =
                 fdsContextService.createForCompletedTransfer(
+                        event.transferId(),
                         event.senderAccountId(),
                         event.receiverAccountId(),
                         event.amount(),

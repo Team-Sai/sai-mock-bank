@@ -1,6 +1,7 @@
 
 package org.teamsai.saimockbank.domain.fds.repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -76,14 +77,20 @@ public interface FdsTransferRepository
                 COUNT(DISTINCT t.toAccountId) AS distinctRecipients,
                 COALESCE(
                     SUM(
-                        CASE WHEN t.toAccountId = :receiverAccountId
-                        THEN 1 ELSE 0 END
+                        CASE
+                            WHEN t.toAccountId = :receiverAccountId
+                            THEN 1
+                            ELSE 0
+                        END
                     ), 0
                 ) AS sameRecipientCount,
                 COALESCE(
                     SUM(
-                        CASE WHEN t.amount <= :smallLimit
-                        THEN 1 ELSE 0 END
+                        CASE
+                            WHEN t.amount <= :smallLimit
+                            THEN 1
+                            ELSE 0
+                        END
                     ), 0
                 ) AS smallTransferCount,
                 COUNT(
@@ -97,9 +104,11 @@ public interface FdsTransferRepository
             WHERE t.fromAccountId = :senderAccountId
               AND t.status = :status
               AND t.completedAt >= :start
-              AND t.completedAt < :end
+              AND t.completedAt <= :end
+              AND t.transferId <> :transferId
             """)
     FiveMinuteStats aggregateFiveMinutes(
+            @Param("transferId") Long transferId,
             @Param("senderAccountId") Long senderAccountId,
             @Param("receiverAccountId") Long receiverAccountId,
             @Param("status") TransferStatus status,
@@ -114,10 +123,12 @@ public interface FdsTransferRepository
             WHERE t.fromAccountId = :senderAccountId
               AND t.status = :status
               AND t.completedAt >= :start
-              AND t.completedAt < :end
+              AND t.completedAt <= :end
               AND t.toAccountId = :receiverAccountId
+              AND t.transferId <> :transferId
             """)
     long countTransfersToRecipient(
+            @Param("transferId") Long transferId,
             @Param("senderAccountId") Long senderAccountId,
             @Param("receiverAccountId") Long receiverAccountId,
             @Param("status") TransferStatus status,
@@ -133,13 +144,32 @@ public interface FdsTransferRepository
               AND t.amount <= :smallLimit
               AND t.toAccountId = :receiverAccountId
               AND t.completedAt >= :start
-              AND t.completedAt < :end
+              AND t.completedAt <= :end
+              AND t.transferId <> :transferId
             """)
     long countSmallTransfersToRecipient(
+            @Param("transferId") Long transferId,
             @Param("senderAccountId") Long senderAccountId,
             @Param("receiverAccountId") Long receiverAccountId,
             @Param("status") TransferStatus status,
             @Param("smallLimit") BigDecimal smallLimit,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+            SELECT COUNT(t)
+            FROM FdsTransferRead t
+            WHERE t.fromAccountId = :senderAccountId
+              AND t.status = :status
+              AND t.completedAt >= :start
+              AND t.completedAt <= :end
+              AND t.transferId <> :transferId
+            """)
+    long countTransfersExcludingCurrent(
+            @Param("transferId") Long transferId,
+            @Param("senderAccountId") Long senderAccountId,
+            @Param("status") TransferStatus status,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
@@ -150,9 +180,11 @@ public interface FdsTransferRepository
             WHERE t.fromAccountId = :senderAccountId
               AND t.status = :status
               AND t.completedAt >= :start
-              AND t.completedAt < :end
+              AND t.completedAt <= :end
+              AND t.transferId <> :transferId
             """)
     BigDecimal sumOutgoingAmount(
+            @Param("transferId") Long transferId,
             @Param("senderAccountId") Long senderAccountId,
             @Param("status") TransferStatus status,
             @Param("start") LocalDateTime start,
@@ -165,9 +197,11 @@ public interface FdsTransferRepository
             WHERE t.fromAccountId = :senderAccountId
               AND t.status = :status
               AND t.completedAt >= :start
-              AND t.completedAt < :end
+              AND t.completedAt <= :end
+              AND t.transferId <> :transferId
             """)
     List<Long> findDistinctOutgoingRecipientIds(
+            @Param("transferId") Long transferId,
             @Param("senderAccountId") Long senderAccountId,
             @Param("status") TransferStatus status,
             @Param("start") LocalDateTime start,
@@ -207,6 +241,6 @@ public interface FdsTransferRepository
             @Param("minimumAmount") BigDecimal minimumAmount,
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
-            org.springframework.data.domain.Pageable pageable
+            Pageable pageable
     );
 }

@@ -54,7 +54,8 @@ public class FdsContextService {
                                 requestedAt
                         );
 
-        int transferCount5Min = recentTransfers.size() + 1;
+        int transferCount5Min =
+                recentTransfers.size() + 1;
 
         Set<Long> recipients = new HashSet<>();
 
@@ -64,7 +65,8 @@ public class FdsContextService {
 
         recipients.add(receiverAccountId);
 
-        int distinctRecipients5Min = recipients.size();
+        int distinctRecipients5Min =
+                recipients.size();
 
         int sameRecipientTransferCount5Min =
                 (int) recentTransfers.stream()
@@ -83,7 +85,8 @@ public class FdsContextService {
                         )
                         .toList();
 
-        int smallTransferCount5Min = smallTransfers.size();
+        int smallTransferCount5Min =
+                smallTransfers.size();
 
         Set<Long> smallRecipients = new HashSet<>();
 
@@ -143,8 +146,8 @@ public class FdsContextService {
                         );
 
         if (recentDeposit.isPresent()) {
-
-            FdsTransferRead deposit = recentDeposit.get();
+            FdsTransferRead deposit =
+                    recentDeposit.get();
 
             LocalDateTime depositAt =
                     deposit.getCompletedAt();
@@ -169,7 +172,8 @@ public class FdsContextService {
                                     BigDecimal::add
                             );
 
-            Set<Long> outgoingRecipients = new HashSet<>();
+            Set<Long> outgoingRecipients =
+                    new HashSet<>();
 
             for (FdsTransferRead transfer : outgoingTransfers) {
                 outgoingRecipients.add(
@@ -224,6 +228,7 @@ public class FdsContextService {
 
     @Transactional(readOnly = true)
     public FdsContext createForCompletedTransfer(
+            Long transferId,
             Long senderAccountId,
             Long receiverAccountId,
             BigDecimal amount,
@@ -240,6 +245,7 @@ public class FdsContextService {
 
         FdsTransferRepository.FiveMinuteStats stats =
                 transferRepository.aggregateFiveMinutes(
+                        transferId,
                         senderAccountId,
                         receiverAccountId,
                         TransferStatus.SUCCESS,
@@ -249,10 +255,13 @@ public class FdsContextService {
                 );
 
         int transferCount5Min =
-                Math.toIntExact(stats.getTransferCount() + 1);
+                Math.toIntExact(
+                        stats.getTransferCount() + 1
+                );
 
         long existingReceiverCount =
                 transferRepository.countTransfersToRecipient(
+                        transferId,
                         senderAccountId,
                         receiverAccountId,
                         TransferStatus.SUCCESS,
@@ -267,7 +276,9 @@ public class FdsContextService {
                 );
 
         int sameRecipientTransferCount5Min =
-                Math.toIntExact(stats.getSameRecipientCount() + 1);
+                Math.toIntExact(
+                        stats.getSameRecipientCount() + 1
+                );
 
         boolean currentSmallTransfer =
                 amount.compareTo(SMALL_TRANSFER_LIMIT) <= 0;
@@ -279,11 +290,14 @@ public class FdsContextService {
                 );
 
         int smallTransferRecipients5Min =
-                Math.toIntExact(stats.getSmallRecipientCount());
+                Math.toIntExact(
+                        stats.getSmallRecipientCount()
+                );
 
         if (currentSmallTransfer) {
             long previousSmallReceiverCount =
                     transferRepository.countSmallTransfersToRecipient(
+                            transferId,
                             senderAccountId,
                             receiverAccountId,
                             TransferStatus.SUCCESS,
@@ -298,13 +312,13 @@ public class FdsContextService {
         }
 
         long previous10MinCount =
-                transferRepository
-                        .countByFromAccountIdAndStatusAndCompletedAtGreaterThanEqualAndCompletedAtLessThan(
-                                senderAccountId,
-                                TransferStatus.SUCCESS,
-                                tenMinutesAgo,
-                                completedAt
-                        );
+                transferRepository.countTransfersExcludingCurrent(
+                        transferId,
+                        senderAccountId,
+                        TransferStatus.SUCCESS,
+                        tenMinutesAgo,
+                        completedAt
+                );
 
         int transferCount10Min =
                 Math.toIntExact(previous10MinCount + 1);
@@ -341,8 +355,8 @@ public class FdsContextService {
                 );
 
         if (!deposits.isEmpty()) {
-
-            FdsTransferRead deposit = deposits.get(0);
+            FdsTransferRead deposit =
+                    deposits.get(0);
 
             LocalDateTime depositAt =
                     deposit.getCompletedAt();
@@ -352,6 +366,7 @@ public class FdsContextService {
 
             BigDecimal previousOutgoingAmount =
                     transferRepository.sumOutgoingAmount(
+                            transferId,
                             senderAccountId,
                             TransferStatus.SUCCESS,
                             depositAt,
@@ -367,12 +382,14 @@ public class FdsContextService {
 
             Set<Long> outgoingRecipients =
                     new HashSet<>(
-                            transferRepository.findDistinctOutgoingRecipientIds(
-                                    senderAccountId,
-                                    TransferStatus.SUCCESS,
-                                    depositAt,
-                                    completedAt
-                            )
+                            transferRepository
+                                    .findDistinctOutgoingRecipientIds(
+                                            transferId,
+                                            senderAccountId,
+                                            TransferStatus.SUCCESS,
+                                            depositAt,
+                                            completedAt
+                                    )
                     );
 
             outgoingRecipients.add(receiverAccountId);

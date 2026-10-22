@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
@@ -70,7 +71,9 @@ public class FdsPreTransferDecisionService {
 
             return new Decision(
                     context,
-                    riskLevel
+                    riskLevel,
+                    List.copyOf(results),
+                    score
             );
 
         } catch (RuntimeException exception) {
@@ -88,7 +91,9 @@ public class FdsPreTransferDecisionService {
 
     public record Decision(
             FdsContext context,
-            FdsRiskLevel riskLevel
+            FdsRiskLevel riskLevel,
+            List<FdsRuleResult> results,
+            int score
     ) {
         public boolean requiresReview() {
             return riskLevel == FdsRiskLevel.HIGH;

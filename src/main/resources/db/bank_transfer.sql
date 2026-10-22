@@ -45,8 +45,9 @@ CREATE TABLE IF NOT EXISTS bank_transfer (
 
 ALTER TABLE bank_transfer
     ADD COLUMN IF NOT EXISTS reviewed_by BIGINT NULL,
-    ADD COLUMN IF NOT EXISTS reviewed_at DATETIME(6) NULL,
-    ADD COLUMN IF NOT EXISTS review_reason VARCHAR(500) NULL;
+    ADD COLUMN IF NOT EXISTS reviewed_at DATETIME NULL,
+    ADD COLUMN IF NOT EXISTS review_reason VARCHAR(255) NULL;
 
 CREATE INDEX IF NOT EXISTS idx_transfer_review_status_created
     ON bank_transfer (status, created_at);
+

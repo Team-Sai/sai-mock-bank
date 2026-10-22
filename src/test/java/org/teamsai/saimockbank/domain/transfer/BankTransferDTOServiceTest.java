@@ -1,4 +1,3 @@
-
 package org.teamsai.saimockbank.domain.transfer;
 
 import org.junit.jupiter.api.Test;
@@ -23,6 +22,7 @@ import org.teamsai.saimockbank.global.exception.DomainException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -70,7 +70,9 @@ class BankTransferDTOServiceTest {
         FdsPreTransferDecisionService.Decision decision =
                 new FdsPreTransferDecisionService.Decision(
                         context,
-                        FdsRiskLevel.LOW
+                        FdsRiskLevel.LOW,
+                        List.of(),
+                        0
                 );
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
@@ -216,9 +218,6 @@ class BankTransferDTOServiceTest {
         BankAccountDTO fromAccount =
                 createAccount(1L, 300L, "110-111-111111");
 
-        BankAccountDTO toAccountForOwnerCheck =
-                createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
-
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
 
@@ -227,9 +226,6 @@ class BankTransferDTOServiceTest {
 
         when(bankAccountMapper.findById(1L))
                 .thenReturn(Optional.of(fromAccount));
-
-        when(bankAccountMapper.findById(2L))
-                .thenReturn(Optional.of(toAccountForOwnerCheck));
 
         assertThatThrownBy(() ->
                 bankTransferService.transfer(
@@ -313,7 +309,9 @@ class BankTransferDTOServiceTest {
         FdsPreTransferDecisionService.Decision decision =
                 new FdsPreTransferDecisionService.Decision(
                         context,
-                        FdsRiskLevel.HIGH
+                        FdsRiskLevel.HIGH,
+                        List.of(),
+                        90
                 );
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))

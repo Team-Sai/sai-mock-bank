@@ -1,7 +1,7 @@
-
 package org.teamsai.saimockbank.domain.fds;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
+@Tag("integration")
 @ActiveProfiles("dev")
 class FdsScenarioIntegrationTest {
 
@@ -397,10 +398,10 @@ class FdsScenarioIntegrationTest {
 
         System.out.println("[PASS] 승인·거절 동시 요청 → " + finalStatus + " 한 건만 반영");
     }
+
     @Test
     void 동일_requestKey_동시송금시_거래가_한번만_생성된다() throws Exception {
         Scenario scenario = prepareScenario("duplicate-request");
-
         TransferRequest request = new TransferRequest(
                 scenario.requestKey(),
                 scenario.sender().id(),
@@ -410,6 +411,8 @@ class FdsScenarioIntegrationTest {
                 "동시 요청 테스트"
         );
 
+        BigDecimal senderBefore = balance(scenario.sender().id());
+        BigDecimal receiverBefore = balance(scenario.receiver().id());
         ExecutorService executor = Executors.newFixedThreadPool(2);
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
@@ -425,27 +428,24 @@ class FdsScenarioIntegrationTest {
 
             Future<TransferResponse> first = executor.submit(task);
             Future<TransferResponse> second = executor.submit(task);
-
             assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
             start.countDown();
 
-            TransferResponse responseA = first.get(30, TimeUnit.SECONDS);
-            TransferResponse responseB = second.get(30, TimeUnit.SECONDS);
+            TransferResponse a = first.get(30, TimeUnit.SECONDS);
+            TransferResponse b = second.get(30, TimeUnit.SECONDS);
+            createdTransfers.add(a.transferId());
 
-            createdTransfers.add(responseA.transferId());
-
-            assertThat(responseA.transferId()).isEqualTo(responseB.transferId());
-            assertThat(responseA.status()).isEqualTo(TransferStatus.PENDING_REVIEW);
-
-            Long count = jdbc.queryForObject(
+            assertThat(a.transferId()).isEqualTo(b.transferId());
+            assertThat(a.status()).isEqualTo(TransferStatus.PENDING_REVIEW);
+            assertThat(b.status()).isEqualTo(TransferStatus.PENDING_REVIEW);
+            assertThat(jdbc.queryForObject(
                     "SELECT COUNT(*) FROM bank_transfer WHERE request_key = ?",
                     Long.class,
                     scenario.requestKey()
-            );
-
-            assertThat(count).isEqualTo(1L);
-            assertThat(transactionCount(responseA.transferId())).isZero();
-
+            )).isEqualTo(1L);
+            assertThat(transactionCount(a.transferId())).isZero();
+            assertThat(balance(scenario.sender().id())).isEqualByComparingTo(senderBefore);
+            assertThat(balance(scenario.receiver().id())).isEqualByComparingTo(receiverBefore);
         } finally {
             start.countDown();
             executor.shutdown();
@@ -456,11 +456,8 @@ class FdsScenarioIntegrationTest {
     @Test
     void 보류거래_승인시_잔액부족이면_보류상태를_유지한다() {
         Scenario scenario = prepareScenario("insufficient-balance");
-
         TransferResponse held = executeHighTransfer(scenario);
-
-        assertThat(held.status())
-                .isEqualTo(TransferStatus.PENDING_REVIEW);
+        assertThat(held.status()).isEqualTo(TransferStatus.PENDING_REVIEW);
 
         jdbc.update(
                 "UPDATE bank_account SET balance = ? WHERE account_id = ?",
@@ -471,26 +468,17 @@ class FdsScenarioIntegrationTest {
         BigDecimal senderBefore = balance(scenario.sender().id());
         BigDecimal receiverBefore = balance(scenario.receiver().id());
 
-        assertThatThrownBy(() ->
-                reviewService.approve(
-                        held.transferId(),
-                        scenario.adminUserId(),
-                        "잔액 부족 승인 테스트"
-                )
-        ).isInstanceOf(DomainException.class)
-                .hasMessageContaining("잔액");
+        assertThatThrownBy(() -> reviewService.approve(
+                held.transferId(), scenario.adminUserId(), "잔액 부족 승인 테스트"
+        )).isInstanceOf(DomainException.class).hasMessageContaining("잔액");
 
         assertThat(transferStatus(held.transferId()))
                 .isEqualTo(TransferStatus.PENDING_REVIEW.name());
-
-        assertThat(balance(scenario.sender().id()))
-                .isEqualByComparingTo(senderBefore);
-
-        assertThat(balance(scenario.receiver().id()))
-                .isEqualByComparingTo(receiverBefore);
-
+        assertThat(balance(scenario.sender().id())).isEqualByComparingTo(senderBefore);
+        assertThat(balance(scenario.receiver().id())).isEqualByComparingTo(receiverBefore);
         assertThat(transactionCount(held.transferId())).isZero();
     }
+
     private List<ReviewResult> runConcurrentReviews(
             Callable<TransferStatus> first,
             Callable<TransferStatus> second
@@ -859,3 +847,4 @@ class FdsScenarioIntegrationTest {
         }
     }
 }
+

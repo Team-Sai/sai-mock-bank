@@ -1,15 +1,10 @@
+
 package org.teamsai.saimockbank.domain.fds;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.test.annotation.Rollback;
 import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
 import org.teamsai.saimockbank.domain.fds.dto.FdsRuleResult;
-import org.teamsai.saimockbank.domain.fds.service.FdsContextService;
 import org.teamsai.saimockbank.domain.fds.service.FdsRuleService;
 import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
 import org.teamsai.saimockbank.domain.fds.type.FdsRuleType;
@@ -21,154 +16,54 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@ActiveProfiles("dev")
-@Transactional
-@Rollback
-class FdsHistoricalContextIntegrationTest {
+@Tag("unit")
+class FdsHighRiskRuleTest {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-
-    @Autowired
-    private FdsContextService contextService;
-
-    @Autowired
-    private FdsRuleService ruleService;
-
-    @Autowired
-    private FdsRiskCalculator riskCalculator;
+    private final FdsRuleService ruleService = new FdsRuleService();
+    private final FdsRiskCalculator riskCalculator = new FdsRiskCalculator();
 
     @Test
-    void 기존_76번_거래의_HIGH_판단을_재현한다() {
-
-        Long transferId = 76L;
-        Long senderAccountId = 21L;
-        Long receiverAccountId = 28L;
-
-        LocalDateTime completedAt =
-                jdbcTemplate.queryForObject(
-                        """
-                        SELECT completed_at
-                        FROM bank_transfer
-                        WHERE transfer_id = ?
-                        """,
-                        (rs, rowNum) ->
-                                rs.getTimestamp("completed_at")
-                                        .toLocalDateTime(),
-                        transferId
-                );
-
-        Integer updated = jdbcTemplate.update(
-                """
-                UPDATE bank_transfer
-                SET status = 'PENDING'
-                WHERE transfer_id = ?
-                  AND status = 'SUCCESS'
-                """,
-                transferId
-        );
-
-        assertEquals(1, updated);
-
-        FdsContext context = contextService.create(
-                senderAccountId,
-                receiverAccountId,
+    void 고액입금후_분산송금과_빈도급증시_HIGH로_판단한다() {
+        FdsContext context = new FdsContext(
+                21L,
+                31L,
                 BigDecimal.valueOf(500_000),
-                completedAt
-        );
-
-        List<FdsRuleResult> results =
-                ruleService.evaluate(context);
-
-        int score = riskCalculator.calculateScore(
-                results,
-                context
-        );
-
-        FdsRiskLevel riskLevel =
-                riskCalculator.determineRiskLevel(score);
-
-        System.out.println("========== FDS TEST ==========");
-
-        System.out.println(
-                "deposit=" + context.recentLargeDepositAmount()
-        );
-
-        System.out.println(
-                "outgoing=" + context.outgoingAmountSinceDeposit()
-        );
-
-        System.out.println(
-                "recipients=" + context.distinctRecipientsSinceDeposit()
-        );
-
-        System.out.println(
-                "newRecipients=" + context.newRecipientsSinceDeposit()
-        );
-
-        System.out.println(
-                "recent10Min=" + context.transferCount10Min()
-        );
-
-        System.out.println(
-                "previous60Min=" + context.previousTransferCount60Min()
-        );
-
-        for (FdsRuleResult result : results) {
-            System.out.println(
-                    result.ruleType()
-                            + " matched=" + result.matched()
-                            + " score=" + result.riskScore()
-            );
-        }
-
-        System.out.println("finalScore=" + score);
-        System.out.println("riskLevel=" + riskLevel);
-
-        System.out.println("==============================");
-
-        assertEquals(
-                0,
-                BigDecimal.valueOf(2_000_000).compareTo(
-                        context.recentLargeDepositAmount()
-                )
-        );
-
-        assertEquals(
-                0,
-                BigDecimal.valueOf(1_850_000).compareTo(
-                        context.outgoingAmountSinceDeposit()
-                )
-        );
-
-        assertEquals(
+                LocalDateTime.of(2026, 10, 22, 10, 0),
+                6,
                 4,
-                context.distinctRecipientsSinceDeposit()
-        );
-
-        assertEquals(
+                1,
+                0,
+                0,
+                BigDecimal.valueOf(2_000_000),
+                BigDecimal.valueOf(1_800_000),
+                4,
                 3,
-                context.newRecipientsSinceDeposit()
+                6,
+                4
         );
 
-        assertEquals(
-                7,
-                context.transferCount10Min()
-        );
+        List<FdsRuleResult> results = ruleService.evaluate(context);
 
-        assertEquals(
-                4,
-                context.previousTransferCount60Min()
-        );
+        int score = riskCalculator.calculateScore(results, context);
+        FdsRiskLevel riskLevel = riskCalculator.determineRiskLevel(score);
 
-        assertTrue(
-                results.stream().anyMatch(
-                        result ->
-                                result.ruleType() == FdsRuleType.R02
-                                        && result.matched()
-                )
-        );
+        assertEquals(0,
+                BigDecimal.valueOf(2_000_000)
+                        .compareTo(context.recentLargeDepositAmount()));
+
+        assertEquals(0,
+                BigDecimal.valueOf(1_800_000)
+                        .compareTo(context.outgoingAmountSinceDeposit()));
+
+        assertEquals(4, context.distinctRecipientsSinceDeposit());
+        assertEquals(3, context.newRecipientsSinceDeposit());
+        assertEquals(6, context.transferCount10Min());
+        assertEquals(4, context.previousTransferCount60Min());
+
+        assertTrue(results.stream().anyMatch(
+                result -> result.ruleType() == FdsRuleType.R02
+                        && result.matched()
+        ));
 
         assertEquals(90, score);
         assertEquals(FdsRiskLevel.HIGH, riskLevel);

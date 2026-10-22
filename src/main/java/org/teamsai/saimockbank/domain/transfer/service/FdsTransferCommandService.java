@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
@@ -6,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
 import org.teamsai.saimockbank.domain.fds.dto.FdsTransferCompletedEvent;
-import org.teamsai.saimockbank.domain.fds.dto.FdsTransferHeldEvent;
 import org.teamsai.saimockbank.domain.fds.service.FdsPreTransferDecisionService;
+import org.teamsai.saimockbank.domain.fds.service.FdsService;
 import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
@@ -21,6 +22,7 @@ public class FdsTransferCommandService {
     private final BankAccountMapper accountMapper;
     private final TransferProcessor processor;
     private final ApplicationEventPublisher events;
+    private final FdsService fdsService;
 
     @Transactional
     public BankTransferDTO execute(
@@ -68,11 +70,9 @@ public class FdsTransferCommandService {
                             receiverId
                     );
 
-            events.publishEvent(
-                    new FdsTransferHeldEvent(
-                            pending.getTransferId(),
-                            decision.context()
-                    )
+            fdsService.evaluate(
+                    pending.getTransferId(),
+                    decision.context()
             );
 
             return pending;

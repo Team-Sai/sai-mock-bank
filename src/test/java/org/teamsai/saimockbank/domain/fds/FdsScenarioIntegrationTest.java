@@ -3,12 +3,17 @@ package org.teamsai.saimockbank.domain.fds;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.teamsai.saimockbank.domain.fds.entity.FdsEvaluation;
+import org.teamsai.saimockbank.domain.fds.repository.FdsEvaluationRepository;
 import org.teamsai.saimockbank.domain.fds.service.FdsAdminReviewService;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferResponse;
@@ -43,6 +48,9 @@ class FdsScenarioIntegrationTest {
 
     @Autowired
     private FdsAdminReviewService reviewService;
+
+    @MockitoSpyBean
+    private FdsEvaluationRepository evaluationRepository;
 
     private final List<Long> createdUsers = new ArrayList<>();
     private final List<Long> createdAccounts = new ArrayList<>();
@@ -163,6 +171,32 @@ class FdsScenarioIntegrationTest {
         assertThat(rejected.status())
                 .isEqualTo(TransferStatus.REJECTED);
 
+        String failureReason = jdbc.queryForObject(
+                """
+                SELECT failure_reason
+                FROM bank_transfer
+                WHERE transfer_id = ?
+                """,
+                String.class,
+                heldForReject.transferId()
+        );
+
+        String reviewReason = jdbc.queryForObject(
+                """
+                SELECT review_reason
+                FROM bank_transfer
+                WHERE transfer_id = ?
+                """,
+                String.class,
+                heldForReject.transferId()
+        );
+
+        assertThat(failureReason)
+                .isEqualTo("관리자 심사에서 거절된 거래입니다.");
+
+        assertThat(reviewReason)
+                .isEqualTo("자동화 거절 테스트");
+
         assertThat(balance(rejection.sender().id()))
                 .isEqualByComparingTo(rejectSenderBefore);
 
@@ -183,6 +217,92 @@ class FdsScenarioIntegrationTest {
         System.out.println(
                 "[PASS] HIGH 보류 → 관리자 거절 → 중복 거절 차단"
         );
+    }
+
+    @Test
+    void FDS_평가_저장_실패시_보류_거래도_롤백() {
+
+        Scenario scenario = prepareScenario("rollback");
+
+        String requestKey = scenario.requestKey();
+
+        BigDecimal senderBefore =
+                balance(scenario.sender().id());
+
+        BigDecimal receiverBefore =
+                balance(scenario.receiver().id());
+
+        Mockito.doThrow(
+                new DataIntegrityViolationException(
+                        "FDS 평가 저장 실패 테스트"
+                )
+        ).when(evaluationRepository).saveAndFlush(
+                Mockito.<FdsEvaluation>any()
+        );
+
+        try {
+            Throwable error = catchThrowable(() ->
+                    executeHighTransfer(scenario)
+            );
+
+            Long transferCount = jdbc.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM bank_transfer
+                    WHERE request_key = ?
+                    """,
+                    Long.class,
+                    requestKey
+            );
+
+            System.out.println(
+                    "[ROLLBACK TEST] error="
+                            + (error == null
+                            ? "NONE"
+                            : error.getClass().getName())
+            );
+
+            System.out.println(
+                    "[ROLLBACK TEST] message="
+                            + (error == null
+                            ? "NONE"
+                            : error.getMessage())
+            );
+
+            System.out.println(
+                    "[ROLLBACK TEST] transferCount="
+                            + transferCount
+            );
+
+            Mockito.verify(
+                    evaluationRepository,
+                    Mockito.times(1)
+            ).saveAndFlush(
+                    Mockito.<FdsEvaluation>any()
+            );
+
+            assertThat(error)
+                    .as("FDS 평가 저장 실패 시 예외가 발생해야 함")
+                    .isNotNull()
+                    .isInstanceOf(RuntimeException.class);
+
+            assertThat(transferCount)
+                    .as("FDS 평가 저장 실패 시 보류 거래도 롤백되어야 함")
+                    .isZero();
+
+            assertThat(balance(scenario.sender().id()))
+                    .isEqualByComparingTo(senderBefore);
+
+            assertThat(balance(scenario.receiver().id()))
+                    .isEqualByComparingTo(receiverBefore);
+
+            System.out.println(
+                    "[PASS] FDS 평가 저장 실패 시 보류 거래 롤백"
+            );
+
+        } finally {
+            Mockito.reset(evaluationRepository);
+        }
     }
 
     private record ReviewResult(
@@ -277,7 +397,100 @@ class FdsScenarioIntegrationTest {
 
         System.out.println("[PASS] 승인·거절 동시 요청 → " + finalStatus + " 한 건만 반영");
     }
+    @Test
+    void 동일_requestKey_동시송금시_거래가_한번만_생성된다() throws Exception {
+        Scenario scenario = prepareScenario("duplicate-request");
 
+        TransferRequest request = new TransferRequest(
+                scenario.requestKey(),
+                scenario.sender().id(),
+                scenario.receiver().number(),
+                BigDecimal.valueOf(500_000),
+                "동시 요청 테스트",
+                "동시 요청 테스트"
+        );
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+
+        try {
+            Callable<TransferResponse> task = () -> {
+                ready.countDown();
+                if (!start.await(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("동시 시작 실패");
+                }
+                return transferService.transfer(scenario.senderUserId(), request);
+            };
+
+            Future<TransferResponse> first = executor.submit(task);
+            Future<TransferResponse> second = executor.submit(task);
+
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+
+            TransferResponse responseA = first.get(30, TimeUnit.SECONDS);
+            TransferResponse responseB = second.get(30, TimeUnit.SECONDS);
+
+            createdTransfers.add(responseA.transferId());
+
+            assertThat(responseA.transferId()).isEqualTo(responseB.transferId());
+            assertThat(responseA.status()).isEqualTo(TransferStatus.PENDING_REVIEW);
+
+            Long count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM bank_transfer WHERE request_key = ?",
+                    Long.class,
+                    scenario.requestKey()
+            );
+
+            assertThat(count).isEqualTo(1L);
+            assertThat(transactionCount(responseA.transferId())).isZero();
+
+        } finally {
+            start.countDown();
+            executor.shutdown();
+            assertThat(executor.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    @Test
+    void 보류거래_승인시_잔액부족이면_보류상태를_유지한다() {
+        Scenario scenario = prepareScenario("insufficient-balance");
+
+        TransferResponse held = executeHighTransfer(scenario);
+
+        assertThat(held.status())
+                .isEqualTo(TransferStatus.PENDING_REVIEW);
+
+        jdbc.update(
+                "UPDATE bank_account SET balance = ? WHERE account_id = ?",
+                BigDecimal.valueOf(100_000),
+                scenario.sender().id()
+        );
+
+        BigDecimal senderBefore = balance(scenario.sender().id());
+        BigDecimal receiverBefore = balance(scenario.receiver().id());
+
+        assertThatThrownBy(() ->
+                reviewService.approve(
+                        held.transferId(),
+                        scenario.adminUserId(),
+                        "잔액 부족 승인 테스트"
+                )
+        ).isInstanceOf(DomainException.class)
+                .hasMessageContaining("잔액");
+
+        assertThat(transferStatus(held.transferId()))
+                .isEqualTo(TransferStatus.PENDING_REVIEW.name());
+
+        assertThat(balance(scenario.sender().id()))
+                .isEqualByComparingTo(senderBefore);
+
+        assertThat(balance(scenario.receiver().id()))
+                .isEqualByComparingTo(receiverBefore);
+
+        assertThat(transactionCount(held.transferId())).isZero();
+    }
     private List<ReviewResult> runConcurrentReviews(
             Callable<TransferStatus> first,
             Callable<TransferStatus> second

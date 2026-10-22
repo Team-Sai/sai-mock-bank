@@ -82,7 +82,7 @@ public interface BankTransferMapper {
                 reviewed_by = #{adminId},
                 reviewed_at = #{reviewedAt},
                 review_reason = #{reason},
-                failure_reason = #{reason}
+                failure_reason = '관리자 심사에서 거절된 거래입니다.'
             WHERE transfer_id = #{transferId}
               AND status = 'PENDING_REVIEW'
             """)

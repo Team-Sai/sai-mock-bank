@@ -86,7 +86,7 @@ public class FdsService {
         );
 
         return FdsEvaluationResponse.from(
-                evaluationRepository.save(evaluation)
+                evaluationRepository.saveAndFlush(evaluation)
         );
     }
 

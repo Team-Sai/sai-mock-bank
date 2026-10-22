@@ -2,6 +2,7 @@
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
@@ -39,15 +40,12 @@ public class BankTransferService {
                 ).orElse(null);
 
         if (existing != null) {
-            validateParticipant(loginUserId, existing);
-
-            validateDuplicateRequest(
-                    existing,
+            return resolveExisting(
+                    loginUserId,
                     request,
-                    toAccountId
+                    toAccountId,
+                    existing
             );
-
-            return toResponse(existing);
         }
 
         FdsPreTransferDecisionService.Decision decision =
@@ -57,15 +55,34 @@ public class BankTransferService {
                         request.amount()
                 );
 
-        BankTransferDTO transfer =
-                commandService.execute(
-                        loginUserId,
-                        request,
-                        toAccountId,
-                        decision
-                );
+        try {
+            BankTransferDTO transfer =
+                    commandService.execute(
+                            loginUserId,
+                            request,
+                            toAccountId,
+                            decision
+                    );
 
-        return toResponse(transfer);
+            return toResponse(transfer);
+
+        } catch (DuplicateKeyException exception) {
+            BankTransferDTO duplicated =
+                    bankTransferMapper.findByRequestKey(
+                            request.requestKey()
+                    ).orElse(null);
+
+            if (duplicated == null) {
+                throw exception;
+            }
+
+            return resolveExisting(
+                    loginUserId,
+                    request,
+                    toAccountId,
+                    duplicated
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -87,6 +104,40 @@ public class BankTransferService {
         validateParticipant(loginUserId, transfer);
 
         return toResponse(transfer);
+    }
+
+    private TransferResponse resolveExisting(
+            Long loginUserId,
+            TransferRequest request,
+            Long toAccountId,
+            BankTransferDTO existing
+    ) {
+        validateSender(loginUserId, existing);
+
+        validateDuplicateRequest(
+                existing,
+                request,
+                toAccountId
+        );
+
+        return toResponse(existing);
+    }
+
+    private void validateSender(
+            Long loginUserId,
+            BankTransferDTO transfer
+    ) {
+        boolean owner =
+                bankAccountMapper.findById(
+                        transfer.getFromAccountId()
+                ).map(account ->
+                        account.getBankUserId().equals(loginUserId)
+                ).orElse(false);
+
+        if (!owner) {
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                    .toException();
+        }
     }
 
     private void validateParticipant(

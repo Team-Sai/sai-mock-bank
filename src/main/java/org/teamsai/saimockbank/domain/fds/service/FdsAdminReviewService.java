@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
@@ -6,7 +7,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.teamsai.saimockbank.domain.fds.dto.response.FdsEvaluationResponse;
 import org.teamsai.saimockbank.domain.fds.dto.response.FdsReviewResponse;
+import org.teamsai.saimockbank.domain.fds.repository.FdsEvaluationRepository;
 import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
@@ -22,6 +25,7 @@ public class FdsAdminReviewService {
 
     private final BankTransferMapper transferMapper;
     private final TransferProcessor transferProcessor;
+    private final FdsEvaluationRepository evaluationRepository;
 
     @Transactional(readOnly = true)
     public Page<FdsReviewResponse> pending(
@@ -42,7 +46,7 @@ public class FdsAdminReviewService {
                                 (int) pageable.getOffset(),
                                 size
                         ).stream()
-                        .map(FdsReviewResponse::from)
+                        .map(this::toReviewResponse)
                         .toList(),
                 pageable,
                 transferMapper.countReviews(
@@ -59,7 +63,7 @@ public class FdsAdminReviewService {
                                 TransferErrorCode.TRANSFER_NOT_FOUND::toException
                         );
 
-        return FdsReviewResponse.from(transfer);
+        return toReviewResponse(transfer);
     }
 
     @Transactional
@@ -78,7 +82,7 @@ public class FdsAdminReviewService {
                         reason
                 );
 
-        return FdsReviewResponse.from(completed);
+        return toReviewResponse(completed);
     }
 
     @Transactional
@@ -108,6 +112,20 @@ public class FdsAdminReviewService {
         }
 
         return detail(transferId);
+    }
+
+    private FdsReviewResponse toReviewResponse(
+            BankTransferDTO transfer
+    ) {
+        FdsEvaluationResponse evaluation =
+                evaluationRepository
+                        .findFirstByTransactionIdOrderByEvaluatedAtDescIdDesc(
+                                transfer.getTransferId()
+                        )
+                        .map(FdsEvaluationResponse::from)
+                        .orElse(null);
+
+        return FdsReviewResponse.from(transfer, evaluation);
     }
 
     private BankTransferDTO pendingForUpdate(

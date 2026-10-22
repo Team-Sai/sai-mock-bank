@@ -42,3 +42,11 @@ CREATE TABLE IF NOT EXISTS bank_transfer (
     ENGINE = InnoDB
     DEFAULT CHARACTER SET = utf8mb4
     COLLATE = utf8mb4_unicode_ci;
+
+ALTER TABLE bank_transfer
+    ADD COLUMN IF NOT EXISTS reviewed_by BIGINT NULL,
+    ADD COLUMN IF NOT EXISTS reviewed_at DATETIME(6) NULL,
+    ADD COLUMN IF NOT EXISTS review_reason VARCHAR(500) NULL;
+
+CREATE INDEX IF NOT EXISTS idx_transfer_review_status_created
+    ON bank_transfer (status, created_at);

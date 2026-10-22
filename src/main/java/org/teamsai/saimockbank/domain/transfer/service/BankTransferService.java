@@ -2,15 +2,15 @@
 package org.teamsai.saimockbank.domain.transfer.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.fds.dto.FdsTransferCompletedEvent;
+import org.teamsai.saimockbank.domain.fds.service.FdsPreTransferDecisionService;
+import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferResponse;
-import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
 
@@ -22,10 +22,9 @@ public class BankTransferService {
 
     private final BankTransferMapper bankTransferMapper;
     private final BankAccountMapper bankAccountMapper;
-    private final TransferProcessor transferProcessor;
-    private final ApplicationEventPublisher eventPublisher;
+    private final FdsTransferCommandService commandService;
+    private final FdsPreTransferDecisionService fdsDecisionService;
 
-    @Transactional
     public TransferResponse transfer(
             Long loginUserId,
             TransferRequest request
@@ -35,41 +34,55 @@ public class BankTransferService {
         Long toAccountId =
                 resolveToAccountId(request.toAccountNumber());
 
-        BankTransferDTO existTransfer =
-                bankTransferMapper
-                        .findByRequestKey(request.requestKey())
-                        .orElse(null);
+        BankTransferDTO existing =
+                bankTransferMapper.findByRequestKey(
+                        request.requestKey()
+                ).orElse(null);
 
-        if (existTransfer != null) {
-            validateParticipant(loginUserId, existTransfer);
-
-            validateDuplicateRequest(
-                    existTransfer,
+        if (existing != null) {
+            return resolveExisting(
+                    loginUserId,
                     request,
-                    toAccountId
+                    toAccountId,
+                    existing
             );
-
-            return toResponse(existTransfer);
         }
 
-        BankTransferDTO transfer =
-                transferProcessor.process(
-                        request,
-                        loginUserId,
-                        toAccountId
+        FdsPreTransferDecisionService.Decision decision =
+                fdsDecisionService.assess(
+                        request.fromAccountId(),
+                        toAccountId,
+                        request.amount()
                 );
 
-        eventPublisher.publishEvent(
-                new FdsTransferCompletedEvent(
-                        transfer.getTransferId(),
-                        transfer.getFromAccountId(),
-                        transfer.getToAccountId(),
-                        transfer.getAmount(),
-                        transfer.getCompletedAt()
-                )
-        );
+        try {
+            BankTransferDTO transfer =
+                    commandService.execute(
+                            loginUserId,
+                            request,
+                            toAccountId,
+                            decision
+                    );
 
-        return toResponse(transfer);
+            return toResponse(transfer);
+
+        } catch (DuplicateKeyException exception) {
+            BankTransferDTO duplicated =
+                    bankTransferMapper.findByRequestKey(
+                            request.requestKey()
+                    ).orElse(null);
+
+            if (duplicated == null) {
+                throw exception;
+            }
+
+            return resolveExisting(
+                    loginUserId,
+                    request,
+                    toAccountId,
+                    duplicated
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -93,24 +106,56 @@ public class BankTransferService {
         return toResponse(transfer);
     }
 
+    private TransferResponse resolveExisting(
+            Long loginUserId,
+            TransferRequest request,
+            Long toAccountId,
+            BankTransferDTO existing
+    ) {
+        validateSender(loginUserId, existing);
+
+        validateDuplicateRequest(
+                existing,
+                request,
+                toAccountId
+        );
+
+        return toResponse(existing);
+    }
+
+    private void validateSender(
+            Long loginUserId,
+            BankTransferDTO transfer
+    ) {
+        boolean owner =
+                bankAccountMapper.findById(
+                        transfer.getFromAccountId()
+                ).map(account ->
+                        account.getBankUserId().equals(loginUserId)
+                ).orElse(false);
+
+        if (!owner) {
+            throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                    .toException();
+        }
+    }
+
     private void validateParticipant(
             Long loginUserId,
             BankTransferDTO transfer
     ) {
         boolean isParticipant =
-                bankAccountMapper
-                        .findById(transfer.getFromAccountId())
-                        .map(account ->
-                                account.getBankUserId().equals(loginUserId)
-                        )
-                        .orElse(false)
+                bankAccountMapper.findById(
+                        transfer.getFromAccountId()
+                ).map(account ->
+                        account.getBankUserId().equals(loginUserId)
+                ).orElse(false)
 
-                        || bankAccountMapper
-                        .findById(transfer.getToAccountId())
-                        .map(account ->
-                                account.getBankUserId().equals(loginUserId)
-                        )
-                        .orElse(false);
+                        || bankAccountMapper.findById(
+                        transfer.getToAccountId()
+                ).map(account ->
+                        account.getBankUserId().equals(loginUserId)
+                ).orElse(false);
 
         if (!isParticipant) {
             throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
@@ -122,14 +167,14 @@ public class BankTransferService {
             BankTransferDTO transfer
     ) {
         BankAccountDTO fromAccount =
-                bankAccountMapper
-                        .findById(transfer.getFromAccountId())
-                        .orElse(null);
+                bankAccountMapper.findById(
+                        transfer.getFromAccountId()
+                ).orElse(null);
 
         BankAccountDTO toAccount =
-                bankAccountMapper
-                        .findById(transfer.getToAccountId())
-                        .orElse(null);
+                bankAccountMapper.findById(
+                        transfer.getToAccountId()
+                ).orElse(null);
 
         if (fromAccount == null || toAccount == null) {
             return TransferResponse.from(transfer);
@@ -146,11 +191,11 @@ public class BankTransferService {
             String toAccountNumber
     ) {
         BankAccountDTO toAccount =
-                bankAccountMapper
-                        .findByAccountNumber(toAccountNumber)
-                        .orElseThrow(
-                                TransferErrorCode.ACCOUNT_NOT_FOUND::toException
-                        );
+                bankAccountMapper.findByAccountNumber(
+                        toAccountNumber
+                ).orElseThrow(
+                        TransferErrorCode.ACCOUNT_NOT_FOUND::toException
+                );
 
         return toAccount.getAccountId();
     }
@@ -172,18 +217,15 @@ public class BankTransferService {
     }
 
     private void validateDuplicateRequest(
-            BankTransferDTO existingTransfer,
+            BankTransferDTO existing,
             TransferRequest request,
             Long toAccountId
     ) {
         boolean sameTransfer =
-                existingTransfer.getFromAccountId()
+                existing.getFromAccountId()
                         .equals(request.fromAccountId())
-
-                        && existingTransfer.getToAccountId()
-                        .equals(toAccountId)
-
-                        && existingTransfer.getAmount()
+                        && existing.getToAccountId().equals(toAccountId)
+                        && existing.getAmount()
                         .compareTo(request.amount()) == 0;
 
         if (!sameTransfer) {

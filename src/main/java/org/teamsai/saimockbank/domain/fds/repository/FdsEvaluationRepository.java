@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.teamsai.saimockbank.domain.fds.entity.FdsEvaluation;
 import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
 
+import java.util.Optional;
+
 public interface FdsEvaluationRepository
         extends JpaRepository<FdsEvaluation, Long> {
 
@@ -21,5 +23,9 @@ public interface FdsEvaluationRepository
     Page<FdsEvaluation> findByRiskLevelOrderByEvaluatedAtDesc(
             FdsRiskLevel riskLevel,
             Pageable pageable
+    );
+
+    Optional<FdsEvaluation> findFirstByTransactionIdOrderByEvaluatedAtDescIdDesc(
+            Long transactionId
     );
 }

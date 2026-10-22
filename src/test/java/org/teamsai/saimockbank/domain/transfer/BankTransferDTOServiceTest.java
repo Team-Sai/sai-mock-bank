@@ -1,32 +1,32 @@
-
 package org.teamsai.saimockbank.domain.transfer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
 import org.teamsai.saimockbank.domain.account.mapper.BankAccountMapper;
-import org.teamsai.saimockbank.domain.fds.dto.FdsTransferCompletedEvent;
+import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
+import org.teamsai.saimockbank.domain.fds.service.FdsPreTransferDecisionService;
+import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
 import org.teamsai.saimockbank.domain.transfer.dto.BankTransferDTO;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferErrorCode;
 import org.teamsai.saimockbank.domain.transfer.mapper.BankTransferMapper;
 import org.teamsai.saimockbank.domain.transfer.service.BankTransferService;
-import org.teamsai.saimockbank.domain.transfer.service.TransferProcessor;
+import org.teamsai.saimockbank.domain.transfer.service.FdsTransferCommandService;
 import org.teamsai.saimockbank.global.exception.DomainException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,10 +39,10 @@ class BankTransferDTOServiceTest {
     private BankAccountMapper bankAccountMapper;
 
     @Mock
-    private TransferProcessor transferProcessor;
+    private FdsTransferCommandService commandService;
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private FdsPreTransferDecisionService fdsDecisionService;
 
     @InjectMocks
     private BankTransferService bankTransferService;
@@ -60,22 +60,20 @@ class BankTransferDTOServiceTest {
         BankAccountDTO toAccount =
                 createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
 
-        LocalDateTime completedAt = LocalDateTime.now();
-
-        BankTransferDTO transfer = BankTransferDTO.builder()
-                .requestKey("TRANSFER-001")
-                .fromAccountId(1L)
-                .toAccountId(2L)
-                .amount(new BigDecimal("10000"))
-                .status(TransferStatus.SUCCESS)
-                .completedAt(completedAt)
-                .build();
-
-        ReflectionTestUtils.setField(
-                transfer,
-                "transferId",
-                10L
+        BankTransferDTO transfer = createTransfer(
+                "TRANSFER-001",
+                TransferStatus.SUCCESS
         );
+
+        FdsContext context = mock(FdsContext.class);
+
+        FdsPreTransferDecisionService.Decision decision =
+                new FdsPreTransferDecisionService.Decision(
+                        context,
+                        FdsRiskLevel.LOW,
+                        List.of(),
+                        0
+                );
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
@@ -83,8 +81,18 @@ class BankTransferDTOServiceTest {
         when(bankTransferMapper.findByRequestKey("TRANSFER-001"))
                 .thenReturn(Optional.empty());
 
-        when(transferProcessor.process(request, LOGIN_USER_ID, 2L))
-                .thenReturn(transfer);
+        when(fdsDecisionService.assess(
+                1L,
+                2L,
+                new BigDecimal("10000")
+        )).thenReturn(decision);
+
+        when(commandService.execute(
+                LOGIN_USER_ID,
+                request,
+                2L,
+                decision
+        )).thenReturn(transfer);
 
         when(bankAccountMapper.findById(1L))
                 .thenReturn(Optional.of(fromAccount));
@@ -92,7 +100,10 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findById(2L))
                 .thenReturn(Optional.of(toAccount));
 
-        var result = bankTransferService.transfer(LOGIN_USER_ID, request);
+        var result = bankTransferService.transfer(
+                LOGIN_USER_ID,
+                request
+        );
 
         assertThat(result.status())
                 .isEqualTo(TransferStatus.SUCCESS);
@@ -100,31 +111,18 @@ class BankTransferDTOServiceTest {
         assertThat(result.amount())
                 .isEqualByComparingTo("10000");
 
-        verify(transferProcessor)
-                .process(request, LOGIN_USER_ID, 2L);
+        verify(fdsDecisionService).assess(
+                1L,
+                2L,
+                new BigDecimal("10000")
+        );
 
-        ArgumentCaptor<FdsTransferCompletedEvent> eventCaptor =
-                ArgumentCaptor.forClass(FdsTransferCompletedEvent.class);
-
-        verify(eventPublisher)
-                .publishEvent(eventCaptor.capture());
-
-        FdsTransferCompletedEvent event = eventCaptor.getValue();
-
-        assertThat(event.transferId())
-                .isEqualTo(10L);
-
-        assertThat(event.senderAccountId())
-                .isEqualTo(1L);
-
-        assertThat(event.receiverAccountId())
-                .isEqualTo(2L);
-
-        assertThat(event.amount())
-                .isEqualByComparingTo("10000");
-
-        assertThat(event.completedAt())
-                .isEqualTo(completedAt);
+        verify(commandService).execute(
+                LOGIN_USER_ID,
+                request,
+                2L,
+                decision
+        );
     }
 
     @Test
@@ -133,26 +131,24 @@ class BankTransferDTOServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                bankTransferService.getTransfer(LOGIN_USER_ID, 999L)
+                bankTransferService.getTransfer(
+                        LOGIN_USER_ID,
+                        999L
+                )
         )
                 .isInstanceOf(DomainException.class)
                 .hasMessage(
-                        TransferErrorCode.TRANSFER_NOT_FOUND.getMessage()
+                        TransferErrorCode.TRANSFER_NOT_FOUND
+                                .getMessage()
                 );
-
-        verifyNoInteractions(eventPublisher);
     }
 
     @Test
     void 이체_당사자가_아니면_조회할_수_없다() {
-        BankTransferDTO transfer = BankTransferDTO.builder()
-                .requestKey("TRANSFER-003")
-                .fromAccountId(1L)
-                .toAccountId(2L)
-                .amount(new BigDecimal("10000"))
-                .status(TransferStatus.SUCCESS)
-                .completedAt(LocalDateTime.now())
-                .build();
+        BankTransferDTO transfer = createTransfer(
+                "TRANSFER-003",
+                TransferStatus.SUCCESS
+        );
 
         BankAccountDTO fromAccount =
                 createAccount(1L, 300L, "110-111-111111");
@@ -170,14 +166,16 @@ class BankTransferDTOServiceTest {
                 .thenReturn(Optional.of(toAccount));
 
         assertThatThrownBy(() ->
-                bankTransferService.getTransfer(LOGIN_USER_ID, 1L)
+                bankTransferService.getTransfer(
+                        LOGIN_USER_ID,
+                        1L
+                )
         )
                 .isInstanceOf(DomainException.class)
                 .hasMessage(
-                        TransferErrorCode.ACCOUNT_ACCESS_DENIED.getMessage()
+                        TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                                .getMessage()
                 );
-
-        verifyNoInteractions(eventPublisher);
     }
 
     @Test
@@ -188,16 +186,20 @@ class BankTransferDTOServiceTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                bankTransferService.transfer(LOGIN_USER_ID, request)
+                bankTransferService.transfer(
+                        LOGIN_USER_ID,
+                        request
+                )
         )
                 .isInstanceOf(DomainException.class)
                 .hasMessage(
-                        TransferErrorCode.ACCOUNT_NOT_FOUND.getMessage()
+                        TransferErrorCode.ACCOUNT_NOT_FOUND
+                                .getMessage()
                 );
 
         verifyNoInteractions(
-                transferProcessor,
-                eventPublisher
+                commandService,
+                fdsDecisionService
         );
     }
 
@@ -208,20 +210,13 @@ class BankTransferDTOServiceTest {
         BankAccountDTO toAccount =
                 createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
 
-        BankTransferDTO existingTransfer = BankTransferDTO.builder()
-                .requestKey("TRANSFER-005")
-                .fromAccountId(1L)
-                .toAccountId(2L)
-                .amount(new BigDecimal("10000"))
-                .status(TransferStatus.SUCCESS)
-                .completedAt(LocalDateTime.now())
-                .build();
+        BankTransferDTO existingTransfer = createTransfer(
+                "TRANSFER-005",
+                TransferStatus.SUCCESS
+        );
 
         BankAccountDTO fromAccount =
                 createAccount(1L, 300L, "110-111-111111");
-
-        BankAccountDTO toAccountForOwnerCheck =
-                createAccount(2L, 400L, TO_ACCOUNT_NUMBER);
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
@@ -232,20 +227,21 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findById(1L))
                 .thenReturn(Optional.of(fromAccount));
 
-        when(bankAccountMapper.findById(2L))
-                .thenReturn(Optional.of(toAccountForOwnerCheck));
-
         assertThatThrownBy(() ->
-                bankTransferService.transfer(LOGIN_USER_ID, request)
+                bankTransferService.transfer(
+                        LOGIN_USER_ID,
+                        request
+                )
         )
                 .isInstanceOf(DomainException.class)
                 .hasMessage(
-                        TransferErrorCode.ACCOUNT_ACCESS_DENIED.getMessage()
+                        TransferErrorCode.ACCOUNT_ACCESS_DENIED
+                                .getMessage()
                 );
 
         verifyNoInteractions(
-                transferProcessor,
-                eventPublisher
+                commandService,
+                fdsDecisionService
         );
     }
 
@@ -256,17 +252,13 @@ class BankTransferDTOServiceTest {
         BankAccountDTO toAccount =
                 createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
 
-        BankTransferDTO existingTransfer = BankTransferDTO.builder()
-                .requestKey("TRANSFER-006")
-                .fromAccountId(1L)
-                .toAccountId(2L)
-                .amount(new BigDecimal("10000"))
-                .status(TransferStatus.SUCCESS)
-                .completedAt(LocalDateTime.now())
-                .build();
-
         BankAccountDTO fromAccount =
                 createAccount(1L, LOGIN_USER_ID, "110-111-111111");
+
+        BankTransferDTO existingTransfer = createTransfer(
+                "TRANSFER-006",
+                TransferStatus.SUCCESS
+        );
 
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
@@ -280,7 +272,10 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findById(2L))
                 .thenReturn(Optional.of(toAccount));
 
-        var result = bankTransferService.transfer(LOGIN_USER_ID, request);
+        var result = bankTransferService.transfer(
+                LOGIN_USER_ID,
+                request
+        );
 
         assertThat(result.status())
                 .isEqualTo(TransferStatus.SUCCESS);
@@ -289,9 +284,96 @@ class BankTransferDTOServiceTest {
                 .isEqualByComparingTo("10000");
 
         verifyNoInteractions(
-                transferProcessor,
-                eventPublisher
+                commandService,
+                fdsDecisionService
         );
+    }
+
+    @Test
+    void 고위험_이체는_심사대기_상태를_반환한다() {
+        TransferRequest request = createRequest("TRANSFER-HIGH");
+
+        BankAccountDTO fromAccount =
+                createAccount(1L, LOGIN_USER_ID, "110-111-111111");
+
+        BankAccountDTO toAccount =
+                createAccount(2L, 200L, TO_ACCOUNT_NUMBER);
+
+        BankTransferDTO pending = createTransfer(
+                "TRANSFER-HIGH",
+                TransferStatus.PENDING_REVIEW
+        );
+
+        FdsContext context = mock(FdsContext.class);
+
+        FdsPreTransferDecisionService.Decision decision =
+                new FdsPreTransferDecisionService.Decision(
+                        context,
+                        FdsRiskLevel.HIGH,
+                        List.of(),
+                        90
+                );
+
+        when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
+                .thenReturn(Optional.of(toAccount));
+
+        when(bankTransferMapper.findByRequestKey("TRANSFER-HIGH"))
+                .thenReturn(Optional.empty());
+
+        when(fdsDecisionService.assess(
+                1L,
+                2L,
+                new BigDecimal("10000")
+        )).thenReturn(decision);
+
+        when(commandService.execute(
+                LOGIN_USER_ID,
+                request,
+                2L,
+                decision
+        )).thenReturn(pending);
+
+        when(bankAccountMapper.findById(1L))
+                .thenReturn(Optional.of(fromAccount));
+
+        when(bankAccountMapper.findById(2L))
+                .thenReturn(Optional.of(toAccount));
+
+        var result = bankTransferService.transfer(
+                LOGIN_USER_ID,
+                request
+        );
+
+        assertThat(result.status())
+                .isEqualTo(TransferStatus.PENDING_REVIEW);
+
+        assertThat(result.completedAt())
+                .isNull();
+
+        verify(commandService).execute(
+                LOGIN_USER_ID,
+                request,
+                2L,
+                decision
+        );
+    }
+
+    private BankTransferDTO createTransfer(
+            String requestKey,
+            TransferStatus status
+    ) {
+        return BankTransferDTO.builder()
+                .requestKey(requestKey)
+                .fromAccountId(1L)
+                .toAccountId(2L)
+                .amount(new BigDecimal("10000"))
+                .status(status)
+                .completedAt(
+                        status == TransferStatus.SUCCESS
+                                ? LocalDateTime.now()
+                                : null
+                )
+                .build();
     }
 
     private TransferRequest createRequest(String requestKey) {

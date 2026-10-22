@@ -1,16 +1,17 @@
+
 package org.teamsai.saimockbank.domain.transfer.dto;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.teamsai.saimockbank.domain.transfer.dto.TransferStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
-public class BankTransferDTO{
+public class BankTransferDTO {
+
     private Long transferId;
     private String requestKey;
     private Long fromAccountId;
@@ -23,6 +24,10 @@ public class BankTransferDTO{
     private LocalDateTime completedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+    private String reviewReason;
 
     @Builder
     private BankTransferDTO(
@@ -50,5 +55,4 @@ public class BankTransferDTO{
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
-
 }

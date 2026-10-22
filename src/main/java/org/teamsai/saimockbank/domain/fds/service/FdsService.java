@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
@@ -31,16 +32,51 @@ public class FdsService {
             Long transactionId,
             FdsContext context
     ) {
-
         List<FdsRuleResult> results =
                 fdsRuleService.evaluate(context);
 
         int riskScore =
-                fdsRiskCalculator.calculateScore(results, context);
+                fdsRiskCalculator.calculateScore(
+                        results,
+                        context
+                );
 
         FdsRiskLevel riskLevel =
                 fdsRiskCalculator.determineRiskLevel(riskScore);
 
+        return persistEvaluation(
+                transactionId,
+                context,
+                results,
+                riskScore,
+                riskLevel
+        );
+    }
+
+    @Transactional
+    public FdsEvaluationResponse evaluate(
+            Long transactionId,
+            FdsContext context,
+            List<FdsRuleResult> results,
+            int riskScore,
+            FdsRiskLevel riskLevel
+    ) {
+        return persistEvaluation(
+                transactionId,
+                context,
+                results,
+                riskScore,
+                riskLevel
+        );
+    }
+
+    private FdsEvaluationResponse persistEvaluation(
+            Long transactionId,
+            FdsContext context,
+            List<FdsRuleResult> results,
+            int riskScore,
+            FdsRiskLevel riskLevel
+    ) {
         FdsAction action =
                 fdsRiskCalculator.determineAction(riskLevel);
 
@@ -60,7 +96,6 @@ public class FdsService {
                         .collect(Collectors.joining("\n"));
 
         if (riskLevel == FdsRiskLevel.HIGH) {
-
             String highReason =
                     "고액 입금 후 자금 분산, "
                             + "30일 미거래 수취계좌 3개 이상, "
@@ -86,10 +121,9 @@ public class FdsService {
         );
 
         return FdsEvaluationResponse.from(
-                evaluationRepository.save(evaluation)
+                evaluationRepository.saveAndFlush(evaluation)
         );
     }
-
 
     @Transactional(readOnly = true)
     public Page<FdsEvaluationResponse> getEvaluations(
@@ -105,7 +139,6 @@ public class FdsService {
 
     @Transactional(readOnly = true)
     public FdsEvaluationResponse getEvaluation(Long id) {
-
         FdsEvaluation evaluation =
                 evaluationRepository.findById(id)
                         .orElseThrow(

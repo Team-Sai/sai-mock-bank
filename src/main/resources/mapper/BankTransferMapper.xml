@@ -21,6 +21,9 @@
         <result property="completedAt" column="completed_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="reviewedBy" column="reviewed_by"/>
+        <result property="reviewedAt" column="reviewed_at"/>
+        <result property="reviewReason" column="review_reason"/>
     </resultMap>
 
     <sql id="transferColumns">
@@ -35,8 +38,12 @@
         failure_reason,
         completed_at,
         created_at,
-        updated_at
+        updated_at,
+        reviewed_by,
+        reviewed_at,
+        review_reason
     </sql>
+
 
     <select id="findById"
             resultMap="bankTransferResultMap">

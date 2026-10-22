@@ -42,88 +42,57 @@ class FdsServiceTest {
     }
 
     private FdsContext createContext(int transferCount) {
-
         return new FdsContext(
-                1L,
-                2L,
-                BigDecimal.ONE,
+                1L, 2L, BigDecimal.ONE,
                 LocalDateTime.of(2026, 10, 19, 15, 0),
-
-                transferCount,
-                5,
-                1,
-
-                // 추가된 소액 송금 집계값
-                transferCount,
-                5,
-
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                0
+                transferCount, 5, 1,
+                transferCount, 5,
+                BigDecimal.ZERO, BigDecimal.ZERO, 0
         );
     }
 
     @Test
     @DisplayName("이상거래 탐지 결과를 DB에 저장")
     void evaluateAndSave() {
-
         FdsContext context = createContext(20);
 
-        when(evaluationRepository.save(any(FdsEvaluation.class)))
+        when(evaluationRepository.saveAndFlush(any(FdsEvaluation.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        FdsEvaluationResponse response =
-                fdsService.evaluate(100L, context);
+        FdsEvaluationResponse response = fdsService.evaluate(100L, context);
 
         assertEquals(100L, response.transactionId());
         assertEquals(40, response.riskScore());
         assertEquals(FdsRiskLevel.MEDIUM, response.riskLevel());
         assertEquals(FdsAction.MONITOR, response.action());
-
-        assertTrue(
-                response.matchedRules().contains(FdsRuleType.R01)
-        );
+        assertTrue(response.matchedRules().contains(FdsRuleType.R01));
 
         verify(evaluationRepository, times(1))
-                .save(any(FdsEvaluation.class));
+                .saveAndFlush(any(FdsEvaluation.class));
     }
 
     @Test
     @DisplayName("정상 거래도 평가 이력을 저장")
     void evaluateNormalTransfer() {
-
         FdsContext context = new FdsContext(
-                1L,
-                2L,
-                BigDecimal.valueOf(25_000),
+                1L, 2L, BigDecimal.valueOf(25_000),
                 LocalDateTime.of(2026, 10, 19, 15, 0),
-
-                1,
-                1,
-                1,
-
-                // 소액 송금 없음
-                0,
-                0,
-
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                0
+                1, 1, 1,
+                0, 0,
+                BigDecimal.ZERO, BigDecimal.ZERO, 0
         );
 
-        when(evaluationRepository.save(any(FdsEvaluation.class)))
+        when(evaluationRepository.saveAndFlush(any(FdsEvaluation.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        FdsEvaluationResponse response =
-                fdsService.evaluate(101L, context);
+        FdsEvaluationResponse response = fdsService.evaluate(101L, context);
 
         assertEquals(0, response.riskScore());
         assertEquals(FdsRiskLevel.LOW, response.riskLevel());
         assertEquals(FdsAction.ALLOW, response.action());
-
         assertTrue(response.matchedRules().isEmpty());
 
         verify(evaluationRepository, times(1))
-                .save(any(FdsEvaluation.class));
+                .saveAndFlush(any(FdsEvaluation.class));
     }
 }

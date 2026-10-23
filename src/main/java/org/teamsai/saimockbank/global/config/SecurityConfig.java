@@ -1,9 +1,13 @@
+
 package org.teamsai.saimockbank.global.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,34 +25,54 @@ import org.teamsai.saimockbank.global.security.InternalApiKeyFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter
-            jwtAuthenticationFilter;
+    @Value("${management.server.port:8082}")
+    private int managementServerPort;
 
-    private final JwtAuthenticationEntryPoint
-            jwtAuthenticationEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
-    // InternalApiKeyFilter와 JwtAuthenticationFilter는 둘 다 @Component이기 때문에
-    // Spring Boot가 기본적으로 이 필터들을 애플리케이션 전역(/**)에도 자동 등록한다.
-    // 그대로 두면 각 필터가 시큐리티 체인 안에서 한 번, Boot의 전역 필터 등록으로 또 한 번
-    // 총 두 번 실행되고, securityMatcher로 의도한 경로 제한도 무시된다.
-    // (InternalApiKeyFilter의 경우 헤더 없는 모든 요청이 401로 막히는 버그로 실제 발현됨)
-    // 전역 자동 등록은 모두 비활성화하고 아래 필터 체인에서만 동작하게 한다.
+    @Bean
+    @Order(0)
+    @Profile("loadtest")
+    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(this::isPublicManagementEndpoint)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+
+        return http.build();
+    }
+
+    boolean isPublicManagementEndpoint(HttpServletRequest request) {
+        if (request.getLocalPort() != managementServerPort) {
+            return false;
+        }
+
+        String path = request.getRequestURI();
+        return "/actuator/health".equals(path) || "/actuator/prometheus".equals(path);
+    }
+
     @Bean
     public FilterRegistrationBean<InternalApiKeyFilter> internalApiKeyFilterRegistration(
-            InternalApiKeyFilter internalApiKeyFilter
+            InternalApiKeyFilter filter
     ) {
         FilterRegistrationBean<InternalApiKeyFilter> registration =
-                new FilterRegistrationBean<>(internalApiKeyFilter);
+                new FilterRegistrationBean<>(filter);
+
         registration.setEnabled(false);
         return registration;
     }
 
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter filter
     ) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration =
-                new FilterRegistrationBean<>(jwtAuthenticationFilter);
+                new FilterRegistrationBean<>(filter);
+
         registration.setEnabled(false);
         return registration;
     }
@@ -59,12 +83,27 @@ public class SecurityConfig {
             HttpSecurity http,
             InternalApiKeyFilter internalApiKeyFilter
     ) throws Exception {
-        http.securityMatcher("/api/link/confirm-key", "/api/link/revoke-key", "/api/link/recover-key",
-                        "/api/mock-bank/link")
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        http
+                .securityMatcher(
+                        "/api/link/confirm-key",
+                        "/api/link/revoke-key",
+                        "/api/link/recover-key",
+                        "/api/mock-bank/link"
+                )
+                .authorizeHttpRequests(auth ->
+                        auth.anyRequest().permitAll()
+                )
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(internalApiKeyFilter, UsernamePasswordAuthenticationFilter.class);
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
+                .addFilterBefore(
+                        internalApiKeyFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
         return http.build();
     }
 
@@ -73,31 +112,35 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
-
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
+                .exceptionHandling(ex ->
+                        ex.authenticationEntryPoint(
                                 jwtAuthenticationEntryPoint
                         )
                 )
+                .authorizeHttpRequests(auth ->
+                        auth
+                                .requestMatchers(
+                                        "/api/fds/admin/**",
+                                        "/api/fds/evaluations",
+                                        "/api/fds/evaluations/**"
+                                )
+                                .hasRole("ADMIN")
 
-                .authorizeHttpRequests(authorize ->
-                        authorize
                                 .requestMatchers(
                                         HttpMethod.POST,
                                         "/api/mock-bank/accounts"
                                 )
                                 .authenticated()
+
                                 .requestMatchers(
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
@@ -111,7 +154,9 @@ public class SecurityConfig {
                                         "/swagger-ui.html",
                                         "/v3/api-docs/**",
                                         "/v3/api-docs.yaml"
-                                ).permitAll()
+                                )
+                                .permitAll()
+
                                 .requestMatchers(
                                         "/api/auth/signup",
                                         "/api/auth/login",
@@ -146,7 +191,6 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated()
                 )
-
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class

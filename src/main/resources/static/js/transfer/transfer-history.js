@@ -14,7 +14,6 @@ const slipTo = document.getElementById('slip-to');
 const slipAmount = document.getElementById('slip-amount');
 const slipFailureRow = document.getElementById('slip-failure-row');
 const slipFailureReason = document.getElementById('slip-failure-reason');
-const slipDate = document.getElementById('slip-date');
 
 function getAuthHeader() {
     const token = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -93,8 +92,6 @@ function renderSlip(data) {
     slipFrom.textContent = data.fromMaskedAccountNumber ?? '—';
     slipTo.textContent = data.toMaskedAccountNumber ?? '—';
     slipAmount.textContent = formatWon(data.amount);
-    slipDate.textContent = formatDate(data.completedAt);
-
     if (data.failureReason) {
         slipFailureRow.hidden = false;
         slipFailureReason.textContent = data.failureReason;
@@ -116,7 +113,6 @@ function renderErrorSlip(message) {
     slipFrom.textContent = '—';
     slipTo.textContent = '—';
     slipAmount.textContent = '—';
-    slipDate.textContent = '—';
 
     slipFailureRow.hidden = false;
     slipFailureReason.textContent = message;

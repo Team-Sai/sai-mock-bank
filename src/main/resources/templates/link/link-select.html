@@ -12,6 +12,9 @@
     <link rel="stylesheet"
           th:href="@{/css/link/link-select.css}"
           href="/css/link/link-select.css">
+    <link rel="stylesheet"
+          th:href="@{/css/common/fds-notification.css}"
+          href="/css/common/fds-notification.css">
 </head>
 <body>
 <header th:replace="~{fragments/header :: header(activeRoute='link-select')}"></header>
@@ -42,5 +45,6 @@
 </main>
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <script th:src="@{/js/link/link-select.js}" src="/js/link/link-select.js" defer></script>
+<script th:src="@{/js/common/fds-notification.js}" src="/js/common/fds-notification.js" defer></script>
 </body>
 </html>

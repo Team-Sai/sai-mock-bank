@@ -491,7 +491,6 @@
                         ? "-" : data.riskScore + "점"],
                     ["거래 상태", data.status],
                     ["요청 일시", dateTime(data.createdAt)],
-                    ["처리 일시", dateTime(data.completedAt)],
                     ["심사자 ID", data.reviewedBy],
                     ["심사 일시", dateTime(data.reviewedAt)],
                     ["기존 심사 사유", data.reviewReason]

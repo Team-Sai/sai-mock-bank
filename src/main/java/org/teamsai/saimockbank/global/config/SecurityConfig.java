@@ -130,7 +130,10 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth ->
-                        auth
+                        auth.dispatcherTypeMatchers(
+                                        jakarta.servlet.DispatcherType.ASYNC
+                                )
+                                .permitAll()
 
                                 // FDS 관리자 API
                                 .requestMatchers(

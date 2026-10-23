@@ -2,6 +2,7 @@ package org.teamsai.saimockbank.global.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -93,15 +94,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorizationHeader =
                 request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (!StringUtils.hasText(authorizationHeader)
-                || !authorizationHeader.startsWith(BEARER_PREFIX)) {
+        if (StringUtils.hasText(authorizationHeader)
+                && authorizationHeader.startsWith(BEARER_PREFIX)) {
+
+            String token = authorizationHeader.substring(
+                    BEARER_PREFIX.length()
+            );
+
+            if (StringUtils.hasText(token)) {
+                return token;
+            }
+        }
+
+        String path = request.getServletPath();
+
+        if (!path.equals("/admin")
+                && !path.equals("/admin/")
+                && !path.startsWith("/admin/")) {
             return null;
         }
 
-        String token = authorizationHeader.substring(
-                BEARER_PREFIX.length()
-        );
+        Cookie[] cookies = request.getCookies();
 
-        return StringUtils.hasText(token) ? token : null;
+        if (cookies == null) {
+            return null;
+        }
+
+        for (Cookie cookie : cookies) {
+            if ("admin_page_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        return null;
     }
 }

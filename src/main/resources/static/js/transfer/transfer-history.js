@@ -123,9 +123,26 @@ function renderErrorSlip(message) {
 }
 
 const STATUS_PRESENTATION = {
-    SUCCESS: { label: '이체 완료', className: null },
-    FAILED: { label: '이체 실패', className: 'is-error' },
-    PENDING: { label: '처리 중', className: 'is-pending' },
+    SUCCESS: {
+        label: '이체 완료',
+        className: null
+    },
+    FAILED: {
+        label: '이체 실패',
+        className: 'is-error'
+    },
+    PENDING: {
+        label: '처리 중',
+        className: 'is-pending'
+    },
+    PENDING_REVIEW: {
+        label: '관리자 심사 대기 (미이체)',
+        className: 'is-pending'
+    },
+    REJECTED: {
+        label: '관리자 심사 거절 (미이체)',
+        className: 'is-error'
+    }
 };
 
 function resolveStatusPresentation(status) {

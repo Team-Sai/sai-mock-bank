@@ -4,9 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.user.dto.request.UserLoginRequest;
@@ -15,6 +19,8 @@ import org.teamsai.saimockbank.domain.user.dto.response.UserLoginResponse;
 import org.teamsai.saimockbank.domain.user.dto.response.UserSignUpResponse;
 import org.teamsai.saimockbank.domain.user.service.AuthService;
 
+import java.time.Duration;
+
 @Tag(
         name = "인증/인가 API",
         description = "회원가입, 로그인 등 인증 관련 API"
@@ -22,6 +28,12 @@ import org.teamsai.saimockbank.domain.user.service.AuthService;
 @Controller
 @RequiredArgsConstructor
 public class AuthController {
+
+    @Value("${jwt.access-token-expiration-ms}")
+    private long accessTokenExpirationMs;
+
+    @Value("${server.servlet.session.cookie.secure:false}")
+    private boolean secureCookie;
 
     private final AuthService authService;
 
@@ -83,8 +95,26 @@ public class AuthController {
     @ResponseBody
     @PostMapping("/api/auth/login")
     public UserLoginResponse login(
-            @Valid @RequestBody UserLoginRequest request
+            @Valid @RequestBody UserLoginRequest request,
+            HttpServletResponse response
     ) {
-        return authService.login(request);
+        UserLoginResponse result = authService.login(request);
+
+        ResponseCookie cookie = ResponseCookie
+                .from("admin_page_token", result.getAccessToken())
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Strict")
+                .path("/admin")
+                .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                .build();
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                cookie.toString()
+        );
+
+        return result;
     }
+
 }

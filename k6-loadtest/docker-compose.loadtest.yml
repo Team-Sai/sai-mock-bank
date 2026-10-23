@@ -1,3 +1,5 @@
+name: sai-mock-bank-loadtest
+
 services:
   influxdb:
     image: influxdb:1.8

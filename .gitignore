@@ -40,3 +40,4 @@ application-dev.yml
 application-prod.yml
 .env
 /k6-loadtest/.env.loadtest
+/k6-loadtest/prometheus/targets.json

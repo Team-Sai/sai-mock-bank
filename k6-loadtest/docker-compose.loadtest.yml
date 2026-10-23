@@ -15,6 +15,7 @@ services:
       - "127.0.0.1:9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/targets.json:/etc/prometheus/targets.json:ro
       - prometheus-data:/prometheus
 
   grafana:

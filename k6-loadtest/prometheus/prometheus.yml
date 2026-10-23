@@ -5,5 +5,7 @@ global:
 scrape_configs:
   - job_name: sai-mock-bank
     metrics_path: /actuator/prometheus
-    static_configs:
-      - targets: ["192.168.0.206:8082"]
+    file_sd_configs:
+      - files:
+          - /etc/prometheus/targets.json
+        refresh_interval: 30s

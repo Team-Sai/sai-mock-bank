@@ -19,9 +19,16 @@
 
 배포 환경의 활성 프로필에 `loadtest`를 더해 서버를 다시 배포해야 합니다. 예를 들어 현재 `aws` 프로필을 쓰는 경우 `SPRING_PROFILES_ACTIVE=aws,loadtest`로 설정합니다. 기존 배포 프로필은 유지하고 뒤에 `loadtest`를 추가하세요.
 
-`docker-compose.yml`은 관리 포트도 호스트에 전달합니다. Prometheus가 다른 머신에서 실행된다면 서버 방화벽/AWS 보안 그룹에서 TCP 8082를 Prometheus가 실행되는 호스트의 IP만 접근하도록 허용해야 합니다. `SecurityConfig`는 이 두 Actuator 경로만 인증 없이 접근하도록 분리하며, 포트 자체의 네트워크 제한은 방화벽에서 해야 합니다.
+`docker-compose.yml`은 관리 포트를 기본적으로 `127.0.0.1`에만 바인딩합니다. Prometheus가 다른 머신에서 실행된다면 배포 서버의 `.env`에 `MANAGEMENT_BIND_IP=192.168.0.206`처럼 서버의 사설 IP를 설정하고, 서버 방화벽에서 TCP 8082를 Prometheus 호스트의 IP만 접근하도록 허용해야 합니다. `loadtest` 프로필에서만 관리 엔드포인트용 보안 체인이 등록되고, 관리 포트의 `/actuator/health`와 `/actuator/prometheus`만 인증 없이 접근할 수 있습니다. 기본 배포에서는 이 체인이 등록되지 않습니다.
 
-Prometheus 설정은 `prometheus/prometheus.yml`에 있습니다. 현재 scrape 대상은 `192.168.0.206:8082`이므로, Prometheus 컨테이너가 그 주소로 라우팅할 수 있어야 합니다. 서버 주소가 바뀌면 이 파일의 target도 함께 바꾸세요. `192.168.x.x`는 사설 주소라 같은 사설망 또는 VPN에서만 도달할 수 있습니다.
+Prometheus 작업 설정은 `prometheus/prometheus.yml`에 있고, 환경별 scrape 대상은 `prometheus/targets.json`에서 관리합니다. 최초 실행 전에 예시 파일을 복사하고 실제 서버 주소를 입력합니다.
+
+```powershell
+Copy-Item .\prometheus\targets.json.example .\prometheus\targets.json
+notepad .\prometheus\targets.json
+```
+
+`192.168.x.x`는 사설 주소라 같은 사설망 또는 VPN에서만 도달할 수 있습니다. `targets.json`은 `.gitignore`에 포함되어 환경별 주소가 Git에 올라가지 않습니다.
 
 서버 배포 후 Prometheus 머신에서 다음 주소가 응답하는지 확인합니다.
 
@@ -56,6 +63,7 @@ docker compose --env-file .env.loadtest -f docker-compose.loadtest.yml ps
 
 - `docker-compose.loadtest.yml`: InfluxDB, Prometheus, Grafana, k6 컨테이너와 저장 볼륨을 정의합니다. k6는 필요할 때만 실행합니다.
 - `prometheus/prometheus.yml`: 서버 메트릭을 읽을 주소와 주기를 정의합니다.
+- `prometheus/targets.json.example`: 환경별 scrape 대상 설정의 예시입니다. 복사해 만든 `targets.json`은 Git에 올라가지 않습니다.
 - `grafana/provisioning/datasources/datasource.yml`: Grafana가 InfluxDB와 Prometheus를 자동으로 데이터 소스로 등록하게 합니다. 각 컨테이너 이름을 주소로 사용하므로 Docker 네트워크 안에서 연결됩니다.
 - `grafana/provisioning/dashboards/dashboards.yml`: 대시보드 JSON 파일을 시작 시 자동으로 불러오게 합니다.
 - `grafana/dashboards/k6.json`: k6 부하 지표 대시보드입니다.

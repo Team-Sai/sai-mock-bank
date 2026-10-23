@@ -1,10 +1,13 @@
 
 package org.teamsai.saimockbank.global.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,8 +25,35 @@ import org.teamsai.saimockbank.global.security.InternalApiKeyFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    @Value("${management.server.port:8082}")
+    private int managementServerPort;
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Bean
+    @Order(0)
+    @Profile("loadtest")
+    public SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(this::isPublicManagementEndpoint)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm ->
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
+
+        return http.build();
+    }
+
+    boolean isPublicManagementEndpoint(HttpServletRequest request) {
+        if (request.getLocalPort() != managementServerPort) {
+            return false;
+        }
+
+        String path = request.getRequestURI();
+        return "/actuator/health".equals(path) || "/actuator/prometheus".equals(path);
+    }
 
     @Bean
     public FilterRegistrationBean<InternalApiKeyFilter> internalApiKeyFilterRegistration(

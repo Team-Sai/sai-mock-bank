@@ -14,6 +14,7 @@ spring:
         - classpath:db/bank_account.sql
         - classpath:db/bank_transfer.sql
         - classpath:db/bank_transaction.sql
+        - classpath:db/fds_evaluation.sql
       encoding: UTF-8
 mock-bank:
   key-hash-secret: test-only-mock-bank-key-hash-secret

@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @Tag("integration")
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 class FdsScenarioIntegrationTest {
 
     @Autowired

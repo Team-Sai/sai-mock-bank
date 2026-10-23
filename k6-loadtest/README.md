@@ -19,16 +19,16 @@
 
 배포 환경의 활성 프로필에 `loadtest`를 더해 서버를 다시 배포해야 합니다. 예를 들어 현재 `aws` 프로필을 쓰는 경우 `SPRING_PROFILES_ACTIVE=aws,loadtest`로 설정합니다. 기존 배포 프로필은 유지하고 뒤에 `loadtest`를 추가하세요.
 
-`docker-compose.yml`은 관리 포트를 기본적으로 `127.0.0.1`에만 바인딩합니다. Prometheus가 다른 머신에서 실행된다면 배포 서버의 `.env`에 `MANAGEMENT_BIND_IP=192.168.0.206`처럼 서버의 사설 IP를 설정하고, 서버 방화벽에서 TCP 8082를 Prometheus 호스트의 IP만 접근하도록 허용해야 합니다. `loadtest` 프로필에서만 관리 엔드포인트용 보안 체인이 등록되고, 관리 포트의 `/actuator/health`와 `/actuator/prometheus`만 인증 없이 접근할 수 있습니다. 기본 배포에서는 이 체인이 등록되지 않습니다.
+`docker-compose.yml`은 관리 포트를 기본적으로 `127.0.0.1`에만 바인딩합니다. Prometheus가 다른 머신에서 실행된다면 배포 서버의 `.env`에 서버의 사설 IP를 `MANAGEMENT_BIND_IP`로 설정하고, 서버 방화벽에서 TCP 8082를 Prometheus 호스트의 IP만 접근하도록 허용해야 합니다. `loadtest` 프로필에서만 관리 엔드포인트용 보안 체인이 등록되고, 관리 포트의 `/actuator/health`와 `/actuator/prometheus`만 인증 없이 접근할 수 있습니다. 기본 배포에서는 이 체인이 등록되지 않습니다.
 
 ### Academy VM에서 사이은행 메트릭 켜기
 
 기존 Academy Compose 파일은 서버에 보존하고, 이 저장소의 `docker-compose.academy-loadtest.yml`을 추가 overlay로 사용합니다. 이 overlay는 현재 `aws` 프로필에 `loadtest`를 더하고 관리 포트 `8082`만 추가합니다.
 
-서버의 `.env`에 다음 값을 설정합니다. Prometheus가 실행되는 PC에서 접근할 수 있는 VM 사설 IP를 사용하고, 방화벽은 Prometheus 호스트만 허용해야 합니다.
+VM에서 `hostname -I`로 사설 IP를 확인한 다음, 서버의 `.env`에 그 주소를 설정합니다. 아래의 `<사이은행 VM 사설 IP>`는 실제 주소로 바꿔야 합니다. 방화벽은 Prometheus 호스트만 허용해야 합니다.
 
 ```dotenv
-MANAGEMENT_BIND_IP=192.168.0.206
+MANAGEMENT_BIND_IP=<사이은행 VM 사설 IP>
 ```
 
 서버에서 저장소 디렉터리로 이동한 뒤 구성을 확인하고 사이은행 컨테이너를 다시 빌드합니다.
@@ -38,11 +38,12 @@ sudo docker compose --env-file .env -f docker-compose.academy.yml -f docker-comp
 sudo docker compose --env-file .env -f docker-compose.academy.yml -f docker-compose.academy-loadtest.yml up -d --build mock-bank
 ```
 
-Prometheus PC의 방화벽 허용 후 다음 주소를 확인합니다.
+Prometheus PC에서 VM의 사설 IP를 변수에 넣고 연결을 확인합니다.
 
 ```powershell
-curl.exe http://192.168.0.206:8082/actuator/health
-curl.exe http://192.168.0.206:8082/actuator/prometheus
+$serverIp = "<사이은행 VM 사설 IP>"
+curl.exe "http://${serverIp}:8082/actuator/health"
+curl.exe "http://${serverIp}:8082/actuator/prometheus"
 ```
 
 첫 주소는 health JSON, 두 번째 주소는 메트릭 텍스트를 반환해야 합니다. 기본 서비스 포트 `8081`에는 Actuator를 열지 않습니다.
@@ -56,11 +57,12 @@ notepad .\prometheus\targets.json
 
 `192.168.x.x`는 사설 주소라 같은 사설망 또는 VPN에서만 도달할 수 있습니다. `targets.json`은 `.gitignore`에 포함되어 환경별 주소가 Git에 올라가지 않습니다.
 
-서버 배포 후 Prometheus 머신에서 다음 주소가 응답하는지 확인합니다.
+서버 배포 후 Prometheus 머신에서 VM의 실제 사설 IP로 다음 주소가 응답하는지 확인합니다.
 
 ```powershell
-curl.exe http://192.168.0.206:8082/actuator/health
-curl.exe http://192.168.0.206:8082/actuator/prometheus
+$serverIp = "<사이은행 VM 사설 IP>"
+curl.exe "http://${serverIp}:8082/actuator/health"
+curl.exe "http://${serverIp}:8082/actuator/prometheus"
 ```
 
 정상이라면 첫 주소는 상태 JSON을, 두 번째 주소는 Prometheus 형식의 메트릭 텍스트를 반환합니다.

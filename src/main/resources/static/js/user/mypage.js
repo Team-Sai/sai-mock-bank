@@ -8,7 +8,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const API = {
         me: "/api/users/me",
-        linkedAccounts: "/api/linked-accounts"
+        linkedAccounts: "/api/linked-accounts",
+        logout: "/api/auth/logout"
     };
 
     document.querySelectorAll("[data-route]").forEach(link => {
@@ -22,6 +23,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const errorBox = document.getElementById("mypage-error");
     const logoutButton = document.getElementById("logout-button");
     const withdrawButton = document.getElementById("withdraw-button");
+
+    let sessionEnding = false;
 
     function redirectToLogin(required = false) {
         const query = required ? "?required=true" : "";
@@ -249,15 +252,76 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // 로그아웃 / 탈퇴 / 인증 만료 시 실행
+    // =========================================
+    // 관리자 인증 쿠키 제거
+    // =========================================
+
+    async function clearAdminCookie() {
+        if (FILE_PREVIEW) {
+            return;
+        }
+
+        try {
+            const response = await fetch(API.logout, {
+                method: "POST",
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+
+            if (!response.ok) {
+                console.warn(
+                    "[Auth] 관리자 쿠키 제거 실패 - HTTP",
+                    response.status
+                );
+            }
+
+        } catch (error) {
+            console.warn(
+                "[Auth] 로그아웃 API 호출 실패",
+                error
+            );
+        }
+    }
+
+    // =========================================
+    // 클라이언트 로그인 정보 정리
+    // =========================================
+
     function clearLoginSession() {
-        // JWT 삭제 전에 알림 기록 먼저 정리
+        window.stopFdsNotificationStream?.();
+
         clearFdsNotificationStorage();
 
         sessionStorage.removeItem("accessToken");
 
         localStorage.removeItem("saiwonjangPreviewAuth");
         localStorage.removeItem("saiwonjangCurrentUser");
+    }
+
+    /**
+     * 로그아웃, 인증 만료, 회원 탈퇴 성공 시
+     * 서버 관리자 쿠키와 클라이언트 로그인 정보를 함께 정리한다.
+     */
+    async function endSession(required = false) {
+        if (sessionEnding) {
+            return;
+        }
+
+        sessionEnding = true;
+
+        if (logoutButton) {
+            logoutButton.disabled = true;
+        }
+
+        try {
+            // HttpOnly 쿠키는 서버 응답으로만 만료 가능
+            await clearAdminCookie();
+
+        } finally {
+            // 서버 요청 실패 여부와 관계없이 로컬 세션 정리
+            clearLoginSession();
+            redirectToLogin(required);
+        }
     }
 
     // =========================================
@@ -273,7 +337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const token = sessionStorage.getItem("accessToken");
 
         if (!token) {
-            redirectToLogin(true);
+            await endSession(true);
             return;
         }
 
@@ -299,8 +363,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             accountsResponse.status === 401 ||
             accountsResponse.status === 403
         ) {
-            clearLoginSession();
-            redirectToLogin(true);
+            await endSession(true);
             return;
         }
 
@@ -322,6 +385,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 accountsData?.data ??
                 accountsData ??
                 [];
+
         } else {
             console.error("연결된 계좌 조회 실패");
         }
@@ -354,9 +418,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 로그아웃
     // =========================================
 
-    function logout() {
-        clearLoginSession();
-        redirectToLogin(false);
+    async function logout() {
+        await endSession(false);
     }
 
     // =========================================
@@ -374,15 +437,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (FILE_PREVIEW) {
             localStorage.removeItem("saiwonjangDemoMember");
-            logout();
+            await endSession(false);
             return;
         }
 
         const token = sessionStorage.getItem("accessToken");
 
         if (!token) {
-            clearLoginSession();
-            redirectToLogin(true);
+            await endSession(true);
             return;
         }
 
@@ -397,8 +459,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             response.status === 401 ||
             response.status === 403
         ) {
-            clearLoginSession();
-            redirectToLogin(true);
+            await endSession(true);
             return;
         }
 
@@ -411,21 +472,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
         }
 
-        clearLoginSession();
-
         window.alert("회원 탈퇴가 완료되었습니다.");
-        redirectToLogin(false);
+
+        await endSession(false);
     }
 
     // =========================================
     // 이벤트 연결
     // =========================================
 
-    logoutButton?.addEventListener("click", logout);
+    logoutButton?.addEventListener("click", async () => {
+        await logout();
+    });
 
     withdrawButton?.addEventListener("click", async () => {
+        if (sessionEnding) {
+            return;
+        }
+
         try {
             await withdraw();
+
         } catch (error) {
             console.error(error);
 
@@ -445,6 +512,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         await loadMyPage();
+
     } catch (error) {
         console.error(error);
 

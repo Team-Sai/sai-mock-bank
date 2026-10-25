@@ -11,13 +11,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.user.dto.request.UserLoginRequest;
 import org.teamsai.saimockbank.domain.user.dto.request.UserSignUpRequest;
 import org.teamsai.saimockbank.domain.user.dto.response.UserLoginResponse;
 import org.teamsai.saimockbank.domain.user.dto.response.UserSignUpResponse;
+import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import org.teamsai.saimockbank.domain.user.service.AuthService;
+import org.teamsai.saimockbank.global.jwt.JwtTokenProvider;
 
 import java.time.Duration;
 
@@ -36,6 +39,8 @@ public class AuthController {
     private boolean secureCookie;
 
     private final AuthService authService;
+    private final UserMapper userMapper;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -100,13 +105,59 @@ public class AuthController {
     ) {
         UserLoginResponse result = authService.login(request);
 
+        Long userId = jwtTokenProvider
+                .getUserIdIfValid(result.getAccessToken())
+                .orElseThrow(() -> new IllegalStateException(
+                        "로그인 토큰에서 사용자 정보를 확인할 수 없습니다."
+                ));
+
+        boolean isAdmin = userMapper.findById(userId)
+                .map(user -> "ADMIN".equals(user.getRole()))
+                .orElse(false);
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                ResponseCookie.from("admin_page_token", "")
+                        .httpOnly(true)
+                        .secure(secureCookie)
+                        .sameSite("Strict")
+                        .path("/admin")
+                        .maxAge(0)
+                        .build()
+                        .toString()
+        );
+
+        if (isAdmin) {
+            ResponseCookie cookie = ResponseCookie
+                    .from("admin_page_token", result.getAccessToken())
+                    .httpOnly(true)
+                    .secure(secureCookie)
+                    .sameSite("Strict")
+                    .path("/admin")
+                    .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                    .build();
+
+            response.addHeader(
+                    HttpHeaders.SET_COOKIE,
+                    cookie.toString()
+            );
+        }
+
+        return result;
+    }
+
+    @ResponseBody
+    @PostMapping("/api/auth/logout")
+    public ResponseEntity<Void> logout(
+            HttpServletResponse response
+    ) {
         ResponseCookie cookie = ResponseCookie
-                .from("admin_page_token", result.getAccessToken())
+                .from("admin_page_token", "")
                 .httpOnly(true)
                 .secure(secureCookie)
                 .sameSite("Strict")
                 .path("/admin")
-                .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                .maxAge(0)
                 .build();
 
         response.addHeader(
@@ -114,7 +165,7 @@ public class AuthController {
                 cookie.toString()
         );
 
-        return result;
+        return ResponseEntity.noContent().build();
     }
 
 }

@@ -13,6 +13,9 @@
           href="/css/common/footer.css">
     <link rel="stylesheet" th:href="@{/css/transfer/transfer.css}"
           href="/css/transfer/transfer.css">
+    <link rel="stylesheet"
+          th:href="@{/css/common/fds-notification.css}"
+          href="/css/common/fds-notification.css">
 </head>
 <body>
 <header th:replace="~{fragments/header :: header(activeRoute='transfer')}"></header>
@@ -115,5 +118,6 @@
 </div>
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <script th:src="@{/js/transfer/transfer.js}" src="/js/transfer/transfer.js" defer></script>
+<script th:src="@{/js/common/fds-notification.js}" src="/js/common/fds-notification.js" defer></script>
 </body>
 </html>

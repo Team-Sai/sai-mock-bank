@@ -215,8 +215,29 @@ form.addEventListener('submit', async (event) => {
 
 function showFormSuccess(data) {
     const amountText = formatWon(data.amount);
-    formSuccessText.textContent = `이체가 완료되었습니다. (이체 번호: ${data.transferId}, ${amountText})`;
-    formSuccessLink.href = `/transfer-history?transferId=${encodeURIComponent(data.transferId)}`;
+
+    if (data.status === 'PENDING_REVIEW') {
+        formSuccessText.textContent =
+            '이체 요청이 이상거래 탐지 시스템에 의해 ' +
+            '관리자 심사 대기 상태로 전환되었습니다. ' +
+            '아직 실제 이체는 진행되지 않았으며, ' +
+            '심사 결과는 이체 내역에서 확인할 수 있습니다. ' +
+            '(이체 번호: ' + data.transferId + ')';
+    } else if (data.status === 'SUCCESS') {
+        formSuccessText.textContent =
+            '이체가 완료되었습니다. ' +
+            '(이체 번호: ' + data.transferId +
+            ', ' + amountText + ')';
+    } else {
+        formSuccessText.textContent =
+            '이체 요청 상태: ' + data.status +
+            ' (이체 번호: ' + data.transferId + ')';
+    }
+
+    formSuccessLink.href =
+        '/transfer-history?transferId=' +
+        encodeURIComponent(data.transferId);
+
     formSuccess.hidden = false;
 }
 

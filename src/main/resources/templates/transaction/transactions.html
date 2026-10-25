@@ -13,6 +13,9 @@
           href="/css/common/transaction-table.css">
     <link rel="stylesheet" th:href="@{/css/transaction/transactions.css}"
           href="/css/transaction/transactions.css">
+    <link rel="stylesheet"
+          th:href="@{/css/common/fds-notification.css}"
+          href="/css/common/fds-notification.css">
 </head>
 <body>
 <header th:replace="~{fragments/header :: header(activeRoute='transactions')}"></header>
@@ -52,5 +55,6 @@
 
 <script th:src="@{/js/common/transaction-utils.js}" src="/js/common/transaction-utils.js"></script>
 <script th:src="@{/js/transaction/transactions.js}" src="/js/transaction/transactions.js" defer></script>
+<script th:src="@{/js/common/fds-notification.js}" src="/js/common/fds-notification.js" defer></script>
 </body>
 </html>

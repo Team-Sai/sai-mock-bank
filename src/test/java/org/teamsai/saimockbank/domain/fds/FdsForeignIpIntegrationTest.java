@@ -2,8 +2,8 @@
 package org.teamsai.saimockbank.domain.fds;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,6 +25,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("dev")
+@EnabledIfEnvironmentVariable(
+        named = "RUN_DB_INTEGRATION_TESTS",
+        matches = "true"
+)
 class FdsForeignIpIntegrationTest {
 
     @Autowired

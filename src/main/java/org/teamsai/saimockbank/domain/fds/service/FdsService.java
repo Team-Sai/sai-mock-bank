@@ -1,4 +1,3 @@
-
 package org.teamsai.saimockbank.domain.fds.service;
 
 import lombok.RequiredArgsConstructor;
@@ -14,6 +13,7 @@ import org.teamsai.saimockbank.domain.fds.exception.FdsErrorCode;
 import org.teamsai.saimockbank.domain.fds.repository.FdsEvaluationRepository;
 import org.teamsai.saimockbank.domain.fds.type.FdsAction;
 import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
+import org.teamsai.saimockbank.domain.fds.type.FdsRuleType;
 import org.teamsai.saimockbank.domain.fds.util.FdsRiskCalculator;
 
 import java.util.List;
@@ -36,10 +36,7 @@ public class FdsService {
                 fdsRuleService.evaluate(context);
 
         int riskScore =
-                fdsRiskCalculator.calculateScore(
-                        results,
-                        context
-                );
+                fdsRiskCalculator.calculateScore(results, context);
 
         FdsRiskLevel riskLevel =
                 fdsRiskCalculator.determineRiskLevel(riskScore);
@@ -95,7 +92,17 @@ public class FdsService {
                         .map(FdsRuleResult::reason)
                         .collect(Collectors.joining("\n"));
 
-        if (riskLevel == FdsRiskLevel.HIGH) {
+        boolean r02Matched = matchedResults.stream()
+                .anyMatch(result ->
+                        result.ruleType() == FdsRuleType.R02
+                );
+
+        boolean highDueToDistribution =
+                r02Matched
+                        && context.hasMultipleNewRecipients()
+                        && context.hasFrequencySpike();
+
+        if (highDueToDistribution) {
             String highReason =
                     "고액 입금 후 자금 분산, "
                             + "30일 미거래 수취계좌 3개 이상, "

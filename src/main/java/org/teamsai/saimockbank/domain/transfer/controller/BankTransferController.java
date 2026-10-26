@@ -1,11 +1,14 @@
+
 package org.teamsai.saimockbank.domain.transfer.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.teamsai.saimockbank.domain.fds.util.ClientIpExtractor;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferRequest;
 import org.teamsai.saimockbank.domain.transfer.dto.TransferResponse;
 import org.teamsai.saimockbank.domain.transfer.service.BankTransferService;
@@ -20,21 +23,33 @@ import org.teamsai.saimockbank.global.security.CustomUserDetails;
 public class BankTransferController {
 
     private final BankTransferService bankTransferService;
+    private final ClientIpExtractor clientIpExtractor;
 
     @Operation(summary = "계좌 이체")
     @PostMapping("/api/mock-bank/transfers")
     public TransferResponse transfer(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @Valid @RequestBody TransferRequest request
-            ){
-        return bankTransferService.transfer(userDetails.getUserId(),request);
+            @Valid @RequestBody TransferRequest request,
+            HttpServletRequest httpServletRequest
+    ) {
+        String clientIp = clientIpExtractor.extract(httpServletRequest);
+
+        return bankTransferService.transfer(
+                userDetails.getUserId(),
+                request,
+                clientIp
+        );
     }
+
     @Operation(summary = "이체 내역 단건 조회")
     @GetMapping("/api/mock-bank/transfers/{transferId}")
     public TransferResponse getTransfer(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long transferId
-    ){
-        return bankTransferService.getTransfer(userDetails.getUserId(),transferId);
+    ) {
+        return bankTransferService.getTransfer(
+                userDetails.getUserId(),
+                transferId
+        );
     }
 }

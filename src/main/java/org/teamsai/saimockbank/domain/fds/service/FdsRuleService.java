@@ -1,11 +1,14 @@
+
 package org.teamsai.saimockbank.domain.fds.service;
 
 import org.springframework.stereotype.Service;
 import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
 import org.teamsai.saimockbank.domain.fds.dto.FdsRuleResult;
+import org.teamsai.saimockbank.domain.fds.dto.GeoIpResolution;
 import org.teamsai.saimockbank.domain.fds.type.FdsRuleType;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,7 +21,6 @@ public class FdsRuleService {
             new BigDecimal("0.80");
 
     public List<FdsRuleResult> evaluate(FdsContext context) {
-
         return List.of(
                 evaluateR01(context),
                 evaluateR02(context),
@@ -26,23 +28,34 @@ public class FdsRuleService {
         );
     }
 
-    /**
-     * R01: 자동화 소액 송금 의심
-     *
-     * - 최근 5분간 1,000원 이하 송금 20회 이상
-     * - 소액 송금 수취계좌 5개 이상
-     */
-    private FdsRuleResult evaluateR01(FdsContext context) {
+    public List<FdsRuleResult> evaluate(
+            FdsContext context,
+            GeoIpResolution location
+    ) {
+        List<FdsRuleResult> results =
+                new ArrayList<>(evaluate(context));
 
-        boolean isRepeatedSmallTransfer =
+        if (location != null && location.foreignIp()) {
+            results.add(FdsRuleResult.matched(
+                    FdsRuleType.R04,
+                    "해외 IP 국가(" + location.countryCode()
+                            + ")에서 송금을 요청했습니다."
+            ));
+        } else {
+            results.add(FdsRuleResult.notMatched(FdsRuleType.R04));
+        }
+
+        return List.copyOf(results);
+    }
+
+    private FdsRuleResult evaluateR01(FdsContext context) {
+        boolean repeated =
                 context.smallTransferCount5Min() >= 20;
 
-        boolean hasMultipleRecipients =
+        boolean multipleRecipients =
                 context.smallTransferRecipients5Min() >= 5;
 
-        if (isRepeatedSmallTransfer
-                && hasMultipleRecipients) {
-
+        if (repeated && multipleRecipients) {
             return FdsRuleResult.matched(
                     FdsRuleType.R01,
                     "최근 5분간 1,000원 이하 송금이 "
@@ -54,37 +67,25 @@ public class FdsRuleService {
         return FdsRuleResult.notMatched(FdsRuleType.R01);
     }
 
-    /**
-     * R02: 입금 직후 자금 분산 의심
-     *
-     * - 최근 10분 내 100만원 이상 단일 입금
-     * - 해당 입금 이후 수취계좌 3개 이상
-     * - 입금액 대비 출금액 80% 이상
-     */
     private FdsRuleResult evaluateR02(FdsContext context) {
-
         BigDecimal depositAmount =
                 context.recentLargeDepositAmount();
 
-        boolean hasLargeDeposit =
-                depositAmount.compareTo(LARGE_DEPOSIT_LIMIT) >= 0;
-
-        if (!hasLargeDeposit) {
+        if (depositAmount.compareTo(LARGE_DEPOSIT_LIMIT) < 0) {
             return FdsRuleResult.notMatched(FdsRuleType.R02);
         }
 
-        boolean hasMultipleRecipients =
+        boolean multipleRecipients =
                 context.distinctRecipientsSinceDeposit() >= 3;
 
-        BigDecimal requiredOutgoingAmount =
+        BigDecimal requiredAmount =
                 depositAmount.multiply(DISTRIBUTION_RATIO);
 
-        boolean hasHighOutgoingRatio =
+        boolean highOutgoingRatio =
                 context.outgoingAmountSinceDeposit()
-                        .compareTo(requiredOutgoingAmount) >= 0;
+                        .compareTo(requiredAmount) >= 0;
 
-        if (hasMultipleRecipients && hasHighOutgoingRatio) {
-
+        if (multipleRecipients && highOutgoingRatio) {
             return FdsRuleResult.matched(
                     FdsRuleType.R02,
                     "최근 고액 입금 이후 3개 이상의 계좌로 "
@@ -95,22 +96,13 @@ public class FdsRuleService {
         return FdsRuleResult.notMatched(FdsRuleType.R02);
     }
 
-    /**
-     * R03: 특정 계좌 집중 송금 의심
-     *
-     * - 최근 5분간 전체 송금 15회 이상
-     * - 동일 수취계좌에 15회 이상
-     */
     private FdsRuleResult evaluateR03(FdsContext context) {
+        boolean repeated = context.transferCount5Min() >= 15;
 
-        boolean isRepeated =
-                context.transferCount5Min() >= 15;
-
-        boolean isSameRecipientRepeated =
+        boolean sameRecipientRepeated =
                 context.sameRecipientTransferCount5Min() >= 15;
 
-        if (isRepeated && isSameRecipientRepeated) {
-
+        if (repeated && sameRecipientRepeated) {
             return FdsRuleResult.matched(
                     FdsRuleType.R03,
                     "최근 5분간 동일 수취계좌에 "

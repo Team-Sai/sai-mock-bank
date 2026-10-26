@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
+import org.teamsai.saimockbank.domain.fds.dto.FdsRuleResult;
 import org.teamsai.saimockbank.domain.fds.dto.response.FdsEvaluationResponse;
 import org.teamsai.saimockbank.domain.fds.entity.FdsEvaluation;
 import org.teamsai.saimockbank.domain.fds.repository.FdsEvaluationRepository;
@@ -19,6 +20,7 @@ import org.teamsai.saimockbank.domain.fds.util.FdsRiskCalculator;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -94,5 +96,59 @@ class FdsServiceTest {
 
         verify(evaluationRepository, times(1))
                 .saveAndFlush(any(FdsEvaluation.class));
+    }
+
+    @Test
+    void 해외_IP로_HIGH가_된_거래에는_분산송금_복합사유가_붙지_않는다() {
+        FdsContext context = new FdsContext(
+                1L,
+                2L,
+                BigDecimal.valueOf(10_000),
+                LocalDateTime.of(2026, 10, 26, 14, 0),
+                0, 0, 0,
+                0, 0,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                0,
+                0, 0, 0
+        );
+
+        List<FdsRuleResult> results = List.of(
+                FdsRuleResult.notMatched(FdsRuleType.R01),
+                FdsRuleResult.notMatched(FdsRuleType.R02),
+                FdsRuleResult.notMatched(FdsRuleType.R03),
+                FdsRuleResult.matched(
+                        FdsRuleType.R04,
+                        "해외 IP 국가(US)에서 송금을 요청했습니다."
+                )
+        );
+
+        when(evaluationRepository.saveAndFlush(
+                any(FdsEvaluation.class)
+        )).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FdsEvaluationResponse response = fdsService.evaluate(
+                200L,
+                context,
+                results,
+                90,
+                FdsRiskLevel.HIGH
+        );
+
+        assertEquals(90, response.riskScore());
+        assertEquals(FdsRiskLevel.HIGH, response.riskLevel());
+        assertEquals(FdsAction.HOLD, response.action());
+
+        assertTrue(response.matchedRules().contains(FdsRuleType.R04));
+
+        assertTrue(response.reasons().stream()
+                .anyMatch(reason -> reason.contains("해외 IP")));
+
+        assertTrue(response.reasons().stream()
+                .noneMatch(reason -> reason.contains("30일 미거래 수취계좌")));
+
+        verify(evaluationRepository).saveAndFlush(
+                any(FdsEvaluation.class)
+        );
     }
 }

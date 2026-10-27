@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.fds.util;
 
 import org.springframework.stereotype.Component;
@@ -19,14 +20,13 @@ public class FdsRiskCalculator {
             List<FdsRuleResult> results,
             FdsContext context
     ) {
-        boolean r01Matched =
-                isMatched(results, FdsRuleType.R01);
+        boolean r01Matched = isMatched(results, FdsRuleType.R01);
+        boolean r02Matched = isMatched(results, FdsRuleType.R02);
+        boolean r03Matched = isMatched(results, FdsRuleType.R03);
 
-        boolean r02Matched =
-                isMatched(results, FdsRuleType.R02);
-
-        boolean r03Matched =
-                isMatched(results, FdsRuleType.R03);
+        if (isMatched(results, FdsRuleType.R04)) {
+            return HIGH_RISK_SCORE;
+        }
 
         if (r02Matched
                 && context.hasMultipleNewRecipients()
@@ -39,15 +39,16 @@ public class FdsRiskCalculator {
                 r03Matched ? FdsRuleType.R03.getRiskScore() : 0
         );
 
-        int p02Score =
-                r02Matched ? R02_MEDIUM_SCORE : 0;
+        int p02Score = r02Matched ? R02_MEDIUM_SCORE : 0;
 
         return Math.min(59, p01Score + p02Score);
     }
 
-    public int calculateScore(
-            List<FdsRuleResult> results
-    ) {
+    public int calculateScore(List<FdsRuleResult> results) {
+        if (isMatched(results, FdsRuleType.R04)) {
+            return HIGH_RISK_SCORE;
+        }
+
         int p01Score = results.stream()
                 .filter(FdsRuleResult::matched)
                 .filter(result ->
@@ -58,8 +59,7 @@ public class FdsRiskCalculator {
                 .max()
                 .orElse(0);
 
-        boolean r02Matched =
-                isMatched(results, FdsRuleType.R02);
+        boolean r02Matched = isMatched(results, FdsRuleType.R02);
 
         return Math.min(
                 59,
@@ -73,20 +73,15 @@ public class FdsRiskCalculator {
     ) {
         return results.stream()
                 .anyMatch(result ->
-                        result.matched()
-                                && result.ruleType() == ruleType
+                        result.matched() && result.ruleType() == ruleType
                 );
     }
 
-    public FdsRiskLevel determineRiskLevel(
-            int score
-    ) {
+    public FdsRiskLevel determineRiskLevel(int score) {
         return FdsRiskLevel.fromScore(score);
     }
 
-    public FdsAction determineAction(
-            FdsRiskLevel riskLevel
-    ) {
+    public FdsAction determineAction(FdsRiskLevel riskLevel) {
         return switch (riskLevel) {
             case LOW -> FdsAction.ALLOW;
             case MEDIUM -> FdsAction.MONITOR;

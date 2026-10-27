@@ -10,8 +10,15 @@ public class UnconfiguredGeoIpService implements GeoIpService {
 
     @Override
     public GeoIpResolution resolve(String ipAddress) {
-        throw new IllegalStateException(
-                "운영 환경의 GeoIP 국가 판별 기능이 설정되지 않았습니다."
+        String normalizedIp =
+                ipAddress == null || ipAddress.isBlank()
+                        ? "UNKNOWN"
+                        : ipAddress.trim();
+
+        return new GeoIpResolution(
+                normalizedIp,
+                "UNKNOWN",
+                false
         );
     }
 }

@@ -1,51 +1,124 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
-<!--
-  공통 헤더 fragment.
-  사용법: <header th:replace="~{fragments/header :: header(activeRoute='home')}"></header>
-  activeRoute 값: 'home' | 'transfer-history' | 'transactions'
-  (해당 라우트와 일치하는 nav 항목에 tx2-nav__link--active 클래스가 붙습니다)
--->
+
 <header th:fragment="header(activeRoute)" class="tx2-header">
     <div class="tx2-header__inner">
+
         <a href="/home" class="tx2-brand">
             <img src="/img/sai-bank-logo.png"
                  th:src="@{/img/sai-bank-logo.png}"
-                 alt="사이 은행" class="tx2-brand__logo">
+                 alt="사이 은행"
+                 class="tx2-brand__logo">
             <span class="tx2-brand__name">사이뱅크</span>
         </a>
 
         <nav class="tx2-nav" aria-label="주요 메뉴">
-            <a href="/home" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'home'} ? ' tx2-nav__link--active' : ''">계좌/이체</a>
-            <a href="/transfer-history" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'transfer-history'} ? ' tx2-nav__link--active' : ''">거래내역 조회</a>
-            <a href="/transactions" class="tx2-nav__link"
-               th:classappend="${activeRoute == 'transactions'} ? ' tx2-nav__link--active' : ''">전체 거래내역</a>
-            <span class="tx2-nav__link tx2-nav__link--disabled" aria-disabled="true" title="사이원장에서 신청해주세요">서비스</span>
+            <a href="/home"
+               class="tx2-nav__link"
+               th:classappend="${activeRoute == 'home'} ? ' tx2-nav__link--active' : ''">
+                계좌/이체
+            </a>
+
+            <a href="/transfer-history"
+               class="tx2-nav__link"
+               th:classappend="${activeRoute == 'transfer-history'} ? ' tx2-nav__link--active' : ''">
+                거래내역 조회
+            </a>
+
+            <a href="/transactions"
+               class="tx2-nav__link"
+               th:classappend="${activeRoute == 'transactions'} ? ' tx2-nav__link--active' : ''">
+                전체 거래내역
+            </a>
+
+            <span class="tx2-nav__link tx2-nav__link--disabled"
+                  aria-disabled="true"
+                  title="사이원장에서 신청해주세요">
+                서비스
+            </span>
         </nav>
 
         <div class="tx2-header__tools">
-            <button th:if="${activeRoute == 'home'}" type="button"
-                    class="tx2-header__create-account" id="createAccountButton">계좌 생성</button>
-            <button class="tx2-icon-button notification-button" type="button" aria-label="알림">
+
+            <button th:if="${activeRoute == 'home'}"
+                    type="button"
+                    class="tx2-header__create-account"
+                    id="createAccountButton">
+                계좌 생성
+            </button>
+
+            <button class="tx2-icon-button notification-button"
+                    type="button"
+                    id="fdsNotificationButton"
+                    aria-label="알림"
+                    aria-expanded="false"
+                    aria-controls="fdsNotificationPanel">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
-                <span></span>
+                <span id="fdsNotificationDot" hidden></span>
             </button>
-            <strong id="header-user-name" class="tx2-header-user-name" hidden></strong>
+
+            <strong id="header-user-name"
+                    class="tx2-header-user-name"
+                    hidden></strong>
+
             <div class="tx2-icon-button header-profile">
-                <img id="header-profile-image" alt="프로필 이미지" hidden>
-                <svg id="header-profile-placeholder" viewBox="0 0 24 24" aria-hidden="true">
+                <img id="header-profile-image"
+                     alt="프로필 이미지"
+                     hidden>
+
+                <svg id="header-profile-placeholder"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
                     <circle cx="12" cy="8" r="4"></circle>
                     <path d="M4 21a8 8 0 0 1 16 0"></path>
                 </svg>
             </div>
         </div>
     </div>
+
+    <!-- 상단 알림 배너 -->
+    <div id="fdsToast"
+         class="fds-toast"
+         role="status"
+         aria-live="polite"
+         hidden>
+        <div id="fdsToastIcon" class="fds-toast__icon"></div>
+        <div class="fds-toast__content">
+            <strong id="fdsToastTitle"></strong>
+            <p id="fdsToastMessage"></p>
+            <span>클릭해서 이체 상세 확인 →</span>
+        </div>
+        <button type="button"
+                id="fdsToastClose"
+                class="fds-toast__close"
+                aria-label="알림 닫기">×</button>
+    </div>
+
+    <!-- 알림 목록 -->
+    <div id="fdsNotificationPanel"
+         class="fds-notification-panel"
+         hidden>
+        <div class="fds-notification-panel__header">
+            <strong>심사 결과 알림</strong>
+            <button type="button"
+                    id="fdsNotificationClear">
+                모두 지우기
+            </button>
+        </div>
+
+        <div id="fdsNotificationList"
+             class="fds-notification-list">
+            <p class="fds-notification-empty">
+                새로운 심사 결과 알림이 없습니다.
+            </p>
+        </div>
+    </div>
+
 </header>
+
 </body>
 </html>

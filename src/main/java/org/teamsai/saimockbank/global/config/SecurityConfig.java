@@ -1,6 +1,6 @@
-
 package org.teamsai.saimockbank.global.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -83,6 +83,7 @@ public class SecurityConfig {
             HttpSecurity http,
             InternalApiKeyFilter internalApiKeyFilter
     ) throws Exception {
+
         http
                 .securityMatcher(
                         "/api/link/confirm-key",
@@ -112,22 +113,59 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http
     ) throws Exception {
+
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-                .exceptionHandling(ex ->
-                        ex.authenticationEntryPoint(
-                                jwtAuthenticationEntryPoint
+
+                // 인증 실패 및 관리자 페이지 접근 거부 처리
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(
+                                (request, response, exception) -> {
+                                    String path = request.getServletPath();
+
+                                    if (isAdminPage(path)) {
+                                        response.sendRedirect("/admin-denied");
+                                        return;
+                                    }
+
+                                    jwtAuthenticationEntryPoint.commence(
+                                            request,
+                                            response,
+                                            exception
+                                    );
+                                }
+                        )
+                        .accessDeniedHandler(
+                                (request, response, exception) -> {
+                                    String path = request.getServletPath();
+
+                                    if (isAdminPage(path)) {
+                                        response.sendRedirect("/admin-denied");
+                                        return;
+                                    }
+
+                                    response.sendError(
+                                            HttpServletResponse.SC_FORBIDDEN
+                                    );
+                                }
                         )
                 )
+
                 .authorizeHttpRequests(auth ->
-                        auth
+                        auth.dispatcherTypeMatchers(
+                                        jakarta.servlet.DispatcherType.ASYNC
+                                )
+                                .permitAll()
+
+                                // FDS 관리자 API
                                 .requestMatchers(
                                         "/api/fds/admin/**",
                                         "/api/fds/evaluations",
@@ -135,12 +173,26 @@ public class SecurityConfig {
                                 )
                                 .hasRole("ADMIN")
 
+                                // FDS 관리자 페이지
+                                .requestMatchers(
+                                        "/admin",
+                                        "/admin/",
+                                        "/admin/**"
+                                )
+                                .hasRole("ADMIN")
+
+                                // 접근 권한 없음 페이지
+                                .requestMatchers("/admin-denied")
+                                .permitAll()
+
+                                // 계좌 생성
                                 .requestMatchers(
                                         HttpMethod.POST,
                                         "/api/mock-bank/accounts"
                                 )
                                 .authenticated()
 
+                                // 인증이 필요한 API
                                 .requestMatchers(
                                         "/api/mock-bank/transfers/**",
                                         "/api/mock-bank/customer-accounts/**",
@@ -149,6 +201,7 @@ public class SecurityConfig {
                                 )
                                 .authenticated()
 
+                                // Swagger
                                 .requestMatchers(
                                         "/swagger-ui/**",
                                         "/swagger-ui.html",
@@ -157,13 +210,16 @@ public class SecurityConfig {
                                 )
                                 .permitAll()
 
+                                // 인증 API 및 공개 Mock Bank API
                                 .requestMatchers(
                                         "/api/auth/signup",
                                         "/api/auth/login",
+                                        "/api/auth/logout",
                                         "/api/mock-bank/**"
                                 )
                                 .permitAll()
 
+                                // 기존 SSR 화면
                                 .requestMatchers(
                                         "/",
                                         "/login",
@@ -179,6 +235,7 @@ public class SecurityConfig {
                                 )
                                 .permitAll()
 
+                                // 정적 리소스
                                 .requestMatchers(
                                         "/css/**",
                                         "/js/**",
@@ -191,11 +248,17 @@ public class SecurityConfig {
                                 .anyRequest()
                                 .authenticated()
                 )
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
+    }
+    private static boolean isAdminPage(String path) {
+        return "/admin".equals(path)
+                || "/admin/".equals(path)
+                || path.startsWith("/admin/");
     }
 }

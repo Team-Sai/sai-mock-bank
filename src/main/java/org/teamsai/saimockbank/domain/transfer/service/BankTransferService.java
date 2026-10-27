@@ -29,6 +29,14 @@ public class BankTransferService {
             Long loginUserId,
             TransferRequest request
     ) {
+        return transfer(loginUserId, request, null);
+    }
+
+    public TransferResponse transfer(
+            Long loginUserId,
+            TransferRequest request,
+            String clientIp
+    ) {
         validateRequest(request);
 
         Long toAccountId =
@@ -52,7 +60,8 @@ public class BankTransferService {
                 fdsDecisionService.assess(
                         request.fromAccountId(),
                         toAccountId,
-                        request.amount()
+                        request.amount(),
+                        clientIp
                 );
 
         try {
@@ -113,13 +122,7 @@ public class BankTransferService {
             BankTransferDTO existing
     ) {
         validateSender(loginUserId, existing);
-
-        validateDuplicateRequest(
-                existing,
-                request,
-                toAccountId
-        );
-
+        validateDuplicateRequest(existing, request, toAccountId);
         return toResponse(existing);
     }
 
@@ -127,12 +130,11 @@ public class BankTransferService {
             Long loginUserId,
             BankTransferDTO transfer
     ) {
-        boolean owner =
-                bankAccountMapper.findById(
-                        transfer.getFromAccountId()
-                ).map(account ->
-                        account.getBankUserId().equals(loginUserId)
-                ).orElse(false);
+        boolean owner = bankAccountMapper.findById(
+                transfer.getFromAccountId()
+        ).map(account ->
+                account.getBankUserId().equals(loginUserId)
+        ).orElse(false);
 
         if (!owner) {
             throw TransferErrorCode.ACCOUNT_ACCESS_DENIED
@@ -150,7 +152,6 @@ public class BankTransferService {
                 ).map(account ->
                         account.getBankUserId().equals(loginUserId)
                 ).orElse(false)
-
                         || bankAccountMapper.findById(
                         transfer.getToAccountId()
                 ).map(account ->
@@ -200,9 +201,7 @@ public class BankTransferService {
         return toAccount.getAccountId();
     }
 
-    private void validateRequest(
-            TransferRequest request
-    ) {
+    private void validateRequest(TransferRequest request) {
         if (request == null
                 || isBlank(request.requestKey())
                 || request.fromAccountId() == null

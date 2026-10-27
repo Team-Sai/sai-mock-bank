@@ -14,7 +14,6 @@ const slipTo = document.getElementById('slip-to');
 const slipAmount = document.getElementById('slip-amount');
 const slipFailureRow = document.getElementById('slip-failure-row');
 const slipFailureReason = document.getElementById('slip-failure-reason');
-const slipDate = document.getElementById('slip-date');
 
 function getAuthHeader() {
     const token = sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
@@ -93,8 +92,6 @@ function renderSlip(data) {
     slipFrom.textContent = data.fromMaskedAccountNumber ?? '—';
     slipTo.textContent = data.toMaskedAccountNumber ?? '—';
     slipAmount.textContent = formatWon(data.amount);
-    slipDate.textContent = formatDate(data.completedAt);
-
     if (data.failureReason) {
         slipFailureRow.hidden = false;
         slipFailureReason.textContent = data.failureReason;
@@ -116,16 +113,32 @@ function renderErrorSlip(message) {
     slipFrom.textContent = '—';
     slipTo.textContent = '—';
     slipAmount.textContent = '—';
-    slipDate.textContent = '—';
 
     slipFailureRow.hidden = false;
     slipFailureReason.textContent = message;
 }
 
 const STATUS_PRESENTATION = {
-    SUCCESS: { label: '이체 완료', className: null },
-    FAILED: { label: '이체 실패', className: 'is-error' },
-    PENDING: { label: '처리 중', className: 'is-pending' },
+    SUCCESS: {
+        label: '이체 완료',
+        className: null
+    },
+    FAILED: {
+        label: '이체 실패',
+        className: 'is-error'
+    },
+    PENDING: {
+        label: '처리 중',
+        className: 'is-pending'
+    },
+    PENDING_REVIEW: {
+        label: '관리자 심사 대기 (미이체)',
+        className: 'is-pending'
+    },
+    REJECTED: {
+        label: '관리자 심사 거절 (미이체)',
+        className: 'is-error'
+    }
 };
 
 function resolveStatusPresentation(status) {

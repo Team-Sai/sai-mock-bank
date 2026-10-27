@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.teamsai.saimockbank.domain.fds.dto.FdsContext;
 import org.teamsai.saimockbank.domain.fds.dto.FdsRuleResult;
+import org.teamsai.saimockbank.domain.fds.dto.GeoIpResolution;
 import org.teamsai.saimockbank.domain.fds.type.FdsRiskLevel;
 import org.teamsai.saimockbank.domain.fds.util.FdsRiskCalculator;
 import org.teamsai.saimockbank.domain.transfer.exception.TransferReviewErrorCode;
@@ -22,11 +23,21 @@ public class FdsPreTransferDecisionService {
     private final FdsContextService contextService;
     private final FdsRuleService ruleService;
     private final FdsRiskCalculator calculator;
+    private final GeoIpService geoIpService;
 
     public Decision assess(
             Long senderAccountId,
             Long receiverAccountId,
             BigDecimal amount
+    ) {
+        return assess(senderAccountId, receiverAccountId, amount, null);
+    }
+
+    public Decision assess(
+            Long senderAccountId,
+            Long receiverAccountId,
+            BigDecimal amount,
+            String clientIp
     ) {
         try {
             FdsContext context = contextService.create(
@@ -36,34 +47,21 @@ public class FdsPreTransferDecisionService {
                     LocalDateTime.now()
             );
 
-            log.info(
-                    "FDS Context: sender={}, receiver={}, amount={}, deposit={}, outgoing={}, recipients={}, newRecipients={}, recent10Min={}, previous60Min={}",
-                    senderAccountId,
-                    receiverAccountId,
-                    amount,
-                    context.recentLargeDepositAmount(),
-                    context.outgoingAmountSinceDeposit(),
-                    context.distinctRecipientsSinceDeposit(),
-                    context.newRecipientsSinceDeposit(),
-                    context.transferCount10Min(),
-                    context.previousTransferCount60Min()
-            );
+            GeoIpResolution location = geoIpService.resolve(clientIp);
 
             List<FdsRuleResult> results =
-                    ruleService.evaluate(context);
+                    ruleService.evaluate(context, location);
 
-            int score = calculator.calculateScore(
-                    results,
-                    context
-            );
+            int score = calculator.calculateScore(results, context);
 
             FdsRiskLevel riskLevel =
                     calculator.determineRiskLevel(score);
 
             log.info(
-                    "FDS Decision: sender={}, receiver={}, score={}, riskLevel={}, requiresReview={}",
+                    "FDS Decision: sender={}, receiver={}, country={}, score={}, riskLevel={}, requiresReview={}",
                     senderAccountId,
                     receiverAccountId,
+                    location.countryCode(),
                     score,
                     riskLevel,
                     riskLevel == FdsRiskLevel.HIGH

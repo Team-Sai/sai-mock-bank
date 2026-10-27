@@ -13,6 +13,9 @@
           href="/css/common/footer.css">
     <link rel="stylesheet" th:href="@{/css/transfer/transfer-history.css}"
           href="/css/transfer/transfer-history.css">
+    <link rel="stylesheet"
+          th:href="@{/css/common/fds-notification.css}"
+          href="/css/common/fds-notification.css">
 </head>
 <body>
 <header th:replace="~{fragments/header :: header(activeRoute='transfer-history')}"></header>
@@ -74,10 +77,6 @@
                         <dt>실패 사유</dt>
                         <dd id="slip-failure-reason">—</dd>
                     </div>
-                    <div class="slip-row">
-                        <dt>처리 일시</dt>
-                        <dd class="mono" id="slip-date">—</dd>
-                    </div>
                 </dl>
                 <div class="slip-perforation" aria-hidden="true"></div>
                 <div class="slip-footer">사이뱅크 발행 영수증</div>
@@ -87,5 +86,6 @@
 </div>
 <footer th:replace="~{fragments/footer :: footer}"></footer>
 <script th:src="@{/js/transfer/transfer-history.js}" src="/js/transfer/transfer-history.js" defer></script>
+<script th:src="@{/js/common/fds-notification.js}" src="/js/common/fds-notification.js" defer></script>
 </body>
 </html>

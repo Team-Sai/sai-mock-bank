@@ -1,3 +1,4 @@
+
 package org.teamsai.saimockbank.domain.transfer;
 
 import org.junit.jupiter.api.Test;
@@ -78,13 +79,11 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
 
-        when(bankTransferMapper.findByRequestKey("TRANSFER-001"))
-                .thenReturn(Optional.empty());
-
         when(fdsDecisionService.assess(
-                1L,
-                2L,
-                new BigDecimal("10000")
+                eq(1L),
+                eq(2L),
+                eq(new BigDecimal("10000")),
+                isNull()
         )).thenReturn(decision);
 
         when(commandService.execute(
@@ -112,9 +111,10 @@ class BankTransferDTOServiceTest {
                 .isEqualByComparingTo("10000");
 
         verify(fdsDecisionService).assess(
-                1L,
-                2L,
-                new BigDecimal("10000")
+                eq(1L),
+                eq(2L),
+                eq(new BigDecimal("10000")),
+                isNull()
         );
 
         verify(commandService).execute(
@@ -317,13 +317,11 @@ class BankTransferDTOServiceTest {
         when(bankAccountMapper.findByAccountNumber(TO_ACCOUNT_NUMBER))
                 .thenReturn(Optional.of(toAccount));
 
-        when(bankTransferMapper.findByRequestKey("TRANSFER-HIGH"))
-                .thenReturn(Optional.empty());
-
         when(fdsDecisionService.assess(
-                1L,
-                2L,
-                new BigDecimal("10000")
+                eq(1L),
+                eq(2L),
+                eq(new BigDecimal("10000")),
+                isNull()
         )).thenReturn(decision);
 
         when(commandService.execute(
@@ -349,6 +347,13 @@ class BankTransferDTOServiceTest {
 
         assertThat(result.completedAt())
                 .isNull();
+
+        verify(fdsDecisionService).assess(
+                eq(1L),
+                eq(2L),
+                eq(new BigDecimal("10000")),
+                isNull()
+        );
 
         verify(commandService).execute(
                 LOGIN_USER_ID,

@@ -4,16 +4,25 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.user.dto.request.UserLoginRequest;
 import org.teamsai.saimockbank.domain.user.dto.request.UserSignUpRequest;
 import org.teamsai.saimockbank.domain.user.dto.response.UserLoginResponse;
 import org.teamsai.saimockbank.domain.user.dto.response.UserSignUpResponse;
+import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import org.teamsai.saimockbank.domain.user.service.AuthService;
+import org.teamsai.saimockbank.global.jwt.JwtTokenProvider;
+
+import java.time.Duration;
 
 @Tag(
         name = "인증/인가 API",
@@ -23,7 +32,15 @@ import org.teamsai.saimockbank.domain.user.service.AuthService;
 @RequiredArgsConstructor
 public class AuthController {
 
+    @Value("${jwt.access-token-expiration-ms}")
+    private long accessTokenExpirationMs;
+
+    @Value("${server.servlet.session.cookie.secure:false}")
+    private boolean secureCookie;
+
     private final AuthService authService;
+    private final UserMapper userMapper;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -83,8 +100,72 @@ public class AuthController {
     @ResponseBody
     @PostMapping("/api/auth/login")
     public UserLoginResponse login(
-            @Valid @RequestBody UserLoginRequest request
+            @Valid @RequestBody UserLoginRequest request,
+            HttpServletResponse response
     ) {
-        return authService.login(request);
+        UserLoginResponse result = authService.login(request);
+
+        Long userId = jwtTokenProvider
+                .getUserIdIfValid(result.getAccessToken())
+                .orElseThrow(() -> new IllegalStateException(
+                        "로그인 토큰에서 사용자 정보를 확인할 수 없습니다."
+                ));
+
+        boolean isAdmin = userMapper.findById(userId)
+                .map(user -> "ADMIN".equals(user.getRole()))
+                .orElse(false);
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                ResponseCookie.from("admin_page_token", "")
+                        .httpOnly(true)
+                        .secure(secureCookie)
+                        .sameSite("Strict")
+                        .path("/admin")
+                        .maxAge(0)
+                        .build()
+                        .toString()
+        );
+
+        if (isAdmin) {
+            ResponseCookie cookie = ResponseCookie
+                    .from("admin_page_token", result.getAccessToken())
+                    .httpOnly(true)
+                    .secure(secureCookie)
+                    .sameSite("Strict")
+                    .path("/admin")
+                    .maxAge(Duration.ofMillis(accessTokenExpirationMs))
+                    .build();
+
+            response.addHeader(
+                    HttpHeaders.SET_COOKIE,
+                    cookie.toString()
+            );
+        }
+
+        return result;
     }
+
+    @ResponseBody
+    @PostMapping("/api/auth/logout")
+    public ResponseEntity<Void> logout(
+            HttpServletResponse response
+    ) {
+        ResponseCookie cookie = ResponseCookie
+                .from("admin_page_token", "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Strict")
+                .path("/admin")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                cookie.toString()
+        );
+
+        return ResponseEntity.noContent().build();
+    }
+
 }

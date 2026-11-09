@@ -5,6 +5,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class StaticPageController { //더이상 이체 기능에 수정이 필요없을 때 지울 예정
+    @GetMapping("/")
+    public String rootPage() {
+        return "redirect:/home";
+    }
+
     @GetMapping("/transfer")
     public String transferPage() {
         return "transfer/transfer";

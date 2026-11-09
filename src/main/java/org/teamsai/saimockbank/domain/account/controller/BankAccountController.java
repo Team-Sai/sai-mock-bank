@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.teamsai.saimockbank.domain.account.dto.AccountDetailResponse;
 import org.teamsai.saimockbank.domain.account.dto.AccountListResponse;
+import org.teamsai.saimockbank.domain.account.dto.MyAccountResponse;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
 import org.teamsai.saimockbank.global.security.CustomUserDetails;
 
@@ -42,10 +43,10 @@ public class BankAccountController {
 
     @Operation(summary = "내 계좌 목록 조회 (로그인 기반)")
     @GetMapping("/my")
-    public ResponseEntity<List<AccountListResponse>> getMyAccounts(
+    public ResponseEntity<List<MyAccountResponse>> getMyAccounts(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        List<AccountListResponse> accounts = bankAccountService.getMyAccounts(userDetails.getUserId());
+        List<MyAccountResponse> accounts = bankAccountService.getMyAccountsWithNumbers(userDetails.getUserId());
 
         return ResponseEntity.ok(accounts);
     }

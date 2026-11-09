@@ -57,7 +57,7 @@ a {
 .balance-card {
     width: 100%;
     max-width: 554px;
-    margin: 0 auto 96px;
+    margin: 0 auto 40px;
     background: var(--color-bg);
     border: 1px solid var(--color-border);
 }
@@ -113,6 +113,20 @@ a {
 
 .balance-card__cta:hover {
     opacity: 0.9;
+}
+
+.home-accounts {
+    margin-bottom: 40px;
+}
+
+.home-accounts__list {
+    margin: 12px 0 0;
+    padding-left: 24px;
+    overflow-wrap: anywhere;
+}
+
+.home-accounts__list li + li {
+    margin-top: 8px;
 }
 
 /* Transactions */

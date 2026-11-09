@@ -27,12 +27,18 @@
 <main class="page">
     <section class="balance-card">
         <div class="balance-card__body">
-            <h2 class="balance-card__label">총 사용 가능 잔액</h2>
+            <h2 class="balance-card__label">대표 계좌 잔액</h2>
             <p class="balance-card__amount" id="balanceAmount">불러오는 중…</p>
         </div>
         <div class="balance-card__footer">
             <a href="/transfer" class="balance-card__cta">이체</a>
         </div>
+    </section>
+
+    <section class="home-accounts" aria-labelledby="homeAccountsTitle">
+        <h2 class="transactions__title" id="homeAccountsTitle">내 계좌</h2>
+        <ul class="home-accounts__list" id="homeAccounts"></ul>
+        <p class="tx2-state" id="homeAccountsState" role="status">불러오는 중…</p>
     </section>
 
     <p id="accountCreationStatus" class="account-creation-status" role="status" aria-live="polite"></p>

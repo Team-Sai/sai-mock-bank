@@ -123,6 +123,13 @@ public class BankAccountService {
                 .toList();
     }
 
+    public List<MyAccountResponse> getMyAccountsWithNumbers(Long bankUserId) {
+        return bankAccountMapper.findAllByBankUserId(bankUserId)
+                .stream()
+                .map(MyAccountResponse::from)
+                .toList();
+    }
+
     public List<AccountListResponse> getAccounts(String userKey) {
         validateUserKey(userKey);
 

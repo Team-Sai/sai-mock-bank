@@ -26,30 +26,49 @@ async function initHome() {
         return;
     }
 
+    let accounts;
     try {
-        const account = await loadPrimaryAccount(accessToken);
-        if (!account) {
-            document.getElementById("balanceAmount").textContent = "0원";
-            document.getElementById("transactionsBody").innerHTML = '<p class="tx2-state">계좌를 생성하면 거래내역을 확인할 수 있습니다.</p>';
-            return;
-        }
-        renderBalance(account);
+        accounts = await TxUtils.fetchWithAuth(CONFIG.ACCOUNTS_ME_URL, accessToken);
+        if (!Array.isArray(accounts)) throw new Error("계좌 목록 응답이 올바르지 않습니다.");
+    } catch (error) {
+        console.error("[home] 계좌 조회 실패:", error);
+        document.getElementById("homeAccountsState").textContent = "계좌를 불러올 수 없습니다.";
+        document.getElementById("homeAccountsState").hidden = false;
+        renderBalanceError();
+        renderTransactionsError();
+        return;
+    }
 
+    renderAccounts(accounts);
+    const account = accounts[0];
+    if (!account) {
+        document.getElementById("balanceAmount").textContent = "0원";
+        document.getElementById("transactionsBody").innerHTML = '<p class="tx2-state">계좌를 생성하면 거래내역을 확인할 수 있습니다.</p>';
+        return;
+    }
+    renderBalance(account);
+
+    try {
         const accountLabel = { bankName: account.bankName, maskedAccountNumber: account.maskedAccountNumber };
         const transactions = await loadTransactions(accessToken, account.accountId, CONFIG.RECENT_COUNT);
         renderTransactions(transactions, accountLabel);
     } catch (error) {
-        console.error("[home] 초기화 실패:", error);
-        renderBalanceError();
+        console.error("[home] 거래내역 조회 실패:", error);
         renderTransactionsError();
     }
 }
 
-/** 계좌 목록 조회 후 대표 계좌(첫 번째) 반환 */
-async function loadPrimaryAccount(accessToken) {
-    const accounts = await TxUtils.fetchWithAuth(CONFIG.ACCOUNTS_ME_URL, accessToken);
-    if (!Array.isArray(accounts)) throw new Error("계좌 목록 응답이 올바르지 않습니다.");
-    return accounts[0] ?? null;
+function renderAccounts(accounts) {
+    const list = document.getElementById("homeAccounts");
+    const state = document.getElementById("homeAccountsState");
+    const items = accounts.map((account) => {
+        const item = document.createElement("li");
+        item.textContent = `${account.bankName} · ${account.accountName} · ${account.accountNumber}`;
+        return item;
+    });
+    list.replaceChildren(...items);
+    state.textContent = accounts.length === 0 ? "보유한 계좌가 없습니다." : "";
+    state.hidden = accounts.length > 0;
 }
 
 /** 특정 계좌의 최신 거래내역 size건 조회 */
@@ -65,6 +84,7 @@ function renderBalance(account) {
     if (!el) return;
 
     el.textContent = `${TxUtils.formatAmount(account.balance)}원`;
+
 }
 
 function renderBalanceError() {

@@ -121,7 +121,8 @@ public class SecurityConfig {
 
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                                // 세션 ID 교체는 로그인 성공 시 AuthController에서 한 번 수행한다.
+                                // JWT 인증 요청이 연동 세션 ID를 바꾸면 동시 계좌 조회가 이전 ID를 사용할 수 있다.
+                                // 자동 교체를 끄고 로그인 성공 시 AuthController에서만 교체한다.
                                 .sessionFixation(fixation -> fixation.none())
                 )
 

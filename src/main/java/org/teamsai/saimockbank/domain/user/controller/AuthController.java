@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -101,6 +102,7 @@ public class AuthController {
     @PostMapping("/api/auth/login")
     public UserLoginResponse login(
             @Valid @RequestBody UserLoginRequest request,
+            HttpServletRequest servletRequest,
             HttpServletResponse response
     ) {
         UserLoginResponse result = authService.login(request);
@@ -114,6 +116,10 @@ public class AuthController {
         boolean isAdmin = userMapper.findById(userId)
                 .map(user -> "ADMIN".equals(user.getRole()))
                 .orElse(false);
+
+        if (servletRequest.getSession(false) != null) {
+            servletRequest.changeSessionId();
+        }
 
         response.addHeader(
                 HttpHeaders.SET_COOKIE,

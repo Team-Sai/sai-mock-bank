@@ -120,9 +120,10 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
 
                 .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                                // JWT 인증 요청이 연동 세션 ID를 바꾸면 동시 계좌 조회가 이전 ID를 사용할 수 있다.
+                                // 자동 교체를 끄고 로그인 성공 시 AuthController에서만 교체한다.
+                                .sessionFixation(fixation -> fixation.none())
                 )
 
                 // 인증 실패 및 관리자 페이지 접근 거부 처리

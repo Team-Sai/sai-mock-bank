@@ -120,9 +120,9 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
 
                 .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                                // 세션 ID 교체는 로그인 성공 시 AuthController에서 한 번 수행한다.
+                                .sessionFixation(fixation -> fixation.none())
                 )
 
                 // 인증 실패 및 관리자 페이지 접근 거부 처리

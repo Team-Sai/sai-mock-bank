@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!dialog.open) dialog.showModal();
             document.getElementById("closeCreationComplete").focus();
             // Refresh failures cannot turn a successful creation into another creation attempt.
-            await initHome();
+            document.dispatchEvent(new CustomEvent("account-created"));
         } catch (error) {
             message.textContent = error.name === "AbortError" || error instanceof TypeError
                 ? "응답을 확인하지 못했습니다. 같은 요청으로 재시도하면 중복 생성되지 않습니다."

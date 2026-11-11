@@ -2,13 +2,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const FILE_PREVIEW = window.location.protocol === "file:";
 
     const ROUTES = {
-        main: FILE_PREVIEW ? "../login/login.html" : "/",
+        main: FILE_PREVIEW ? "../login/login.html" : "/home",
         login: FILE_PREVIEW ? "../login/login.html" : "/login"
     };
 
     const API = {
         me: "/api/users/me",
-        linkedAccounts: "/api/linked-accounts",
+        linkedAccounts: "/api/mock-bank/accounts/my",
         logout: "/api/auth/logout"
     };
 
@@ -23,8 +23,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const errorBox = document.getElementById("mypage-error");
     const logoutButton = document.getElementById("logout-button");
     const withdrawButton = document.getElementById("withdraw-button");
+    const accountError = document.getElementById("account-error");
 
     let sessionEnding = false;
+    let hasAccountSnapshot = false;
 
     function redirectToLogin(required = false) {
         const query = required ? "?required=true" : "";
@@ -111,7 +113,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 ${escapeHtml(account.bankName)}
                             </div>
                             <div class="account-name">
-                                ${escapeHtml(account.accountAlias)}
+                                ${escapeHtml(account.accountName)}
                             </div>
                         </div>
                         <strong class="account-balance">
@@ -119,13 +121,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </strong>
                     </div>
                     <div class="account-number">
-                        ${escapeHtml(account.maskedAccountNumber)}
+                        ${escapeHtml(account.accountNumber)}
                     </div>
                 </div>
             `;
 
             accountList.appendChild(item);
         });
+    }
+
+    function showAccountError() {
+        accountError.textContent = "계좌 목록을 갱신하지 못했습니다. 잠시 후 다시 시도해 주세요."
+            + (hasAccountSnapshot ? " 이전 조회 결과를 표시하고 있습니다." : "");
+        accountError.hidden = false;
+        if (!hasAccountSnapshot) {
+            document.getElementById("account-list").textContent = "계좌 목록을 불러오지 못했습니다.";
+        }
     }
 
     function formatBalance(balance) {
@@ -153,12 +164,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </svg>
             </div>
             <strong class="account-empty-title">
-                연결된 계좌가 없습니다
+                보유한 계좌가 없습니다
             </strong>
-            <p class="account-empty-desc">
-                계좌를 연결하면 정산 및 차용금 관리가<br>
-                자동화되어 더욱 편리해집니다.
-            </p>
+            <p class="account-empty-desc">계좌를 생성하면 계좌별 잔액을 확인할 수 있습니다.</p>
             <button type="button"
                     class="account-empty-button"
                     id="connect-account-button">
@@ -167,7 +175,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <path d="M12 8v8"></path>
                     <path d="M8 12h8"></path>
                 </svg>
-                지금 바로 연결하기
+                계좌 생성하기
             </button>
         `;
 
@@ -182,9 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function handleConnectAccountClick() {
-        window.location.href = FILE_PREVIEW
-            ? "../link/link.html"
-            : "/accounts/link";
+        document.getElementById("createAccountButton")?.click();
     }
 
     function renderMyPage(rawData) {
@@ -199,7 +205,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         setText("member-email", data.email);
         setText("member-birth-date", data.birthDate);
         setText("member-phone", formatPhone(data.phone));
-        setText("member-key", data.userKey);
+        setText("member-token", data.userToken);
+        const headerName = document.getElementById("header-user-name");
+        if (headerName) headerName.hidden = !data.name;
+        setText("detail-email", data.email);
 
         const badge = document.getElementById(
             "verification-status"
@@ -226,7 +235,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
 
         setProfileImage(data.profileImageUrl);
-        renderAccounts(data.accounts ?? []);
     }
 
     // =========================================
@@ -346,7 +354,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             Authorization: `Bearer ${token}`
         };
 
-        const [meResponse, accountsResponse] = await Promise.all([
+        const [meResult, accountsResult] = await Promise.allSettled([
             fetch(API.me, {
                 method: "GET",
                 headers
@@ -357,16 +365,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             })
         ]);
 
+        const meResponse = meResult.status === "fulfilled" ? meResult.value : null;
+        const accountsResponse = accountsResult.status === "fulfilled" ? accountsResult.value : null;
+
         if (
-            meResponse.status === 401 ||
-            meResponse.status === 403 ||
-            accountsResponse.status === 401 ||
-            accountsResponse.status === 403
+            meResponse?.status === 401 ||
+            meResponse?.status === 403 ||
+            accountsResponse?.status === 401 ||
+            accountsResponse?.status === 403
         ) {
             await endSession(true);
             return;
         }
 
+        if (!meResponse) throw new Error("내 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
         const meData = await readJson(meResponse);
 
         if (!meResponse.ok) {
@@ -376,24 +388,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
         }
 
-        let accounts = [];
+        renderMyPage(meData);
 
-        if (accountsResponse.ok) {
-            const accountsData = await readJson(accountsResponse);
-
-            accounts =
-                accountsData?.data ??
-                accountsData ??
-                [];
-
-        } else {
-            console.error("연결된 계좌 조회 실패");
+        if (!accountsResponse?.ok) {
+            showAccountError();
+            return;
         }
 
-        renderMyPage({
-            ...(meData?.data ?? meData ?? {}),
-            accounts
-        });
+        try {
+            const accountsData = await readJson(accountsResponse);
+            const accounts = accountsData?.data ?? accountsData;
+            if (!Array.isArray(accounts)) {
+                showAccountError();
+                return;
+            }
+            renderAccounts(accounts);
+            hasAccountSnapshot = true;
+            accountError.hidden = true;
+            accountError.textContent = "";
+        } catch {
+            showAccountError();
+        }
     }
 
     function loadPreviewMyPage() {
@@ -412,6 +427,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         renderMyPage(member);
+        renderAccounts(member.accounts ?? []);
+        hasAccountSnapshot = true;
     }
 
     // =========================================
@@ -503,12 +520,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    document
-        .querySelector(".add-account-button")
-        ?.addEventListener(
-            "click",
-            handleConnectAccountClick
-        );
+
+
+    document.addEventListener("account-created", async () => {
+        errorBox.hidden = true;
+        try { await loadMyPage(); }
+        catch (error) {
+            errorBox.textContent = error.message || "계좌 목록을 불러오지 못했습니다.";
+            errorBox.hidden = false;
+        }
+    });
 
     try {
         await loadMyPage();
@@ -517,6 +538,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(error);
 
         if (errorBox) {
+            const accountList = document.getElementById("account-list");
+            if (accountList?.textContent === "계좌를 불러오는 중…") {
+                accountList.textContent = "계좌 목록을 불러오지 못했습니다.";
+            }
             errorBox.textContent =
                 error.message ||
                 "내 정보를 불러오지 못했습니다.";

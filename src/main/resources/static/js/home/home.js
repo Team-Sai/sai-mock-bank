@@ -32,14 +32,11 @@ async function initHome() {
         if (!Array.isArray(accounts)) throw new Error("계좌 목록 응답이 올바르지 않습니다.");
     } catch (error) {
         console.error("[home] 계좌 조회 실패:", error);
-        document.getElementById("homeAccountsState").textContent = "계좌를 불러올 수 없습니다.";
-        document.getElementById("homeAccountsState").hidden = false;
         renderBalanceError();
         renderTransactionsError();
         return;
     }
 
-    renderAccounts(accounts);
     const account = accounts[0];
     if (!account) {
         document.getElementById("balanceAmount").textContent = "0원";
@@ -58,18 +55,6 @@ async function initHome() {
     }
 }
 
-function renderAccounts(accounts) {
-    const list = document.getElementById("homeAccounts");
-    const state = document.getElementById("homeAccountsState");
-    const items = accounts.map((account) => {
-        const item = document.createElement("li");
-        item.textContent = `${account.bankName} · ${account.accountName} · ${account.accountNumber}`;
-        return item;
-    });
-    list.replaceChildren(...items);
-    state.textContent = accounts.length === 0 ? "보유한 계좌가 없습니다." : "";
-    state.hidden = accounts.length > 0;
-}
 
 /** 특정 계좌의 최신 거래내역 size건 조회 */
 async function loadTransactions(accessToken, accountId, size) {
@@ -113,3 +98,5 @@ function renderTransactionsError() {
         container.innerHTML = `<p class="tx2-state">거래내역을 불러올 수 없습니다.</p>`;
     }
 }
+
+document.addEventListener("account-created", initHome);

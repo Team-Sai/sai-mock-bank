@@ -8,6 +8,7 @@ const source = fs.readFileSync(path.join(__dirname, '../../main/resources/static
 
 function page(fetch, storage = new Map()) {
     const elements = new Map();
+    const dispatchedEvents = [];
     const get = id => {
         if (!elements.has(id)) elements.set(id, {
             hidden: false, attributes: {}, value: '', textContent: '', disabled: false, open: false, events: {},
@@ -20,13 +21,14 @@ function page(fetch, storage = new Map()) {
     };
     storage.set('accessToken', `header.${Buffer.from('{"sub":"42"}').toString('base64url')}.signature`);
     const context = {
-        document: { getElementById: get, addEventListener: (_, fn) => fn() },
+        document: { getElementById: get, addEventListener: (_, fn) => fn(), dispatchEvent: event => dispatchedEvents.push(event.type) },
+        CustomEvent: class { constructor(type) { this.type = type; } },
         sessionStorage: { getItem: k => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: k => storage.delete(k) },
         fetch, atob, crypto: webcrypto, AbortController, setTimeout, clearTimeout,
         initHome: async () => {}, TypeError,
     };
     vm.runInNewContext(source, context);
-    return { get, storage, open: () => { get('createAccountButton').events.click(); if (!get('creationInitialBalance').value) get('creationInitialBalance').value = '12345.67'; },
+    return { get, storage, dispatchedEvents, open: () => { get('createAccountButton').events.click(); if (!get('creationInitialBalance').value) get('creationInitialBalance').value = '12345.67'; },
         submit: () => get('createAccountForm').events.submit({ preventDefault() {} }) };
 }
 const success = () => ({ ok: true, status: 201, json: async () => ({ accountId: 12, bankName: '신한은행', accountName: '입출금통장', maskedAccountNumber: '****1234' }) });
@@ -49,6 +51,7 @@ test('double submit sends one request and leaves completion button disabled', as
     p.get('closeCreationComplete').events.click();
     assert.equal(p.get('createAccountDialog').open, false);
     assert.match(p.get('accountCreationStatus').textContent, /계좌가 생성/);
+    assert.deepEqual(p.dispatchedEvents, ['account-created']);
 });
 
 test('response loss and page reload reuse identical key and body', async () => {

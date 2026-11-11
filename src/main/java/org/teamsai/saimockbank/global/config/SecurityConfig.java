@@ -226,6 +226,7 @@ public class SecurityConfig {
                                         "/login",
                                         "/signup",
                                         "/home",
+                                        "/mypage",
                                         "/link/start",
                                         "/link/select",
                                         "/transfer",

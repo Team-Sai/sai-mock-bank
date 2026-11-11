@@ -38,7 +38,10 @@ async function page({ accounts = [], accountStatus = 200, meStatus = 200, networ
         console: { error() {}, warn() {} }, Date, Intl, Number,
     });
     await ready();
-    return { get, storage, calls, redirects, setAccounts: next => { accounts = next; }, created: () => listeners.get('account-created')() };
+    return { get, storage, calls, redirects, setAccounts: next => { accounts = next; },
+        setAccountStatus: next => { accountStatus = next; },
+        setNetworkFailure: next => { networkFailure = next; },
+        created: () => listeners.get('account-created')() };
 }
 
 test('profile and every account balance use actual API fields and authenticated requests', async () => {
@@ -77,10 +80,47 @@ for (const options of [{ accountStatus: 500 }, { networkFailure: true }, { accou
     test(`account failure preserves profile and shows error: ${JSON.stringify(options)}`, async () => {
         const p = await page(options);
         assert.equal(p.get('member-name').textContent, '검증 사용자');
-        assert.equal(p.get('mypage-error').hidden, false);
+        assert.equal(p.get('mypage-error').hidden, true);
+        assert.equal(p.get('account-error').hidden, false);
         assert.match(p.get('account-list').textContent, /불러오지 못했습니다/);
     });
 }
+
+for (const failure of ['http', 'network', 'invalid']) {
+    test(`refresh failure keeps previous full account numbers and balances, then recovers: ${failure}`, async () => {
+        const account = { bankName: '신한은행', accountName: '기존 통장', accountNumber: '1101234560915', balance: 54321 };
+        const p = await page({ accounts: [account] });
+        const previousRow = p.get('account-list').children[0];
+        if (failure === 'http') p.setAccountStatus(500);
+        if (failure === 'network') p.setNetworkFailure(true);
+        if (failure === 'invalid') p.setAccounts({ unexpected: true });
+        await p.created();
+        assert.equal(p.get('account-list').children[0], previousRow);
+        assert.match(previousRow.innerHTML, /1101234560915/);
+        assert.match(previousRow.innerHTML, /54,321원/);
+        assert.equal(p.get('member-name').textContent, '검증 사용자');
+        assert.equal(p.get('mypage-error').hidden, true);
+        assert.equal(p.get('account-error').hidden, false);
+        assert.match(p.get('account-error').textContent, /이전 조회 결과/);
+
+        p.setAccountStatus(200);
+        p.setNetworkFailure(false);
+        p.setAccounts([account, { ...account, accountName: '새 통장', accountNumber: '1109876543210', balance: 100 }]);
+        await p.created();
+        assert.equal(p.get('account-list').children.length, 2);
+        assert.match(p.get('account-list').children[1].innerHTML, /1109876543210/);
+        assert.equal(p.get('account-error').hidden, true);
+        assert.equal(p.get('account-error').textContent, '');
+    });
+}
+
+test('successful empty response clears previous accounts without showing an error', async () => {
+    const p = await page({ accounts: [{ accountNumber: '1101234560915', balance: 1 }] });
+    p.setAccounts([]);
+    await p.created();
+    assert.match(p.get('account-list').children[0].innerHTML, /보유한 계좌가 없습니다/);
+    assert.equal(p.get('account-error').hidden, true);
+});
 
 for (const options of [{ token: null }, { accountStatus: 401 }, { meStatus: 403 }]) {
     test(`missing or expired authorization redirects to login: ${JSON.stringify(options)}`, async () => {

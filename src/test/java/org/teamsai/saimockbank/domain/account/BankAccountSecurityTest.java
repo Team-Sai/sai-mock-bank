@@ -12,6 +12,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.teamsai.saimockbank.domain.account.controller.BankAccountController;
 import org.teamsai.saimockbank.domain.account.service.BankAccountService;
+import org.teamsai.saimockbank.domain.account.dto.BankAccountDTO;
+import org.teamsai.saimockbank.domain.account.dto.MyAccountResponse;
+import org.teamsai.saimockbank.domain.account.dto.AccountStatus;
 import org.teamsai.saimockbank.domain.user.dto.UserDTO;
 import org.teamsai.saimockbank.domain.user.mapper.UserMapper;
 import org.teamsai.saimockbank.global.config.SecurityConfig;
@@ -23,6 +26,7 @@ import org.teamsai.saimockbank.global.security.InternalApiKeyFilter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -111,5 +115,24 @@ class BankAccountSecurityTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(bankAccountService);
+    }
+
+    @Test
+    void authenticatedMyAccountsResponseIncludesFullAccountNumber() throws Exception {
+        when(jwtTokenProvider.getUserIdIfValid("valid-token")).thenReturn(Optional.of(1L));
+        when(userMapper.findById(1L)).thenReturn(Optional.of(UserDTO.builder().bankUserId(1L).build()));
+        var account = BankAccountDTO.builder()
+                .accountId(42L).bankUserId(1L).bankCode("088").bankName("신한은행")
+                .accountName("입출금통장").accountHolderName("테스트")
+                .accountNumber("1101234560915").balance(new BigDecimal("54321.00"))
+                .status(AccountStatus.ACTIVE).build();
+        when(bankAccountService.getMyAccountsWithNumbers(1L)).thenReturn(List.of(MyAccountResponse.from(account)));
+
+        mvc.perform(get("/api/mock-bank/accounts/my").header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].accountNumber").value("1101234560915"))
+                .andExpect(jsonPath("$[0].maskedAccountNumber").exists())
+                .andExpect(jsonPath("$[0].balance").value(54321));
+        verify(bankAccountService).getMyAccountsWithNumbers(1L);
     }
 }

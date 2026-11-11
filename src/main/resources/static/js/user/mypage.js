@@ -23,8 +23,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const errorBox = document.getElementById("mypage-error");
     const logoutButton = document.getElementById("logout-button");
     const withdrawButton = document.getElementById("withdraw-button");
+    const accountError = document.getElementById("account-error");
 
     let sessionEnding = false;
+    let hasAccountSnapshot = false;
 
     function redirectToLogin(required = false) {
         const query = required ? "?required=true" : "";
@@ -128,6 +130,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    function showAccountError() {
+        accountError.textContent = "계좌 목록을 갱신하지 못했습니다. 잠시 후 다시 시도해 주세요."
+            + (hasAccountSnapshot ? " 이전 조회 결과를 표시하고 있습니다." : "");
+        accountError.hidden = false;
+        if (!hasAccountSnapshot) {
+            document.getElementById("account-list").textContent = "계좌 목록을 불러오지 못했습니다.";
+        }
+    }
+
     function formatBalance(balance) {
         if (balance == null) {
             return "0";
@@ -224,7 +235,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
 
         setProfileImage(data.profileImageUrl);
-        renderAccounts(data.accounts ?? []);
     }
 
     // =========================================
@@ -378,34 +388,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
         }
 
-        let accounts = [];
-
         renderMyPage(meData);
 
-        if (accountsResponse?.ok) {
-            const accountsData = await readJson(accountsResponse);
-
-            accounts =
-                accountsData?.data ??
-                accountsData ??
-                [];
-
-            if (!Array.isArray(accounts)) {
-                document.getElementById("account-list").textContent = "계좌 목록을 불러오지 못했습니다.";
-                throw new Error("계좌 목록 응답이 올바르지 않습니다.");
-            }
-
-        } else {
-            const message = "계좌 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
-            renderMyPage(meData);
-            document.getElementById("account-list").textContent = message;
-            throw new Error(message);
+        if (!accountsResponse?.ok) {
+            showAccountError();
+            return;
         }
 
-        renderMyPage({
-            ...(meData?.data ?? meData ?? {}),
-            accounts
-        });
+        try {
+            const accountsData = await readJson(accountsResponse);
+            const accounts = accountsData?.data ?? accountsData;
+            if (!Array.isArray(accounts)) {
+                showAccountError();
+                return;
+            }
+            renderAccounts(accounts);
+            hasAccountSnapshot = true;
+            accountError.hidden = true;
+            accountError.textContent = "";
+        } catch {
+            showAccountError();
+        }
     }
 
     function loadPreviewMyPage() {
@@ -424,6 +427,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         renderMyPage(member);
+        renderAccounts(member.accounts ?? []);
+        hasAccountSnapshot = true;
     }
 
     // =========================================
